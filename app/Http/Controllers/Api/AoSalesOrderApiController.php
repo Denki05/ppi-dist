@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Entities\Penjualan\PengajuanProforma;
 use App\Entities\Penjualan\SalesOrder;
 use App\Entities\Penjualan\SalesOrderItem;
+use App\Entities\Penjualan\PackingOrder;
+use App\Entities\Finance\Invoicing;
 use App\Entities\Master\Product;
 use App\Entities\Master\ProductPack;
 use App\Entities\Master\BrandLokal;
@@ -903,20 +905,134 @@ class AoSalesOrderApiController extends Controller
     }
 
     /**
-     * List SO baru untuk import transaksi -> AO (pull).
+     * Metadata dokumen satu SO: DO yang dipakai, invoice aktif, dan ketersediaan resi.
+     * DO status 6 diutamakan karena hanya DO itu yang dianggap selesai/resi terupload.
+     */
+    protected function soDokumenMeta($so)
+    {
+        $do = PackingOrder::where('so_id', $so->id)->where('status', 6)->orderBy('id', 'desc')->first();
+        if (!$do) {
+            $do = PackingOrder::where('so_id', $so->id)->orderBy('id', 'desc')->first();
+        }
+        $inv = $do ? Invoicing::where('do_id', $do->id)->orderBy('id', 'desc')->first() : null;
+        return $this->metaFromDo($do, $inv);
+    }
+
+    protected function metaFromDo($do, $inv = null)
+    {
+        $out = [
+            'do_id' => $do ? (int) $do->id : null,
+            'do_code' => $do ? ($do->do_code ?: $do->code) : null,
+            'do_status' => $do ? (int) $do->status : null,
+            'do_updated_at' => ($do && $do->updated_at) ? (string) $do->updated_at : null,
+            'invoice_id' => null,
+            'invoice_code' => null,
+            'invoice_status' => null,
+            'pdf_ready' => false,
+            'resi_at' => null,
+            'resi' => ['slot1' => false, 'slot2' => false],
+        ];
+
+        if (!$do) {
+            return $out;
+        }
+
+        $out['resi']['slot1'] = $this->resiPhonePath($do->image) !== null;
+        $out['resi']['slot2'] = $this->resiPhonePath($do->image2) !== null;
+        $hasResi = $out['resi']['slot1'] || $out['resi']['slot2'];
+        if ((int) $do->status === 6 && $hasResi && $do->updated_at) {
+            $out['resi_at'] = (string) $do->updated_at;
+        }
+
+        if ($inv) {
+            $out['invoice_status'] = (int) $inv->status;
+            $out['invoice_id'] = (int) $inv->id;
+            // Hanya invoice ACTIVE yang boleh ditampilkan (VOID/DELETED final).
+            if ((int) $inv->status === Invoicing::STATUS['ACTIVE']) {
+                $out['invoice_code'] = $inv->code;
+                $out['pdf_ready'] = $this->invoicePdfExists($inv->code);
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Path fisik file resi. Disk 'public' di app ini berakar di public_path(),
+     * jadi kolom image biasanya berisi path lengkap (images/.../x.jpg). Data
+     * lama bisa berisi nama file saja, karena itu ada fallback directory.
+     */
+    protected function resiPhonePath($name)
+    {
+        $name = trim((string) $name);
+        if ($name === '') {
+            return null;
+        }
+
+        $name = ltrim(str_replace('\\', '/', $name), '/');
+        $full = public_path($name);
+        if (is_file($full)) {
+            return $full;
+        }
+
+        $legacy = rtrim(public_path(PackingOrder::$directory_image), '/\\') . DIRECTORY_SEPARATOR . basename($name);
+        return is_file($legacy) ? $legacy : null;
+    }
+
+    protected function invoicePdfExists($code)
+    {
+        $name = basename((string) $code);
+        if ($name === '') {
+            return false;
+        }
+        $dir = public_path('cr/invoice/export');
+        return is_file($dir . DIRECTORY_SEPARATOR . $name . '-FULL.pdf')
+            || is_file($dir . DIRECTORY_SEPARATOR . $name . '.pdf');
+    }
+
+    /**
+     * List SO untuk import/sync transaksi -> AO (pull).
      * GET /api/ao/so-awal/list?since_id=0&limit=100
-     * Mengembalikan SO non-deleted dengan id > since_id (asc), max 200.
-     * Dipakai scheduler AO agar input via web transaksi ikut masuk AO.
+     *     &date_from=2026-10-01&date_to=2026-10-31&do_status=6
+     * Mengembalikan SO non-deleted dengan id > since_id (asc), max 200,
+     * plus metadata DO/invoice/resi agar AO tidak perlu menebak.
      */
     public function list(Request $request)
     {
         $sinceId = (int) $request->query('since_id', 0);
         $limit = min(max((int) $request->query('limit', 100), 1), 200);
 
-        $rows = SalesOrder::where('id', '>', $sinceId)
-            ->orderBy('id', 'asc')
-            ->limit($limit)
-            ->get(['id', 'so_code', 'status', 'brand_name', 'type_transaction', 'customer_id', 'customer_other_address_id', 'note', 'idr_rate', 'disc_percent', 'disc_idr', 'disc_usd', 'disc_kemasan', 'approval_mou', 'so_indent', 'is_estimate', 'estimate_code', 'code', 'created_by', 'created_at']);
+        $dateFrom = trim((string) $request->query('date_from', ''));
+        $dateTo = trim((string) $request->query('date_to', ''));
+        $dateFrom = preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateFrom) ? $dateFrom : null;
+        $dateTo = preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateTo) ? $dateTo : null;
+        $doStatus = $request->query('do_status');
+        $doStatus = is_numeric($doStatus) ? (int) $doStatus : null;
+
+        $hasAoCol = \Illuminate\Support\Facades\Schema::hasColumn('penjualan_so', 'ao_order_number');
+        $cols = ['id', 'so_code', 'status', 'brand_name', 'type_transaction', 'customer_id', 'customer_other_address_id', 'note', 'idr_rate', 'disc_percent', 'disc_idr', 'disc_usd', 'disc_kemasan', 'approval_mou', 'so_indent', 'is_estimate', 'estimate_code', 'code', 'created_by', 'created_at'];
+        if ($hasAoCol) {
+            $cols[] = 'ao_order_number';
+        }
+
+        $query = SalesOrder::where('id', '>', $sinceId);
+        if ($dateFrom) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $query->whereDate('created_at', '<=', $dateTo);
+        }
+        if ($doStatus !== null) {
+            $query->whereIn('id', function ($sub) use ($doStatus) {
+                $sub->select('so_id')
+                    ->from('penjualan_do')
+                    ->where('status', $doStatus)
+                    ->whereNull('deleted_at');
+            });
+        }
+
+        $rows = $query->orderBy('id', 'asc')->limit($limit)->get($cols);
+        $soIds = $rows->pluck('id')->filter()->values()->all();
 
         $usernames = [];
         try {
@@ -927,8 +1043,66 @@ class AoSalesOrderApiController extends Controller
         } catch (\Exception $e) {
         }
 
-        $data = $rows->map(function ($so) use ($usernames) {
-            return [
+        // Batch member (nama + officer untuk PIC AO)
+        $members = [];
+        try {
+            $childIds = $rows->pluck('customer_other_address_id')->filter()->unique()->values()->all();
+            if ($childIds) {
+                // officer tidak selalu ada di schema production; nama tetap diambil.
+                $memberCols = ['id', 'name', 'text_kota'];
+                if (\Illuminate\Support\Facades\Schema::hasColumn('master_customer_other_addresses', 'officer')) {
+                    $memberCols[] = 'officer';
+                }
+                foreach (CustomerOtherAddress::whereIn('id', $childIds)->get($memberCols) as $m) {
+                    $members[(string) $m->id] = $m;
+                }
+            }
+        } catch (\Exception $e) {
+        }
+
+        // Batch DO: DO status 6 diutamakan, sisanya DO terbaru.
+        $dos = [];
+        $doIds = [];
+        try {
+            if ($soIds) {
+                $doRows = PackingOrder::whereIn('so_id', $soIds)
+                    ->orderBy('id', 'asc')
+                    ->get(['id', 'so_id', 'do_code', 'code', 'status', 'image', 'image2', 'updated_at']);
+                foreach ($doRows as $do) {
+                    $sid = (int) $do->so_id;
+                    if (!isset($dos[$sid]) || (int) $do->status === 6) {
+                        $dos[$sid] = $do;
+                    }
+                }
+                $doIds = array_values(array_map(function ($do) {
+                    return (int) $do->id;
+                }, $dos));
+            }
+        } catch (\Exception $e) {
+        }
+
+        // Batch invoice: baris terbaru per DO.
+        $invs = [];
+        try {
+            if ($doIds) {
+                $invRows = Invoicing::whereIn('do_id', $doIds)
+                    ->orderBy('id', 'asc')
+                    ->get(['id', 'do_id', 'code', 'status']);
+                foreach ($invRows as $inv) {
+                    $invs[(int) $inv->do_id] = $inv;
+                }
+            }
+        } catch (\Exception $e) {
+        }
+
+        $data = $rows->map(function ($so) use ($usernames, $members, $dos, $invs, $hasAoCol) {
+            $childId = (string) $so->customer_other_address_id;
+            $member = $members[$childId] ?? null;
+            $do = $dos[(int) $so->id] ?? null;
+            $inv = $do ? ($invs[(int) $do->id] ?? null) : null;
+            $meta = $this->metaFromDo($do, $inv);
+
+            return array_merge([
                 'so_id' => $so->id,
                 'so_code' => $so->so_code,
                 'status' => $so->status,
@@ -936,10 +1110,14 @@ class AoSalesOrderApiController extends Controller
                 'type_transaction' => $so->type_transaction,
                 'customer_id' => $so->customer_id,
                 'customer_other_address_id' => $so->customer_other_address_id,
+                'customer_name' => $member ? $member->name : null,
+                'customer_city' => $member ? $member->text_kota : null,
+                'officer' => $member ? $member->officer : null,
+                'ao_order_number' => $hasAoCol ? ($so->ao_order_number ?? null) : null,
                 'created_by' => $so->created_by,
                 'created_username' => $usernames[$so->created_by] ?? null,
                 'created_at' => $so->created_at,
-            ];
+            ], $meta);
         });
 
         return response()->json(['success' => true, 'data' => $data]);
@@ -969,7 +1147,18 @@ class AoSalesOrderApiController extends Controller
             }
         }
 
-        return response()->json(['success' => true, 'data' => [
+        $member = null;
+        try {
+            $memberCols = ['id', 'name', 'text_kota'];
+            if (\Illuminate\Support\Facades\Schema::hasColumn('master_customer_other_addresses', 'officer')) {
+                $memberCols[] = 'officer';
+            }
+            $member = CustomerOtherAddress::where('id', $so->customer_other_address_id)->first($memberCols);
+        } catch (\Exception $e) {
+        }
+        $hasAoCol = \Illuminate\Support\Facades\Schema::hasColumn('penjualan_so', 'ao_order_number');
+
+        return response()->json(['success' => true, 'data' => array_merge([
             'so_id' => $so->id,
             'so_code' => $so->so_code,
             'status' => $so->status,
@@ -977,6 +1166,10 @@ class AoSalesOrderApiController extends Controller
             'type_transaction' => $so->type_transaction,
             'customer_id' => $so->customer_id,
             'customer_other_address_id' => $so->customer_other_address_id,
+            'customer_name' => $member ? $member->name : null,
+            'customer_city' => $member ? $member->text_kota : null,
+            'officer' => $member ? $member->officer : null,
+            'ao_order_number' => $hasAoCol ? ($so->ao_order_number ?? null) : null,
             'note' => $so->note,
             'idr_rate' => $so->idr_rate,
             'disc_percent' => $so->disc_percent,
@@ -997,7 +1190,7 @@ class AoSalesOrderApiController extends Controller
                     'free_product' => $it->free_product,
                 ];
             })->values(),
-        ]]);
+        ], $this->soDokumenMeta($so))]);
     }
 
     /**
@@ -1062,6 +1255,177 @@ class AoSalesOrderApiController extends Controller
     }
 
     /**
+     * Cari SO untuk endpoint dokumen. Mendukung ?by=ao (nomor order AO),
+     * sama seperti endpoint status.
+     */
+    protected function findSoForDokumen(Request $request, $code)
+    {
+        $byAo = $request->query('by') === 'ao';
+        $hasAoCol = \Illuminate\Support\Facades\Schema::hasColumn('penjualan_so', 'ao_order_number');
+        $col = ($byAo && $hasAoCol) ? 'ao_order_number' : 'so_code';
+
+        $so = SalesOrder::where($col, $code)->orderBy('id', 'desc')->first();
+        if (!$so && $byAo && !$hasAoCol) {
+            $so = SalesOrder::where('note', 'like', '%[AO:' . $code . ']%')->orderBy('id', 'desc')->first();
+        }
+        return $so;
+    }
+
+    /**
+     * Metadata dokumen untuk modal AO.
+     * GET /api/ao/so-awal/dokumen/{so_code}
+     */
+    public function dokumen(Request $request, $so_code)
+    {
+        $so = $this->findSoForDokumen($request, $so_code);
+        if (!$so) {
+            $trashed = SalesOrder::withTrashed()->where('so_code', $so_code)->first();
+            if ($trashed) {
+                return response()->json(['success' => false, 'deleted' => true, 'message' => "SO {$so_code} sudah dihapus"], 410);
+            }
+            return response()->json(['success' => false, 'message' => "SO {$so_code} tidak ditemukan"], 404);
+        }
+
+        $meta = $this->soDokumenMeta($so);
+        return response()->json([
+            'success' => true,
+            'data' => array_merge([
+                'so_id' => (int) $so->id,
+                'so_code' => $so->so_code,
+                'has_do' => !empty($meta['do_id']),
+            ], $meta),
+        ]);
+    }
+
+    /**
+     * Stream PDF nota invoice (ACTIVE) untuk DO terkait.
+     * GET /api/ao/so-awal/dokumen/{so_code}/invoice
+     */
+    public function dokumenInvoice(Request $request, $so_code)
+    {
+        $so = $this->findSoForDokumen($request, $so_code);
+        if (!$so) {
+            return response()->json(['success' => false, 'message' => "SO {$so_code} tidak ditemukan"], 404);
+        }
+        $do = PackingOrder::where('so_id', $so->id)->where('status', 6)->orderBy('id', 'desc')->first();
+        if (!$do) {
+            return response()->json(['success' => false, 'message' => 'DO belum selesai (status 6)'], 404);
+        }
+        $inv = Invoicing::where('do_id', $do->id)->orderBy('id', 'desc')->first();
+        if (!$inv || (int) $inv->status !== Invoicing::STATUS['ACTIVE']) {
+            return response()->json(['success' => false, 'message' => 'Invoice belum tersedia atau sudah void'], 404);
+        }
+
+        $file = $this->ensureInvoicePdf($inv->code, $do);
+        if (!$file) {
+            return response()->json(['success' => false, 'message' => 'PDF invoice belum tersedia, cetak sekali dari modul transaksi'], 503);
+        }
+
+        return response()->file($file, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . basename($file) . '"',
+            'Cache-Control' => 'private, max-age=300',
+        ]);
+    }
+
+    /**
+     * Stream bukti resi (slot 1/2) dari DO yang sudah status 6.
+     * GET /api/ao/so-awal/dokumen/{so_code}/resi/{slot}
+     */
+    public function dokumenResi(Request $request, $so_code, $slot)
+    {
+        $slot = (int) $slot;
+        if (!in_array($slot, [1, 2], true)) {
+            return response()->json(['success' => false, 'message' => 'Slot resi tidak valid'], 404);
+        }
+
+        $so = $this->findSoForDokumen($request, $so_code);
+        if (!$so) {
+            return response()->json(['success' => false, 'message' => "SO {$so_code} tidak ditemukan"], 404);
+        }
+        $do = PackingOrder::where('so_id', $so->id)->where('status', 6)->orderBy('id', 'desc')->first();
+        if (!$do) {
+            return response()->json(['success' => false, 'message' => 'DO belum selesai (status 6)'], 404);
+        }
+
+        $name = $slot === 1 ? $do->image : $do->image2;
+        if (empty($name)) {
+            return response()->json(['success' => false, 'message' => 'Bukti resi belum diupload'], 404);
+        }
+
+        $path = $this->resiPhonePath($name);
+        if (!$path) {
+            return response()->json(['success' => false, 'message' => 'File resi tidak ditemukan di server'], 404);
+        }
+
+        $mime = @mime_content_type($path);
+        return response()->file($path, [
+            'Content-Type' => $mime ?: 'application/octet-stream',
+            'Cache-Control' => 'private, max-age=300',
+        ]);
+    }
+
+    /**
+     * Pastikan PDF invoice tersedia. Pakai cache export dulu; generate via
+     * Crystal hanya bila file belum ada dan COM tersedia di server.
+     */
+    protected function ensureInvoicePdf($code, $do)
+    {
+        $name = basename((string) $code);
+        if ($name === '') {
+            return null;
+        }
+        $dir = public_path('cr/invoice/export');
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+        foreach ([$name . '-FULL.pdf', $name . '.pdf'] as $f) {
+            $p = $dir . DIRECTORY_SEPARATOR . $f;
+            if (is_file($p) && filesize($p) > 0) {
+                return $p;
+            }
+        }
+
+        if (!class_exists('COM')) {
+            return null;
+        }
+        $rpt = public_path('cr/invoice/full.rpt');
+        if (!is_file($rpt)) {
+            return null;
+        }
+
+        $tmp = $dir . DIRECTORY_SEPARATOR . $name . '-FULL-' . getmypid() . '-' . uniqid() . '.pdf';
+        try {
+            $crapp = new \COM('CrystalDesignRunTime.Application');
+            $creport = $crapp->OpenReport($rpt, 1);
+            $db = config('database.connections.mysql');
+            $creport->Database->Tables(1)->SetLogOnInfo('LOCAL', $db['database'], $db['username'], $db['password']);
+            $creport->EnableParameterPrompting = false;
+            $creport->RecordSelectionFormula = "{penjualan_do.id} = " . (int) $do->id;
+            $creport->ExportOptions->DiskFileName = $tmp;
+            $creport->ExportOptions->PDFExportAllPages = true;
+            $creport->ExportOptions->DestinationType = 1;
+            $creport->ExportOptions->FormatType = 31;
+            $creport->Export(false);
+            $creport = null;
+            $crapp = null;
+
+            if (is_file($tmp) && filesize($tmp) > 0) {
+                $final = $dir . DIRECTORY_SEPARATOR . $name . '-FULL.pdf';
+                if (@rename($tmp, $final)) {
+                    return $final;
+                }
+                return $tmp;
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Generate invoice PDF gagal', ['code' => $name, 'error' => $e->getMessage()]);
+            @unlink($tmp);
+        }
+
+        return null;
+    }
+
+    /**
      * GET status SO untuk tombol "Cek Status" di AO + scheduler poll.
      * GET /api/ao/so-awal/status/{so_code}
      * Response: status int + status_text (STEP) + do_code/nota/invoice bila sudah tutup.
@@ -1087,25 +1451,12 @@ class AoSalesOrderApiController extends Controller
             return response()->json(['success' => false, 'message' => "SO {$so_code} tidak ditemukan"], 404);
         }
 
-        $doCode = null;
-        $notaCode = $so->code;
-        $invoiceCode = null;
-        try {
-            $do = \App\Entities\Penjualan\PackingOrder::where('so_id', $so->id)->orderBy('id', 'desc')->first();
-            if ($do) {
-                $doCode = $do->do_code ?? $do->code;
-                $inv = \App\Entities\Finance\Invoicing::where('do_id', $do->id)->orderBy('id', 'desc')->first();
-                if ($inv) {
-                    $invoiceCode = $inv->code;
-                }
-            }
-        } catch (\Exception $e) {
-            // abaikan, status tetap kembali
-        }
+        $meta = $this->soDokumenMeta($so);
+        $hasAoCol = \Illuminate\Support\Facades\Schema::hasColumn('penjualan_so', 'ao_order_number');
 
         return response()->json([
             'success' => true,
-            'data' => [
+            'data' => array_merge([
                 'so_id'     => $so->id,
                 'so_code'   => $so->so_code,
                 'status'    => $so->status,
@@ -1113,11 +1464,10 @@ class AoSalesOrderApiController extends Controller
                 'so_indent' => $so->so_indent,
                 'indent_status' => $so->indent_status,
                 'condition' => $so->condition,
-                'do_code' => $doCode,
-                'nota_code' => $notaCode,
-                'invoice_code' => $invoiceCode,
+                'ao_order_number' => $hasAoCol ? ($so->ao_order_number ?? null) : null,
+                'nota_code' => $so->code,
                 'updated_at' => $so->updated_at,
-            ],
+            ], $meta),
         ]);
     }
 
