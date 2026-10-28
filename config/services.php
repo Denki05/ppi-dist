@@ -84,5 +84,8 @@ return [
     'trial' => [
         'sync_url' => env('TRIAL_SYNC_URL'),
         'key'      => env('TRIAL_SYNC_KEY'),
+        // Verifikasi sertifikat TLS saat push user. Set false hanya bila
+        // server trial memakai sertifikat self-signed.
+        'verify_tls' => env('TRIAL_SYNC_VERIFY_TLS', true),
     ],
 ];

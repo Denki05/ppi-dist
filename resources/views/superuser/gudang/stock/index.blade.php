@@ -373,6 +373,8 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
                             <th>Kemasan</th>
                             <th>Stock</th>
                             <th>KS</th>
+                            <!-- <th>Tipe</th>
+                            <th>Harga</th> -->
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -1211,7 +1213,17 @@ $(document).ready(function(){
         ],
         columns: [
           { data: 'no', width: '40px' },
-          { data: 'product_name' },
+          {
+              data: 'product_name',
+              render: function(data, type, row){
+                  return data
+                      + ' <i class="fa fa-info-circle text-muted product-info-tip" style="cursor:help" title="Tipe: '
+                      + (row.type_name ?? '-')
+                      + ' | Harga: '
+                      + (row.price ?? '-')
+                      + '"></i>';
+              }
+          },
           { data: 'brand_name', width: '90px' },
           { data: 'pack_name', width: '100px' },
           { data: 'stock', className: 'text-end', width: '65px' },
@@ -1237,6 +1249,15 @@ $(document).ready(function(){
         autoWidth:false,
         scrollX:false,
         ordering:false,
+        drawCallback: function(){
+            document.querySelectorAll('.product-info-tip').forEach(function(el){
+                bootstrap.Tooltip.getOrCreateInstance(el, {
+                    delay: { show: 100, hide: 100 },
+                    placement: 'right',
+                    customClass: 'product-info-tooltip'
+                });
+            });
+        },
         // pagingType:"simple",
         // language:{paginate:{previous:"<", next:">"}},
         // drawCallback: function(settings){

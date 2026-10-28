@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App;
 use Closure;
 use Illuminate\Support\Facades\Auth;
 
@@ -24,7 +25,7 @@ class Authentication
             $isSsoPath = $request->is('auth/superuser/sso*');
 
             if (!$isSsoPath && Auth::guard('superuser')->check() == true) {
-                return redirect()->route('superuser.index');
+                return redirect()->route('portal.modules');
             }
         }
 

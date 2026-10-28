@@ -14,8 +14,9 @@ class VerifyUserApiKey
     public function handle(Request $request, Closure $next)
     {
         $expected = (string) config('services.user_api.key', '');
+        $provided = (string) $request->header('X-API-KEY', '');
 
-        if ($expected === '' || $request->header('X-API-KEY') !== $expected) {
+        if ($expected === '' || $provided === '' || !hash_equals($expected, $provided)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized: API key tidak valid',

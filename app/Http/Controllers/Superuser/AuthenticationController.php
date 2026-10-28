@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Superuser;
 
 use App\Entities\Account\Superuser;
 use App\Http\Controllers\Controller;
+use App\Services\ModuleAccessService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
@@ -76,14 +77,14 @@ class AuthenticationController extends Controller
 
                 $user = Auth::guard('superuser')->user();
 
-                // Warning akun lama: email random / belum link Google -> arahkan ke Profile.
+                // Warning akun lama: email random / belum link Google -> arahkan ke Profil portal.
                 if ($this->needsEmailFix($user)) {
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'warning',
-                        'content' => 'Login berhasil. Email akun Anda (' . e($user->email) . ') perlu diperbarui ke Gmail asli agar bisa hubungkan Google. Anda diarahkan ke halaman Profile.',
+                        'content' => 'Login berhasil. Email akun Anda (' . e($user->email) . ') perlu diperbarui ke Gmail asli agar bisa hubungkan Google. Anda diarahkan ke halaman Profil.',
                     ];
-                    $response['redirect_to'] = route('superuser.profile.index');
+                    $response['redirect_to'] = route('portal.profile');
                     return $this->response(200, $response);
                 }
 
@@ -100,8 +101,8 @@ class AuthenticationController extends Controller
                         'content' => 'Success',
                     ];
                 }
-                $response['redirect_to'] = route('superuser.index');
-                return $this->response(200, $response);
+
+                return $this->response(200, $this->withModuleRedirect($user, $response));
             }
         } else {
             return redirect()->route('auth.superuser.index');
@@ -111,7 +112,8 @@ class AuthenticationController extends Controller
     public function logout(Request $request)
     {
         Auth::guard('superuser')->logout();
-        $request->session()->flush();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
         return redirect()->route('auth.superuser.index');
     }
@@ -169,13 +171,51 @@ class AuthenticationController extends Controller
                 ->withErrors([$this->maintenanceMessage()]);
         }
 
+        $user = $tokenData->superuser;
+
+        if (!$user || (int) ($user->is_active ?? 0) !== 1) {
+            return redirect()->route('auth.superuser.index')
+                ->withErrors(['Akun belum aktif. Hubungi admin untuk verifikasi.']);
+        }
+
+        // Konsumsi token secara atomik: hanya satu request yang boleh menang.
+        $consumed = SuperuserLoginToken::where('id', $tokenData->id)
+            ->where('used', false)
+            ->update(['used' => true]);
+
+        if ($consumed !== 1) {
+            return redirect()->route('auth.superuser.index')
+                ->withErrors(['Token tidak valid atau sudah kadaluarsa.']);
+        }
+
         // Login otomatis
-        Auth::guard('superuser')->login($tokenData->superuser);
+        Auth::guard('superuser')->login($user);
+        request()->session()->regenerate();
 
-        // Tandai token sudah digunakan
-        $tokenData->update(['used' => true]);
+        // Gateway selalu jadi halaman pertama agar profil & tautan Google
+        // bisa dicek sebelum user masuk ke modul.
+        return redirect()->route('portal.modules');
+    }
 
-        return redirect()->route('superuser.index'); // ubah sesuai dashboard Anda
+    /**
+     * Arahkan user ke gateway portal setelah login berhasil.
+     * Gateway selalu tampil; user memilih modul dari sana.
+     */
+    protected function withModuleRedirect($user, array $response)
+    {
+        $modules = ModuleAccessService::forUser($user);
+
+        if (count($modules) === 0) {
+            $response['notification'] = [
+                'alert' => 'notify',
+                'type' => 'warning',
+                'content' => 'Login berhasil, tetapi akun Anda belum memiliki akses modul. Hubungi admin untuk mendapatkan akses.',
+            ];
+        }
+
+        $response['redirect_to'] = route('portal.modules');
+
+        return $response;
     }
 
     /**
@@ -240,40 +280,5 @@ class AuthenticationController extends Controller
         }
 
         return $default;
-    }
-
-    public function directLogin($id, Request $request)
-    {
-        try {
-            Auth::guard('superuser')->loginUsingId($id);
-            $request->session()->regenerate();
-
-            $redirectPath = $request->query('redirect');
-            $flag = $request->query('x', 'false');
-
-            // Simpan flag agar bisa dipakai untuk pembatasan tampilan
-            session(['is_from_agenda' => $flag === 'true']);
-
-            // Validasi redirect agar tidak bisa sembarangan path
-            $allowedPaths = [
-                'superuser/penjualan/so_awal',
-                'superuser/penjualan/sales_order_kontrak',
-                'superuser/penjualan/sales_order_indent',
-                'superuser/penjualan/so_proforma',
-                'superuser/penjualan/sales_order_ppn/index_ppn_awal',
-            ];
-
-            if ($redirectPath && in_array($redirectPath, $allowedPaths)) {
-                $redirectUrl = url($redirectPath);
-            } else {
-                $redirectUrl = route('superuser.index');
-            }
-
-            return redirect($redirectUrl);
-        } catch (\Exception $e) {
-            return redirect('/auth/superuser')->withErrors([
-                'login' => 'Gagal login langsung: ' . $e->getMessage(),
-            ]);
-        }
     }
 }

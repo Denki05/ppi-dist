@@ -43,6 +43,7 @@ class UserSyncService
             'email'             => $user->email,
             'password'          => $user->password,
             'division'          => $user->division,
+            'jabatan'           => $user->jabatan ?? null,
             'cabang'            => $user->cabang ?? null,
             'is_superuser'      => (int) ($user->is_superuser ?? 0),
             'is_active'         => (int) ($user->is_active ?? 0),
@@ -58,7 +59,7 @@ class UserSyncService
             $client = new \GuzzleHttp\Client([
                 'timeout'         => 5,
                 'connect_timeout' => 3,
-                'verify'          => false,
+                'verify'          => (bool) config('services.trial.verify_tls', true),
                 'http_errors'     => false,
             ]);
             $res = $client->post($url, [

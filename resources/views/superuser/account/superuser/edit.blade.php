@@ -1,9 +1,16 @@
 @extends('superuser.app')
 
 @section('content')
+<style>
+  .module-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;padding:10px 12px;border:1px solid #dbe3ee;border-radius:10px;background:#f8fafc}
+  .module-chip{display:flex;align-items:center;gap:7px;margin:0;font-size:12.5px;color:#334155;cursor:pointer}
+  .module-chip input{width:15px;height:15px;margin:0}
+  .module-chip b{color:#0f172a}
+  .module-chip span{color:#64748b}
+</style>
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Account</span>
-  <a class="breadcrumb-item" href="{{ route('superuser.account.superuser.index') }}">Superuser</a>
+  <a class="breadcrumb-item" href="{{ route('superuser.account.user.index', ['type' => 'superuser']) }}">Akun</a>
   <a class="breadcrumb-item" href="{{ route('superuser.account.superuser.show', $account->id) }}">{{ $account->id }}</a>
   <span class="breadcrumb-item active">Edit</span>
 </nav>
@@ -62,6 +69,23 @@
           <input type="file" id="image" name="image" data-max-file-size="2000" accept="image/png, image/jpeg" data-src="{{ $account->img }}">
         </div>
       </div>
+      @role('Developer|SuperAdmin', 'superuser')
+      <div class="form-group row">
+        <label class="col-lg-3 col-form-label text-right">Akses modul</label>
+        <div class="col-lg-7">
+          <input type="hidden" name="modules_present" value="1">
+          <div class="module-grid">
+            @foreach($modules as $code => $item)
+              <label class="module-chip" title="{{ $item['description'] ?? '' }}">
+                <input type="checkbox" name="modules[]" value="{{ $code }}" {{ in_array($code, $currentModules, true) ? 'checked' : '' }}>
+                <b>{{ $code }}</b><span>{{ $item['name'] ?? $code }}</span>
+              </label>
+            @endforeach
+          </div>
+          <small class="form-text text-muted">Modul yang boleh dibuka setelah login. Semua tercentang = akses penuh.</small>
+        </div>
+      </div>
+      @endrole
     </div>
     <div class="block-content block-content-full block-content-sm bg-body-light font-size-sm text-right">
       <a href="{{ route('superuser.account.superuser.show', $account->id) }}">

@@ -254,8 +254,8 @@
                                 @endif
                                 @if($superuser->can('superuser-manage') OR $superuser->division == "Admin" OR $superuser->division == "Management")
                                 <li><a class="dropdown-item" href="{{ route('superuser.penjualan.so_proforma.index') }}"><i class="fa-solid fa-file-prescription"></i> Proforma</a></li>
-                                @endif
                                 <li><a class="dropdown-item" href="{{ route('superuser.penjualan.pengajuan_proforma.index') }}"><i class="fa-solid fa-file-circle-plus"></i> Pengajuan Proforma</a></li>
+                                @endif
                                 <li>
                                     <hr class="dropdown-divider">
                                 </li>
@@ -597,8 +597,7 @@
                             </a>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="{{ route('superuser.account.log_activity.index') }}">Aktivitas Log</a></li>
-                                <li><a class="dropdown-item" href="{{ route('superuser.account.superuser.index') }}">Superuser</a></li>
-                                <li><a class="dropdown-item" href="{{ route('superuser.account.user.index') }}">User</a></li>
+                                <li><a class="dropdown-item" href="{{ route('superuser.account.user.index') }}">Akun</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.account.sales_person.index') }}">Sales Person</a></li>
                             </ul>
                         </li>
@@ -610,9 +609,7 @@
                                 <i class="fa-solid fa-bars"></i> Menu
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ route('superuser.setting.menu.index') }}">Halaman</a></li>
-                                <li><a class="dropdown-item" href="{{ route('superuser.account.superuser.index') }}">Kegunaan</a></li>
-                                <li><a class="dropdown-item" href="{{ route('superuser.account.user.index') }}">Wilayah indonesia</a></li>
+                                <li><a class="dropdown-item" href="{{ route('superuser.setting.menu.index') }}">Daftar Menu</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.utility.settings.index') }}">Maintenance Mode</a></li>
                             </ul>
                         </li>

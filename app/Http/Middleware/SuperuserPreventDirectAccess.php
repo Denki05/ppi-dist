@@ -26,10 +26,16 @@ class SuperuserPreventDirectAccess
         // is not ajax
         // is get
         if  ($request->is($blacklistUrl) AND !$request->ajax() AND $request->isMethod('get')) {
+            $user = Auth::guard('superuser')->user();
+
+            if ($user && $user->hasAnyRole(['Developer', 'SuperAdmin', 'Admin'])) {
+                return $next($request);
+            }
+
             $token = $request->token;
 
             // debug for developer
-            if ($token === '?' OR env('SUPERUSER_PREVENT_DIRECT_ACCESS') === false) {
+            if (env('SUPERUSER_PREVENT_DIRECT_ACCESS') === false) {
                 return $next($request);
             }
             

@@ -71,8 +71,9 @@ class StockController extends Controller
         $productName = $request->product_name;
 
         $rows = ProductMinStock::with([
-                'product_pack.product',
-                'product_pack.packaging'
+            'product_pack.product',
+            'product_pack.packaging',
+            'product_pack.type_product_pack'
             ])
             ->where('warehouse_id', $warehouse)
             ->when($brand, function ($q) use ($brand) {
@@ -131,6 +132,8 @@ class StockController extends Controller
                 'product_name'    => $pack->code.' - '.$product->name,
                 'brand_name'      => $product->brand_name ?? '-',
                 'pack_name'       => $pack->packaging->pack_name ?? '-',
+                'type_name'       => $pack->type_product_pack->name ?? '-',
+                'price'           => number_format((float) $pack->price, 2),
                 'stock'           => $stockFormatted,
                 'ks'              => $ksFormatted,
             ];

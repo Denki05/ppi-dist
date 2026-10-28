@@ -4,6 +4,7 @@ namespace App\Entities\Account;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
+ 
 
 class User extends Model
 {
@@ -16,8 +17,12 @@ class User extends Model
     	'username',
     	'password',
     	'division',
+        'jabatan',
         'cabang',
         'modul_akses',
+        'access_profile',
+        'access_addons',
+        'can_access_mis',
         'google_id',
         'avatar',
         'email_verified_at',
@@ -53,5 +58,10 @@ class User extends Model
     }
     public function is_active(){
         return (object) self::IS_ACTIVE[$this->is_active];
+    }
+
+    public function isPassCodeNull()
+    {
+        return $this->pass_code === null;
     }
 }

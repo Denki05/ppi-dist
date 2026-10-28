@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Superuser\Account\LockScreenController;
+
 Route::group([
     'middleware' => ['role:Developer|SuperAdmin|Admin', 'auth:superuser'],
     'as' => 'account.',
@@ -16,6 +18,9 @@ Route::group([
     });
     Route::resource('superuser', 'Account\SuperuserController');
     
+    // Checklist akses modul (matriks user x modul).
+    Route::get('/module-access', 'Account\ModuleAccessController@index')->name('module_access.index');
+
     Route::group(['as' => 'user.', 'prefix' => '/user'], function () {
         Route::get('/','Account\UserController@index')->name('index');
         Route::get('/create','Account\UserController@create')->name('create');
@@ -23,7 +28,11 @@ Route::group([
         Route::post('/store','Account\UserController@store')->name('store');
         Route::post('/update','Account\UserController@update')->name('update');
         Route::post('/destroy','Account\UserController@destroy')->name('destroy');
+        Route::post('/force-delete','Account\UserController@forceDelete')->name('force_delete');
         Route::post('/restore','Account\UserController@restore')->name('restore');
+        // Approval pendaftar SSO (paket jabatan, tanpa checklist).
+        Route::get('/{id}/approve','Account\UserController@approveForm')->name('approve.form');
+        Route::post('/approve','Account\UserController@approve')->name('approve');
     });
 
     Route::group(['as' => 'sales_person.', 'prefix' => '/sales_person'], function () {
@@ -50,7 +59,7 @@ Route::group([
     Route::resource('sales_person', 'Account\SalesPersonController');
 
     Route::group(['as' => 'log_activity.', 'prefix' => '/log_activity'], function () {
-        Route::get('/index', 'LogActivityController@index')->name('index');
-     });
-     Route::resource('log_activity', 'Account\LogActivityController');
+       Route::get('/index', 'LogActivityController@index')->name('index');
+    });
+    Route::resource('log_activity', 'Account\LogActivityController');
 });

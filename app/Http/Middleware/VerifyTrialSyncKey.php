@@ -15,8 +15,9 @@ class VerifyTrialSyncKey
     public function handle(Request $request, Closure $next)
     {
         $expected = (string) config('services.trial.key', '');
+        $provided = (string) $request->header('X-API-KEY', '');
 
-        if ($expected === '' || $request->header('X-API-KEY') !== $expected) {
+        if ($expected === '' || $provided === '' || !hash_equals($expected, $provided)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized: API key sinkronisasi tidak valid',

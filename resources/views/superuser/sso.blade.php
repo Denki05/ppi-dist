@@ -46,7 +46,7 @@
 
         <ul class="mlogin-steps">
           <li><b>1.</b> Kandidat baru: daftar → status menunggu → admin aktifkan.</li>
-          <li><b>2.</b> Akun lama: email sama langsung terhubung otomatis.</li>
+          <li><b>2.</b> Akun lama: login password dulu, lalu hubungkan Google dari halaman Profile (butuh password).</li>
           <li><b>3.</b> Email beda: hubungi admin untuk mapping manual sekali.</li>
         </ul>
 
