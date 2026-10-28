@@ -12,6 +12,7 @@ use App\Entities\Gudang\StockAdjustment;
 use App\Entities\Setting\UserMenu;
 use App\Repositories\CodeRepo;
 use App\Entities\Gudang\StockMove;
+use App\Services\StockService;
 use Auth;
 use DB;
 
@@ -22,7 +23,8 @@ class StockAdjustmentController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function __construct(){
+    public function __construct(StockService $stockService){
+        $this->stockService = $stockService;
         $this->view = "superuser.gudang.stock_adjustment.";
         $this->route = "superuser.gudang.stock_adjustment";
         $this->user_menu = new UserMenu;
@@ -136,6 +138,11 @@ class StockAdjustmentController extends Controller
                 $product_warehouse = ProductMinStock::where('warehouse_id',$post["warehouse_id"])
                                                     ->where('product_packaging_id',$post["product_packaging_id"])
                                                     ->first();
+                if(empty($product_warehouse)){
+                    $data_json["IsError"] = TRUE;
+                    $data_json["Message"] = "Stok produk ini belum terdaftar di gudang terkait (data master_product_min_stocks kosong). Hubungi admin untuk dibuatkan baris stoknya terlebih dahulu.";
+                    goto ResultData;
+                }
 
                 $plus_stock = (empty($post["plus"])) ? 0 : $post["plus"];
                 $min_stock = (empty($post["min"])) ? 0 : $post["min"];
@@ -163,6 +170,17 @@ class StockAdjustmentController extends Controller
                                                 ]);
                                                 
                 $insert = StockAdjustment::create($data);
+
+                // Tulis kartu stok (KS) agar saldo KS ikut berubah
+                $this->stockService->recordAdjustmentMove(
+                    $post["warehouse_id"],
+                    $post["product_packaging_id"],
+                    $plus_stock,
+                    $min_stock,
+                    $data['code'],
+                    trim(htmlentities($post["note"] ?? ''))
+                );
+
                 DB::commit();
 
                 $data_json["IsError"] = FALSE;

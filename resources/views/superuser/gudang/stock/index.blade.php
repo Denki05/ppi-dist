@@ -662,7 +662,9 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
       <div class="modal-body">
         <small class="text-muted d-block mb-2">
           Cari data tidak valid (Fisik != KS / booking tidak cocok), kroscek, lalu tampilkan hasil perbaikan.
-          Yang diperbaiki otomatis hanya yang aman: Fisik diset = KS saat tidak ada DO open (LogAktif 0).
+          Perbaikan otomatis (hanya saat LogAktif 0):<br>
+          • <strong>Backfill KS</strong> — selisih dijelaskan oleh Stock Adjustment yang belum masuk kartu stok (adjustment setelah KS terakhir). Yang disisipkan jurnal KS-nya, fisik tidak diubah.<br>
+          • <strong>Fisik = KS</strong> — selisih tanpa adjustment, fisik disamakan ke saldo KS.
         </small>
         <div id="reconcileResult" class="small">Pilih gudang di filter, lalu klik Cari.</div>
       </div>
@@ -1121,14 +1123,16 @@ function loadRebuildProducts(warehouseId) {
         }
         let html = '<div class="table-responsive"><table class="table table-sm table-bordered mb-0">'
             + '<thead><tr><th>Produk</th><th class="text-end">Fisik</th><th class="text-end">KS</th>'
-            + '<th class="text-end">Selisih</th><th class="text-end">LogAktif</th><th>Otomatis?</th></tr></thead><tbody>';
+            + '<th class="text-end">Selisih</th><th class="text-end">LogAktif</th><th>Perbaikan</th></tr></thead><tbody>';
         rows.forEach(function (r) {
+            let mode = r.fix_mode === 'backfill' ? 'Backfill KS'
+                : (r.fix_mode === 'fisik' ? 'Fisik = KS' : 'Manual');
             html += '<tr><td>' + r.product_packaging_id + '</td>'
                 + '<td class="text-end">' + r.fisik + '</td>'
                 + '<td class="text-end">' + r.ks + '</td>'
                 + '<td class="text-end">' + r.selisih_fisik + '</td>'
                 + '<td class="text-end">' + r.log_aktif + '</td>'
-                + '<td>' + (r.auto_fixable ? 'Ya' : 'Manual') + '</td></tr>';
+                + '<td>' + mode + '</td></tr>';
         });
         return html + '</tbody></table></div>';
     }
@@ -1152,12 +1156,13 @@ function loadRebuildProducts(warehouseId) {
     $('#btnReconcileSync').on('click', function () {
         let wid = $('#warehouse').val();
         if (!wid) return;
-        if (!confirm('Selaraskan Fisik=KS untuk yang aman (LogAktif 0)?')) return;
+        if (!confirm('Jalankan perbaikan aman (LogAktif 0)? Backfill KS untuk kasus adjustment, Fisik=KS untuk sisanya.')) return;
         $('#reconcileResult').html('Memperbaiki...');
         $.post("{{ route('superuser.gudang.stock.reconcileSync') }}", {
             warehouse_id: wid, _token: '{{ csrf_token() }}'
         }).done(function (res) {
-            let html = '<div class="alert alert-info py-2">Fisik diperbaiki: <strong>'
+            let html = '<div class="alert alert-info py-2">Backfill KS: <strong>'
+                + res.fixed_backfill + '</strong>, Fisik diperbaiki: <strong>'
                 + res.fixed_fisik + '</strong>, orphan dibersihkan: <strong>'
                 + res.fixed_orphan + '</strong>, sisa manual: <strong>'
                 + res.remaining + '</strong></div>';
@@ -1211,7 +1216,17 @@ $(document).ready(function(){
         ],
         columns: [
           { data: 'no', width: '40px' },
-          { data: 'product_name' },
+          {
+              data: 'product_name',
+              render: function(data, type, row){
+                  return data
+                      + ' <i class="fa fa-info-circle text-muted product-info-tip" style="cursor:help" title="Tipe: '
+                      + (row.type_name ?? '-')
+                      + ' | Harga: '
+                      + (row.price ?? '-')
+                      + '"></i>';
+              }
+          },
           { data: 'brand_name', width: '90px' },
           { data: 'pack_name', width: '100px' },
           { data: 'stock', className: 'text-end', width: '65px' },
@@ -1237,6 +1252,15 @@ $(document).ready(function(){
         autoWidth:false,
         scrollX:false,
         ordering:false,
+        drawCallback: function(){
+            document.querySelectorAll('.product-info-tip').forEach(function(el){
+                bootstrap.Tooltip.getOrCreateInstance(el, {
+                    delay: { show: 100, hide: 100 },
+                    placement: 'right',
+                    customClass: 'product-info-tooltip'
+                });
+            });
+        },
         // pagingType:"simple",
         // language:{paginate:{previous:"<", next:">"}},
         // drawCallback: function(settings){
