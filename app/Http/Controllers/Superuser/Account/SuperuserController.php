@@ -7,6 +7,7 @@ use App\Entities\Account\Superuser;
 use App\Entities\Utility\Role;
 use App\Helper\UploadMedia;
 use App\Http\Controllers\Controller;
+use App\Services\ModuleAccessService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
@@ -95,13 +96,43 @@ class SuperuserController extends Controller
 
     public function edit($id)
     {
-        $data['account'] = Superuser::where('is_superuser', 1)->findOrFail($id);
+        $account = Superuser::where('is_superuser', 1)->findOrFail($id);
 
-        if (($data['account']->id == 1 OR $data['account']->email == 'contact.willystwn@gmail.com') AND !Auth::guard('superuser')->user()->hasRole('Developer')) {
+        if (($account->id == 1 OR $account->email == 'contact.willystwn@gmail.com') AND !Auth::guard('superuser')->user()->hasRole('Developer')) {
             abort(403);
         }
 
-        return view('superuser.account.superuser.edit', $data);
+        // modul_akses NULL = belum dibatasi -> tampilkan semua tercentang.
+        $modules = config('modules.items', []);
+        $currentModules = ($account->modul_akses === null || $account->modul_akses === '')
+            ? array_keys($modules)
+            : ModuleAccessService::normalize($account->modul_akses);
+
+        $actor = Auth::guard('superuser')->user();
+
+        $data = [
+            'result' => $account,
+            'isSuperuser' => true,
+            'modules' => $modules,
+            'currentModules' => $currentModules,
+            'divisions' => [],
+            'profiles' => [],
+            'addons' => [],
+            'currentProfile' => null,
+            'currentAddons' => [],
+            'returnTab' => null,
+            'linkedCustomers' => 0,
+            'updateUrl' => route('superuser.account.superuser.update', $account->id),
+            'backUrl' => route('superuser.account.user.index', ['type' => 'superuser']),
+            'canEditIdentity' => $actor && $actor->hasRole('SuperAdmin'),
+            'canEditModules' => $actor && $actor->hasAnyRole(['Developer', 'SuperAdmin']),
+            'canManageRoles' => $actor && $actor->hasRole('SuperAdmin'),
+            'passwordConfirmName' => 'password_confirmation',
+            'formMethod' => 'PUT',
+            'formHasFile' => true,
+        ];
+
+        return view('superuser.account.user.edit', $data);
     }
 
     public function update(Request $request, $id)
@@ -116,14 +147,10 @@ class SuperuserController extends Controller
             ]);
     
             if ($validator->fails()) {
-                $response['notification'] = [
-                    'alert' => 'block',
-                    'type' => 'alert-danger',
-                    'header' => 'Error',
-                    'content' => $validator->errors()->all(),
-                ];
-    
-                return $this->response(400, $response);
+                return response()->json([
+                    'IsError' => true,
+                    'Message' => implode(' ', $validator->errors()->all()),
+                ]);
             }
     
             if ($validator->passes()) {
@@ -151,19 +178,31 @@ class SuperuserController extends Controller
     
                     $superuser->image = UploadMedia::image($request->file('image'), Superuser::$directory_image);
                 }
+
+                // Hanya Developer/SuperAdmin yang boleh membatasi modul superuser.
+                $actor = Auth::guard('superuser')->user();
+
+                if ($actor && $actor->hasAnyRole(['Developer', 'SuperAdmin']) && $request->filled('modules_present')) {
+                    $modules = array_values(array_intersect(
+                        (array) $request->input('modules', []),
+                        ModuleAccessService::codes()
+                    ));
+
+                    $superuser->modul_akses = json_encode($modules);
+                    $superuser->can_access_mis = in_array('MIS', $modules, true) ? 1 : 0;
+                }
     
                 if ($superuser->save()) {
-    
-                    $response['notification'] = [
-                        'alert' => 'notify',
-                        'type' => 'success',
-                        'content' => 'Success',
-                    ];
-    
-                    $response['redirect_to'] = route('superuser.account.superuser.show', $superuser->id);
-    
-                    return $this->response(200, $response);
+                    return response()->json([
+                        'IsError' => false,
+                        'Message' => 'Superuser berhasil diubah',
+                    ]);
                 }
+
+                return response()->json([
+                    'IsError' => true,
+                    'Message' => 'Gagal menyimpan perubahan',
+                ]);
             }
         }
     }
@@ -277,7 +316,7 @@ class SuperuserController extends Controller
                 'content' => 'Success',
             ];
 
-            $response['redirect_to'] = route('superuser.account.superuser.show', $superuser->id);
+            $response['redirect_to'] = 'reload()';
             
             return $this->response(200, $response);
         }

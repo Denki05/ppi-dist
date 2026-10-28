@@ -9,9 +9,10 @@ class VerifyAoApiKey
 {
     public function handle(Request $request, Closure $next)
     {
-        $key = $request->header('X-API-KEY');
+        $expected = (string) config('services.ao_api.key', '');
+        $provided = (string) $request->header('X-API-KEY', '');
 
-        if (!$key || $key !== config('services.ao_api.key')) {
+        if ($expected === '' || $provided === '' || !hash_equals($expected, $provided)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized: API key tidak valid',

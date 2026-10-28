@@ -8,7 +8,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | Kode modul harus sama dengan isi kolom superusers.modul_akses:
-    | MIS, AO, APM, TRS, DSG.
+    | MIS, CRM, AO, APM, TRS, DSG.
     |
     | internal_route : modul yang berjalan di aplikasi ini (tidak perlu handoff).
     | sso_path       : endpoint penerima token SSO di aplikasi modul.
@@ -20,12 +20,22 @@ return [
 
         'MIS' => [
             'label'       => 'MIS',
-            'name'        => 'MIS / CRM',
+            'name'        => 'MIS / Management',
             'description' => 'Laporan tim, doctor, customer, dan prospek.',
             'url'         => env('MODULE_MIS_URL', 'https://crm.lsfragrance.id'),
             'sso_path'    => '/module-sso',
             'icon'        => 'fa-line-chart',
             'color'       => '#2563eb',
+        ],
+
+        'CRM' => [
+            'label'       => 'CRM',
+            'name'        => 'CRM / Customer',
+            'description' => 'Portal customer: prospek, customer, dan kontak (admin/SPV).',
+            'url'         => env('MODULE_CRM_URL', env('MODULE_MIS_URL', 'https://crm.lsfragrance.id')),
+            'sso_path'    => '/module-sso',
+            'icon'        => 'fa-address-card',
+            'color'       => '#0ea5e9',
         ],
 
         'AO' => [
@@ -43,7 +53,7 @@ return [
             'name'        => 'APM',
             'description' => 'Modul APM.',
             'url'         => env('MODULE_APM_URL', 'https://apm.lsfragrance.id'),
-            'sso_path'    => null,
+            'sso_path'    => '/module-sso',
             'icon'        => 'fa-users',
             'color'       => '#7c3aed',
         ],
@@ -64,7 +74,7 @@ return [
             'name'        => 'Design',
             'description' => 'Design drive dan aset produk.',
             'url'         => env('MODULE_DSG_URL', 'https://drive.lssoft88.xyz'),
-            'sso_path'    => null,
+            'sso_path'    => '/module-sso',
             'icon'        => 'fa-paint-brush',
             'color'       => '#db2777',
         ],

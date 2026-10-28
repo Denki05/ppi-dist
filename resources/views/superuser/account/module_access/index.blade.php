@@ -126,7 +126,8 @@
     </div>
 
     <p class="text-muted mt-3 mb-0" style="font-size:12.5px">
-      Centang di tabel adalah akses efektif. Akun superuser tidak ditampilkan karena otomatis punya semua modul.
+      Centang di tabel adalah akses efektif untuk akun staff. Akun superuser diatur dari menu <b>Edit Superuser</b>;
+      selama daftar modulnya kosong, superuser tetap otomatis punya semua modul.
       Akun lama tanpa data modul dianggap punya akses <b>TRS</b> agar tidak kehilangan akses transaksi.
     </p>
   </div>

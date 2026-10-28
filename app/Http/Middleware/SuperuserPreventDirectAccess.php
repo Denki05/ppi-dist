@@ -35,7 +35,7 @@ class SuperuserPreventDirectAccess
             $token = $request->token;
 
             // debug for developer
-            if ($token === '?' OR env('SUPERUSER_PREVENT_DIRECT_ACCESS') === false) {
+            if (env('SUPERUSER_PREVENT_DIRECT_ACCESS') === false) {
                 return $next($request);
             }
             

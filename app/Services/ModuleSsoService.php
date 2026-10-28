@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Log;
+
 /**
  * Membuat URL masuk modul beserta token SSO bertanda tangan HMAC.
  *
@@ -29,6 +31,14 @@ class ModuleSsoService
             return $base;
         }
 
+        // Fail closed: key kosong membuat token bisa dipalsukan siapa saja.
+        // Tanpa key, jangan kirim token; user masuk lewat halaman login modul.
+        if ((string) config('modules.sso.key', '') === '') {
+            Log::error('MODULE_SSO_KEY kosong; token SSO tidak dibuat.', ['module' => $module]);
+
+            return $base;
+        }
+
         $token = self::makeToken($module, $user);
         $separator = strpos($base, '?') === false ? '?' : '&';
 
@@ -37,6 +47,16 @@ class ModuleSsoService
 
     public static function makeToken($module, $user)
     {
+        $key = (string) config('modules.sso.key', '');
+
+        if ($key === '') {
+            throw new \RuntimeException('MODULE_SSO_KEY belum diatur.');
+        }
+
+        if (strlen($key) < 32) {
+            Log::warning('MODULE_SSO_KEY terlalu pendek; gunakan minimal 32 karakter acak.');
+        }
+
         $now = time();
 
         $payload = [
@@ -51,7 +71,7 @@ class ModuleSsoService
         ];
 
         $body = self::base64UrlEncode(json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
-        $signature = hash_hmac('sha256', $body, (string) config('modules.sso.key', ''));
+        $signature = hash_hmac('sha256', $body, $key);
 
         return $body . '.' . $signature;
     }

@@ -23,6 +23,12 @@
         .avatar{width:62px;height:62px;margin:0 auto 14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;letter-spacing:.04em;color:#fff;background:linear-gradient(135deg,#2563eb,#0891b2 55%,#16a34a);box-shadow:0 0 0 1px rgba(255,255,255,.14),0 14px 34px rgba(8,145,178,.28)}
         .profile h1{margin:0 0 6px;font-size:22px;font-weight:800;letter-spacing:-.02em}
         .profile p{margin:0;color:rgba(255,255,255,.56);font-size:13.5px;line-height:1.6}
+        .pills{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:10px}
+        .pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:999px;text-decoration:none;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.14);color:#fff;transition:background .18s ease}
+        .pill:hover{background:rgba(255,255,255,.26);color:#fff;text-decoration:none}
+        .pill.ok{background:#16a34a;border-color:#16a34a}
+        .pill.warn{background:#f59e0b;border-color:#f59e0b}
+        .pill.bad{background:#ef4444;border-color:#ef4444}
         .alert{display:flex;gap:10px;align-items:flex-start;background:rgba(239,68,68,.12);border:1px solid rgba(248,113,113,.35);color:#fecaca;padding:12px 15px;border-radius:12px;margin-bottom:16px;font-size:13px;line-height:1.6}
         .links{display:flex;flex-direction:column;gap:10px}
         .link{position:relative;display:flex;align-items:center;gap:14px;padding:15px 16px;border-radius:14px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.1);color:#f8fafc;text-decoration:none;overflow:hidden;opacity:0;transform:translateY(8px);animation:fadeUp .42s ease forwards;animation-delay:calc(var(--i) * 55ms);transition:background .18s ease,border-color .18s ease,transform .18s ease,box-shadow .18s ease;backdrop-filter:blur(10px)}
@@ -56,9 +62,16 @@
         $initials .= substr($part, 0, 1);
     }
     $initials = strtoupper($initials) ?: 'U';
+
+    $emailRaw = strtolower(trim((string) ($superuser->email ?? '')));
+    $allowedDomains = config('services.google.allowed_domains', ['gmail.com', 'googlemail.com']);
+    $emailDomain = substr(strrchr($emailRaw, '@') ?: '', 1);
+    $emailOk = $emailRaw !== '' && filter_var($emailRaw, FILTER_VALIDATE_EMAIL) && in_array($emailDomain, $allowedDomains, true);
+    $googleLinked = !empty($superuser->google_id);
 @endphp
 <div class="wrap">
     <div class="top">
+        <a class="out" href="{{ route('portal.profile') }}"><i class="fa fa-user"></i> Profil</a>
         <a class="out" href="{{ route('superuser.logout') }}"><i class="fa fa-sign-out"></i> Keluar</a>
     </div>
 
@@ -66,6 +79,16 @@
         <div class="avatar">{{ $initials }}</div>
         <h1>Halo, {{ $displayName }}</h1>
         <p>{{ count($items) > 0 ? count($items) . ' modul siap dibuka' : 'Belum ada modul yang bisa dibuka' }}</p>
+        <div class="pills">
+            @if($googleLinked)
+                <span class="pill ok"><i class="fa fa-google"></i> Google terhubung</span>
+            @else
+                <a class="pill warn" href="{{ route('portal.profile') }}"><i class="fa fa-google"></i> Hubungkan Google</a>
+            @endif
+            @if(!$emailOk)
+                <a class="pill bad" href="{{ route('portal.profile') }}"><i class="fa fa-exclamation-triangle"></i> Perbaiki email</a>
+            @endif
+        </div>
     </div>
 
     @if(session('error'))

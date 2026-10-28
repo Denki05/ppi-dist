@@ -5,24 +5,17 @@ namespace App\Http\Controllers\Superuser;
 use App\Http\Controllers\Controller;
 use App\Services\ModuleAccessService;
 use App\Services\ModuleSsoService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ModuleController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
         $user = Auth::guard('superuser')->user();
         $items = ModuleAccessService::itemsForUser($user);
 
-        // Kalau hanya punya satu modul, langsung masuk modul tersebut.
-        // Tambahkan ?choose=1 jika ingin tetap melihat halaman pilihan.
-        if (count($items) === 1 && !$request->boolean('choose')) {
-            $code = key($items);
-
-            return redirect()->away(ModuleSsoService::urlFor($code, $user));
-        }
-
+        // Gateway selalu tampil agar user bisa melihat badge profil dan
+        // menautkan Google sebelum masuk modul apa pun.
         return view('superuser.modules', [
             'superuser' => $user,
             'items'     => $items,

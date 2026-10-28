@@ -189,7 +189,7 @@ class UserController extends Controller
                 }
 
                 $modules = isset($post["modules"]) && is_array($post["modules"])
-                	? array_values(array_intersect($post["modules"], ['MIS','AO','APM','TRS','DSG']))
+                	? array_values(array_intersect($post["modules"], ['MIS','CRM','AO','APM','TRS','DSG']))
                 	: [];
 
                 $profile = $this->submittedProfile($post);
@@ -289,6 +289,15 @@ class UserController extends Controller
     		'currentAddons' => MenuAccessService::addonKeys($result),
     		'returnTab' => $returnTab,
     		'linkedCustomers' => $this->linkedCustomerCount($result),
+    		'isSuperuser' => false,
+    		'updateUrl' => route('superuser.account.user.update'),
+    		'backUrl' => route('superuser.account.user.index', ['tab' => $returnTab]),
+    		'canEditIdentity' => true,
+    		'canEditModules' => true,
+    		'canManageRoles' => false,
+    		'passwordConfirmName' => 'password_confirm',
+    		'formMethod' => 'POST',
+    		'formHasFile' => false,
     	];
         return view($this->view."edit",$data);
     }
@@ -383,7 +392,7 @@ class UserController extends Controller
                 }
 
                 $modules = isset($post["modules"]) && is_array($post["modules"])
-                	? array_values(array_intersect($post["modules"], ['MIS','AO','APM','TRS','DSG']))
+                	? array_values(array_intersect($post["modules"], ['MIS','CRM','AO','APM','TRS','DSG']))
                 	: [];
 
                 $data_user = [
@@ -540,7 +549,7 @@ class UserController extends Controller
                 }
 
                 $modules = isset($post["modules"]) && is_array($post["modules"])
-                	? array_values(array_intersect($post["modules"], ['MIS','AO','APM','TRS','DSG']))
+                	? array_values(array_intersect($post["modules"], ['MIS','CRM','AO','APM','TRS','DSG']))
                 	: [];
 
                 $data_user = [
@@ -557,6 +566,20 @@ class UserController extends Controller
                 	'can_access_mis' => in_array('MIS', $modules, true) ? 1 : 0,
                 	'updated_by' => Auth::id(),
                 ];
+
+                // Email berubah: tautan Google lama dilepas + sesi auto-login dicabut.
+                $emailChanged = strtolower(trim((string) $post["email"])) !== strtolower(trim((string) $result->email));
+
+                if ($emailChanged) {
+                    $data_user['email_verified_at'] = null;
+                    $data_user['google_id'] = null;
+                    $data_user['google_linked_at'] = null;
+                    $data_user['remember_token'] = null;
+                }
+
+                if (!empty($post["password"])) {
+                    $data_user['remember_token'] = null;
+                }
 
                 $update_user = User::where('id',$post["user_id"])->update($data_user);
 
@@ -602,6 +625,7 @@ class UserController extends Controller
 
             User::where('id',$post["id"])->update([
             	'is_active' => 0,
+            	'remember_token' => null,
             	'deleted_by' => Auth::id()
             ]);
             
@@ -758,7 +782,7 @@ class UserController extends Controller
         return DB::table('master_customers')
             ->where(function($query) use ($values) {
                 foreach ($values as $value) {
-                    $query->orWhere('am', $value)
+                    $query->orWhere('sm', $value)
                         ->orWhere('asm', $value)
                         ->orWhere('pic', $value);
                 }

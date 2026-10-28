@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Superuser;
 use App\Entities\Account\Superuser;
 use App\Http\Controllers\Controller;
 use App\Services\ModuleAccessService;
-use App\Services\ModuleSsoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
@@ -78,14 +77,14 @@ class AuthenticationController extends Controller
 
                 $user = Auth::guard('superuser')->user();
 
-                // Warning akun lama: email random / belum link Google -> arahkan ke Profile.
+                // Warning akun lama: email random / belum link Google -> arahkan ke Profil portal.
                 if ($this->needsEmailFix($user)) {
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'warning',
-                        'content' => 'Login berhasil. Email akun Anda (' . e($user->email) . ') perlu diperbarui ke Gmail asli agar bisa hubungkan Google. Anda diarahkan ke halaman Profile.',
+                        'content' => 'Login berhasil. Email akun Anda (' . e($user->email) . ') perlu diperbarui ke Gmail asli agar bisa hubungkan Google. Anda diarahkan ke halaman Profil.',
                     ];
-                    $response['redirect_to'] = route('superuser.profile.index');
+                    $response['redirect_to'] = route('portal.profile');
                     return $this->response(200, $response);
                 }
 
@@ -113,7 +112,8 @@ class AuthenticationController extends Controller
     public function logout(Request $request)
     {
         Auth::guard('superuser')->logout();
-        $request->session()->flush();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
         return redirect()->route('auth.superuser.index');
     }
@@ -171,36 +171,39 @@ class AuthenticationController extends Controller
                 ->withErrors([$this->maintenanceMessage()]);
         }
 
-        // Login otomatis
-        Auth::guard('superuser')->login($tokenData->superuser);
-
-        // Tandai token sudah digunakan
-        $tokenData->update(['used' => true]);
-
         $user = $tokenData->superuser;
-        $modules = ModuleAccessService::forUser($user);
 
-        if (count($modules) === 1) {
-            return redirect()->away(ModuleSsoService::urlFor($modules[0], $user));
+        if (!$user || (int) ($user->is_active ?? 0) !== 1) {
+            return redirect()->route('auth.superuser.index')
+                ->withErrors(['Akun belum aktif. Hubungi admin untuk verifikasi.']);
         }
 
+        // Konsumsi token secara atomik: hanya satu request yang boleh menang.
+        $consumed = SuperuserLoginToken::where('id', $tokenData->id)
+            ->where('used', false)
+            ->update(['used' => true]);
+
+        if ($consumed !== 1) {
+            return redirect()->route('auth.superuser.index')
+                ->withErrors(['Token tidak valid atau sudah kadaluarsa.']);
+        }
+
+        // Login otomatis
+        Auth::guard('superuser')->login($user);
+        request()->session()->regenerate();
+
+        // Gateway selalu jadi halaman pertama agar profil & tautan Google
+        // bisa dicek sebelum user masuk ke modul.
         return redirect()->route('portal.modules');
     }
 
     /**
-     * Arahkan user ke modul yang tepat setelah login berhasil.
-     * - 1 modul  : langsung masuk modul (SSO bila modul eksternal).
-     * - >1 modul : halaman pilih modul.
-     * - 0 modul  : halaman pilih modul dengan peringatan.
+     * Arahkan user ke gateway portal setelah login berhasil.
+     * Gateway selalu tampil; user memilih modul dari sana.
      */
     protected function withModuleRedirect($user, array $response)
     {
         $modules = ModuleAccessService::forUser($user);
-
-        if (count($modules) === 1) {
-            $response['redirect_to'] = ModuleSsoService::urlFor($modules[0], $user);
-            return $response;
-        }
 
         if (count($modules) === 0) {
             $response['notification'] = [

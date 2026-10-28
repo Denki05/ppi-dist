@@ -129,8 +129,8 @@
     <div class="col-md-5">
       <div class="pfx-card">
         <div class="pfx-card-h"><i class="fa fa-google"></i>Login Google<small>1 klik</small></div>
-        <div class="pfx-card-b d-flex align-items-center">
-          <div class="flex-fill" style="font-size:12.5px;color:#475569">
+        <div class="pfx-card-b">
+          <div style="font-size:12.5px;color:#475569">
             @if($linked)
               <b style="color:#0f172a">Aktif.</b> Tidak perlu password tiap hari.
               <div class="pfx-hint mt-1">Login terakhir via Google: {{ $superuser->google_last_login_at ? $superuser->google_last_login_at->format('d M Y H:i') : 'belum pernah' }}</div>
@@ -138,11 +138,15 @@
               <b style="color:#0f172a">Belum aktif.</b> Pastikan email Gmail, lalu hubungkan.
             @endif
           </div>
-          @if($linked)
-            <button type="button" class="btn btn-sm btn-alt-danger ml-2" id="btn-unlink-google">Lepas</button>
-          @else
-            <a href="{{ route('auth.superuser.sso.redirect') }}" class="pfx-gbtn primary ml-2"><i class="fa fa-google"></i>Hubungkan</a>
-          @endif
+          <div class="d-flex align-items-center mt-2">
+            <input type="password" class="form-control form-control-sm pfx-input mr-2" id="google_password" placeholder="Password saat ini" autocomplete="new-password">
+            @if($linked)
+              <button type="button" class="btn btn-sm btn-alt-danger" id="btn-unlink-google">Lepas</button>
+            @else
+              <button type="button" class="pfx-gbtn primary" id="btn-link-google"><i class="fa fa-google"></i>Hubungkan</button>
+            @endif
+          </div>
+          <div class="pfx-hint mt-1">Wajib isi password akun untuk hubungkan/lepas Google.</div>
         </div>
       </div>
 
@@ -208,14 +212,43 @@ $(document).ready(function () {
     initialPreviewConfig: [{ caption: '{{ $superuser->name ?? $superuser->username }}' }]
   });
 
+  $('#btn-link-google').on('click', function () {
+    var pwd = $('#google_password').val();
+    if (!pwd) {
+      responded({ alert: 'block', type: 'alert-danger', header: 'Error', content: 'Isi password saat ini dulu untuk menghubungkan Google.' });
+      return;
+    }
+    var btn = $(this);
+    btn.prop('disabled', true);
+    $.ajax({
+      url: '{{ route('superuser.profile.google-link') }}',
+      type: 'POST',
+      data: { _token: '{{ csrf_token() }}', current_password: pwd },
+      headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+    }).done(function (response) {
+      if (response && response.data && response.data.notification) responded(response.data.notification);
+      if (response && response.data && response.data.redirect_to) redirect(response.data.redirect_to, 1500);
+      else btn.prop('disabled', false);
+    }).fail(function (xhr) {
+      var msg = (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.notification && xhr.responseJSON.data.notification.content) || 'Gagal menghubungkan. Coba lagi.';
+      responded({ alert: 'block', type: 'alert-danger', header: 'Error', content: msg });
+      btn.prop('disabled', false);
+    });
+  });
+
   $('#btn-unlink-google').on('click', function () {
+    var pwd = $('#google_password').val();
+    if (!pwd) {
+      responded({ alert: 'block', type: 'alert-danger', header: 'Error', content: 'Isi password saat ini dulu untuk melepas Google.' });
+      return;
+    }
     if (!confirm('Lepas hubungan Google? Login password tetap bisa.')) return;
     var btn = $(this);
     btn.prop('disabled', true);
     $.ajax({
       url: '{{ route('superuser.profile.unlink-google') }}',
       type: 'POST',
-      data: { _token: '{{ csrf_token() }}' },
+      data: { _token: '{{ csrf_token() }}', current_password: pwd },
       headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
     }).done(function (response) {
       if (response && response.data && response.data.notification) responded(response.data.notification);

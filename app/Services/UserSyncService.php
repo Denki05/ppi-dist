@@ -59,7 +59,7 @@ class UserSyncService
             $client = new \GuzzleHttp\Client([
                 'timeout'         => 5,
                 'connect_timeout' => 3,
-                'verify'          => false,
+                'verify'          => (bool) config('services.trial.verify_tls', true),
                 'http_errors'     => false,
             ]);
             $res = $client->post($url, [

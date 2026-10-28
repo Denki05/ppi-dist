@@ -6,9 +6,10 @@ namespace App\Services;
  * Sumber tunggal untuk membaca hak akses modul user.
  *
  * Nilai modul_akses disimpan sebagai JSON array, contoh: ["MIS","AO"].
- * Akun superuser selalu dianggap punya semua modul.
- * Akun lama dengan modul_akses NULL memakai default config modules.legacy_default
- * supaya akses transaksi yang sudah berjalan tidak hilang.
+ * Daftar eksplisit selalu menang, termasuk untuk akun superuser, supaya akses
+ * modul bisa dibatasi tanpa mencabut flag is_superuser.
+ * modul_akses NULL memakai default: superuser semua modul, user lama
+ * config modules.legacy_default (TRS) supaya akses lama tidak hilang.
  */
 class ModuleAccessService
 {
@@ -65,14 +66,12 @@ class ModuleAccessService
             return [];
         }
 
-        if ((int) ($user->is_superuser ?? 0) === 1) {
-            return self::codes();
-        }
-
         $raw = $user->modul_akses ?? null;
 
         if ($raw === null || $raw === '') {
-            $modules = self::normalize(config('modules.legacy_default', ['TRS']));
+            $modules = (int) ($user->is_superuser ?? 0) === 1
+                ? self::codes()
+                : self::normalize(config('modules.legacy_default', ['TRS']));
         } else {
             $modules = self::normalize($raw);
         }

@@ -181,6 +181,7 @@ return [
     'divisions' => [
         'Admin',
         'Customer Service',
+        'Design',
         'Developer',
         'Finance',
         'IT',
