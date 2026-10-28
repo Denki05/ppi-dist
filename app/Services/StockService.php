@@ -467,4 +467,71 @@ class StockService
             return true;
         });
     }
+
+    // 9. TULIS KARTU STOK (KS) UNTUK STOCK ADJUSTMENT
+    // Fisik (master_product_min_stocks) sudah di-update oleh caller (StockAdjustmentController@store).
+    public function recordAdjustmentMove($warehouseId, $productId, $stockIn, $stockOut, $transactionCode, $note, $transactionDate = null)
+    {
+        return DB::transaction(function () use ($warehouseId, $productId, $stockIn, $stockOut, $transactionCode, $note, $transactionDate) {
+            $effectiveDate = $transactionDate ?? now();
+            $stockIn  = (float) $stockIn;
+            $stockOut = (float) $stockOut;
+            if ($stockIn == 0 && $stockOut == 0) return true;
+
+            // Mutex per produk+gudang agar baca-saldo-lalu-insert tidak bertabrakan
+            ProductMinStock::where('warehouse_id', $warehouseId)
+                ->where('product_packaging_id', $productId)
+                ->lockForUpdate()
+                ->first();
+
+            $lastBalance = StockMove::where('warehouse_id', $warehouseId)
+                ->where('product_packaging_id', $productId)
+                ->where('created_at', '<=', $effectiveDate)
+                ->orderBy('created_at', 'desc')
+                ->orderBy('id', 'desc')
+                ->value('stock_balance');
+
+            $newBalance = ($lastBalance ?? 0) + $stockIn - $stockOut;
+
+            $newId = StockMove::insertGetId([
+                'code_transaction'     => $transactionCode,
+                'warehouse_id'         => $warehouseId,
+                'product_packaging_id' => $productId,
+                'stock_in'             => $stockIn,
+                'stock_out'            => $stockOut,
+                'stock_balance'        => $newBalance,
+                'note'                 => $note,
+                'created_by'           => auth()->id() ?? 1,
+                'created_at'           => $effectiveDate,
+                'updated_at'           => now(),
+            ]);
+
+            // Recalculate berantai untuk baris sesudahnya (backdate handling)
+            $subsequentMoves = StockMove::where('warehouse_id', $warehouseId)
+                ->where('product_packaging_id', $productId)
+                ->where(function ($q) use ($effectiveDate, $newId) {
+                    $q->where('created_at', '>', $effectiveDate)
+                      ->orWhere(function ($q2) use ($effectiveDate, $newId) {
+                          $q2->where('created_at', '=', $effectiveDate)
+                             ->where('id', '>', $newId);
+                      });
+                })
+                ->orderBy('created_at', 'asc')
+                ->orderBy('id', 'asc')
+                ->get();
+
+            $runningBalance = $newBalance;
+            foreach ($subsequentMoves as $move) {
+                $runningBalance += ($move->stock_in - $move->stock_out);
+                if ((float) $move->stock_balance !== (float) $runningBalance) {
+                    StockMove::where('id', $move->id)->update([
+                        'stock_balance' => $runningBalance,
+                        'updated_at'    => now(),
+                    ]);
+                }
+            }
+
+            return true;
+        });
+    }
 }
