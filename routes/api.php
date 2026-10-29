@@ -46,6 +46,10 @@ Route::group(['prefix' => 'ao/so-awal', 'middleware' => 'ao.apikey'], function (
     Route::post('/store', [AoSalesOrderApiController::class, 'store']);
     // Revisi AO: cek status + kirim revisi (hanya jika status=3 di transaksi)
     Route::get('/status/{so_code}', [AoSalesOrderApiController::class, 'status']);
+    // Dokumen selesai (DO status 6): meta, PDF nota invoice, bukti resi 1/2
+    Route::get('/dokumen/{so_code}', [AoSalesOrderApiController::class, 'dokumen']);
+    Route::get('/dokumen/{so_code}/invoice', [AoSalesOrderApiController::class, 'dokumenInvoice']);
+    Route::get('/dokumen/{so_code}/resi/{slot}', [AoSalesOrderApiController::class, 'dokumenResi']);
     Route::post('/update', [AoSalesOrderApiController::class, 'updateFromAo']);
     // Pengajuan proforma dari modul AO (antrean verifikasi admin sales)
     Route::post('/pengajuan/receive', [AoSalesOrderApiController::class, 'receivePengajuan']);
