@@ -61,6 +61,8 @@ Route::group([
         Route::get('/{id}/cancel_edit', 'PayableController@cancel_edit')->name('cancel_edit');
         Route::post('/{id}/update_cancel', 'PayableController@update_cancel')->name('update_cancel');
         Route::get('/unpaidInvoices', 'PayableController@unpaidInvoices')->name('unpaidInvoices');
+        Route::get('/discount-audit', 'PayableController@discountAudit')->name('discount_audit');
+        Route::post('/discount-audit/fix', 'PayableController@discountAuditFix')->name('discount_audit_fix');
         Route::get('/customerSearch', 'PayableController@customerSearch')->name('customerSearch');
         Route::get('/json_done', 'PayableController@json_done')->name('json_done');
         Route::delete('payable/{id}', 'PayableController@destroy')->name('superuser.finance.payable.destroy');

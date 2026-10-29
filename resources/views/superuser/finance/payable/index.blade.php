@@ -34,6 +34,13 @@
         </main>
 
         <div class="tab-content active" id="content1">
+            @role('Developer', 'superuser')
+            <div class="d-flex justify-content-end mb-10">
+                <button type="button" class="btn btn-warning btn-sm" id="btn-discount-audit">
+                    <i class="fa fa-search-plus mr-5"></i> Cek Diskon Nota
+                </button>
+            </div>
+            @endrole
             <form id="payableForm" method="POST" action="{{ route('superuser.finance.payable.store') }}">
             @csrf
                 <div class="row">
@@ -223,10 +230,79 @@
         </div>
     </div>
 </div>
+
+@role('Developer', 'superuser')
+<div class="modal fade" id="modalDiscountAudit" tabindex="-1" role="dialog" aria-labelledby="modalDiscountAuditLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalDiscountAuditLabel">Nota dengan Diskon Belum Terpotong</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-10">
+                    <div class="col-md-2">
+                        <select id="discount-audit-year" class="form-control">
+                            @for($y = now()->year; $y >= now()->year - 2; $y--)
+                            <option value="{{ $y }}">{{ $y }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" id="discount-audit-search" placeholder="Cari nota / customer...">
+                    </div>
+                    <div class="col-md-3">
+                        <button type="button" class="btn btn-primary" id="btn-discount-audit-scan">
+                            <i class="fa fa-search mr-5"></i> Scan
+                        </button>
+                    </div>
+                    <div class="col-md-3 text-right">
+                        <span class="text-muted" id="discount-audit-count">0 nota bermasalah</span>
+                    </div>
+                </div>
+                <div style="max-height: 55vh; overflow-y: auto;">
+                    <table class="table table-sm table-striped table-bordered mb-0">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width: 36px;">
+                                    <input type="checkbox" id="discount-audit-check-all">
+                                </th>
+                                <th>Nota</th>
+                                <th>Customer</th>
+                                <th class="text-right">Tagihan DB</th>
+                                <th class="text-right">Sudah Dibayar</th>
+                                <th class="text-right">Seharusnya</th>
+                                <th class="text-right">Selisih</th>
+                                <th>Keterangan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="discount-audit-tbody">
+                            <tr><td colspan="8" class="text-center text-muted">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <small class="text-muted d-block mt-10">
+                    Hanya nota yang bisa diperbaiki otomatis (FIX) yang dapat dicentang. Baris "Perlu manual" tidak diikutkan.
+                    Perbaikan menyelaraskan tagihan nota dan grand total DO ke nilai netto setelah diskon.
+                </small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-danger" id="btn-discount-audit-fix" disabled>
+                    <i class="fa fa-wrench mr-5"></i> Perbaiki Terpilih
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+@endrole
 @endsection
 
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.datatables')
+@include('superuser.asset.plugin.swal2')
 
 @push('scripts')
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
@@ -667,4 +743,227 @@
         });
     });
 </script>
+
+@role('Developer', 'superuser')
+<script>
+    $(function () {
+        var auditListUrl = '{{ route('superuser.finance.payable.discount_audit') }}';
+        var auditFixUrl = '{{ route('superuser.finance.payable.discount_audit_fix') }}';
+        var auditCsrf = '{{ csrf_token() }}';
+        var auditData = [];
+        var auditSelected = {};
+
+        function auditEscape(value) {
+            return $('<div>').text(value === null || value === undefined ? '' : value).html();
+        }
+
+        function auditMoney(value) {
+            if (value === null || value === undefined) {
+                return '-';
+            }
+
+            return 'Rp. ' + Number(value).toLocaleString('id-ID', {maximumFractionDigits: 2});
+        }
+
+        function auditFilteredRows() {
+            var keyword = ($('#discount-audit-search').val() || '').toLowerCase().trim();
+
+            if (!keyword) {
+                return auditData;
+            }
+
+            return auditData.filter(function (row) {
+                return [row.code, row.customer, row.note].join(' ').toLowerCase().indexOf(keyword) !== -1;
+            });
+        }
+
+        function auditUpdateSelection() {
+            var rows = auditFilteredRows();
+            var fixable = rows.filter(function (row) {
+                return row.action === 'FIX';
+            });
+            var checkedVisible = fixable.filter(function (row) {
+                return auditSelected[row.code];
+            }).length;
+            var checkedTotal = Object.keys(auditSelected).length;
+
+            $('#discount-audit-check-all')
+                .prop('checked', fixable.length > 0 && checkedVisible === fixable.length)
+                .prop('indeterminate', checkedVisible > 0 && checkedVisible < fixable.length)
+                .prop('disabled', fixable.length === 0);
+
+            $('#btn-discount-audit-fix')
+                .prop('disabled', checkedTotal === 0)
+                .html('<i class="fa fa-wrench mr-5"></i> Perbaiki Terpilih' + (checkedTotal ? ' (' + checkedTotal + ')' : ''));
+
+            $('#discount-audit-count').text(rows.length + ' nota bermasalah');
+        }
+
+        function auditRender() {
+            var rows = auditFilteredRows();
+            var html = '';
+
+            rows.forEach(function (row) {
+                var fixable = row.action === 'FIX';
+                var badge = fixable
+                    ? '<span class="badge badge-success">Bisa diperbaiki</span>'
+                    : '<span class="badge badge-warning">Perlu manual</span>';
+
+                html += '<tr>'
+                    + '<td class="text-center"><input type="checkbox" class="discount-audit-check" value="' + auditEscape(row.code) + '"'
+                    + (fixable ? '' : ' disabled')
+                    + (auditSelected[row.code] ? ' checked' : '') + '></td>'
+                    + '<td>' + auditEscape(row.code) + '</td>'
+                    + '<td>' + auditEscape(row.customer || '-') + '</td>'
+                    + '<td class="text-right">' + auditMoney(row.tagihan) + '</td>'
+                    + '<td class="text-right">' + auditMoney(row.dibayar) + '</td>'
+                    + '<td class="text-right">' + auditMoney(row.seharusnya) + '</td>'
+                    + '<td class="text-right">' + auditMoney(row.selisih) + '</td>'
+                    + '<td>' + badge + ' <small class="text-muted">' + auditEscape(row.note) + '</small></td>'
+                    + '</tr>';
+            });
+
+            if (!rows.length) {
+                html = '<tr><td colspan="8" class="text-center text-muted">'
+                    + (auditData.length ? 'Tidak ada data yang cocok.' : 'Tidak ada nota bermasalah.')
+                    + '</td></tr>';
+            }
+
+            $('#discount-audit-tbody').html(html);
+            auditUpdateSelection();
+        }
+
+        function auditLoad() {
+            auditData = [];
+            auditSelected = {};
+            $('#discount-audit-tbody').html('<tr><td colspan="8" class="text-center text-muted">Memuat data...</td></tr>');
+            $('#discount-audit-count').text('Memuat...');
+            $('#btn-discount-audit-fix').prop('disabled', true);
+
+            $.ajax({
+                url: auditListUrl,
+                type: 'GET',
+                dataType: 'json',
+                data: {year: $('#discount-audit-year').val()}
+            }).done(function (response) {
+                auditData = response.data || [];
+                auditRender();
+            }).fail(function (xhr) {
+                var message = xhr.responseJSON && xhr.responseJSON.message
+                    ? xhr.responseJSON.message
+                    : 'Gagal memuat data.';
+
+                auditData = [];
+                $('#discount-audit-tbody').html('<tr><td colspan="8" class="text-center text-danger">' + auditEscape(message) + '</td></tr>');
+                $('#discount-audit-count').text('0 nota bermasalah');
+            });
+        }
+
+        $('#btn-discount-audit').on('click', function (e) {
+            e.preventDefault();
+            $('#discount-audit-search').val('');
+            $('#modalDiscountAudit').modal('show');
+            auditLoad();
+        });
+
+        $('#btn-discount-audit-scan').on('click', auditLoad);
+        $('#discount-audit-search').on('input', auditRender);
+
+        $(document).on('change', '#discount-audit-check-all', function () {
+            var checked = this.checked;
+
+            auditFilteredRows().forEach(function (row) {
+                if (row.action !== 'FIX') {
+                    return;
+                }
+
+                if (checked) {
+                    auditSelected[row.code] = true;
+                } else {
+                    delete auditSelected[row.code];
+                }
+            });
+
+            auditRender();
+        });
+
+        $(document).on('change', '.discount-audit-check', function () {
+            if (this.checked) {
+                auditSelected[this.value] = true;
+            } else {
+                delete auditSelected[this.value];
+            }
+
+            auditUpdateSelection();
+        });
+
+        $('#btn-discount-audit-fix').on('click', function () {
+            var codes = Object.keys(auditSelected);
+
+            if (!codes.length) {
+                return;
+            }
+
+            Swal.fire({
+                title: 'Perbaiki ' + codes.length + ' nota?',
+                text: 'Tagihan nota dan grand total DO akan disesuaikan ke nilai netto setelah diskon. Tindakan ini mengubah data.',
+                type: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, perbaiki',
+                cancelButtonText: 'Batal'
+            }).then(function (result) {
+                if (!result.value) {
+                    return;
+                }
+
+                Swal.fire({
+                    title: 'Memproses...',
+                    allowOutsideClick: false,
+                    onOpen: function () {
+                        Swal.showLoading();
+                    }
+                });
+
+                $.ajax({
+                    url: auditFixUrl,
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        _token: auditCsrf,
+                        codes: codes
+                    }
+                }).done(function (response) {
+                    var html = auditEscape(response.message);
+
+                    if (response.fixed && response.fixed.length) {
+                        html += '<br><br>' + response.fixed.map(function (row) {
+                            return auditEscape(row.code) + ': ' + auditMoney(row.dari) + ' &rarr; ' + auditMoney(row.menjadi);
+                        }).join('<br>');
+                    }
+
+                    if (response.skipped && response.skipped.length) {
+                        html += '<br><br><small>Dilewati: ' + response.skipped.map(function (row) {
+                            return auditEscape(row.code);
+                        }).join(', ') + '</small>';
+                    }
+
+                    Swal.fire({
+                        type: response.failed && response.failed.length ? 'warning' : 'success',
+                        title: 'Selesai',
+                        html: html
+                    }).then(function () {
+                        auditLoad();
+                    });
+                }).fail(function (xhr) {
+                    var message = xhr.responseJSON && xhr.responseJSON.message
+                        ? xhr.responseJSON.message
+                        : 'Gagal memproses perbaikan.';
+
+                    Swal.fire('Error', message, 'error');
+                });
+            });
+        });
+    });
+</script>
+@endrole
 @endpush
