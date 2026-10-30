@@ -237,12 +237,14 @@ Route::group([
         
         // Corrected routes to use POST method
         Route::post('/mark_as_read_do/{id}/{do}', 'NotificationController@unread_notif_do')->name('mark_as_read_do');
-        Route::post('/mark_as_read_so/{id}/{do}', 'NotificationController@unread_notif_so')->name('mark_as_read_so');
+        Route::post('/mark_as_read_so/{id}', 'NotificationController@unread_notif_so')->name('mark_as_read_so');
         Route::post('/mark_as_read_payable/{id}', 'NotificationController@unread_notif_payable')->name('mark_as_read_payable');
         Route::post('/mark_as_read_only/{id}', 'NotificationController@mark_as_read_only')->name('mark_as_read_only');
         Route::post('/unread_all_notif', 'NotificationController@unread_all_notif')->name('unread_all_notif');
+        // Klik dari lonceng (GET): tandai dibaca + redirect sesuai tipe
+        Route::get('/read/{id}', 'NotificationController@read')->name('read');
+        Route::get('/', 'NotificationController@index')->name('index');
     });
-    Route::resource('notification', 'NotificationController');
 
     Route::group(['as' => 'so_proforma.', 'prefix' => '/so_proforma'], function () {
         Route::post('/store', 'SalesOrderProformaController@store')->name('store');

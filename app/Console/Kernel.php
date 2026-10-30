@@ -34,6 +34,9 @@ class Kernel extends ConsoleKernel
         
         // Arsipkan SO Awal CASH/TEMPO yang masih AWAL setelah 7 hari - setiap hari jam 03:30
         $schedule->command('so:archive-old-awal --days=7')->daily()->at('03:30');
+
+        // Bersihkan notifikasi lama: DO 7 hari, tipe lain 90 hari - setiap hari jam 03:45
+        $schedule->command('notif:prune --do-days=7 --other-days=90')->daily()->at('03:45');
     }
 
     /**

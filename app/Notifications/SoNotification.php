@@ -3,30 +3,25 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class SoNotification extends Notification
 {
     use Queueable;
 
-    /**
-     * Create a new notification instance.
-     *
-     * @return void
-     */
-    public function __construct($so)
-    {
-        $this->so = $so;
-    }
+    public $so;
+    public $kind;
 
     /**
-     * Get the notification's delivery channels.
-     *
-     * @param  mixed  $notifiable
-     * @return array
+     * @param mixed  $so   SalesOrder
+     * @param string $kind lanjutan | proforma
      */
+    public function __construct($so, $kind = 'lanjutan')
+    {
+        $this->so = $so;
+        $this->kind = $kind;
+    }
+
     public function via($notifiable)
     {
         return ['database'];
@@ -34,11 +29,15 @@ class SoNotification extends Notification
 
     public function toArray($notifiable)
     {
+        $member = $this->so->member;
+
         return [
             'id' => $this->so->id,
             'code' => $this->so->so_code,
-            'customer' => $this->so->member->name,
-            'customer_kota' => $this->so->member->text_kota,
+            'customer' => $member ? $member->name : null,
+            'customer_kota' => $member ? $member->text_kota : null,
+            'type_transaction' => $this->so->type_transaction,
+            'kind' => $this->kind,
             'created_at' => $this->so->created_at,
         ];
     }

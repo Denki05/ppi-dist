@@ -75,6 +75,8 @@ class SalesOrderWorkflowService
                 }
             }
 
+            $this->notifyAdminSales($salesOrder, 'proforma');
+
             return ['type' => 'proforma', 'sales_order' => $salesOrder];
         }
 
@@ -83,6 +85,8 @@ class SalesOrderWorkflowService
         // Catat waktu submit ke admin (basis tanggal tab SO Lanjutan).
         $salesOrder->submitted_at = date('Y-m-d H:i:s');
         $salesOrder->save();
+
+        $this->notifyAdminSales($salesOrder, 'lanjutan');
 
         return ['type' => 'lanjutan', 'sales_order' => $salesOrder];
     }
@@ -165,17 +169,32 @@ class SalesOrderWorkflowService
     }
 
     /**
-     * Helper: Generate notification for SO lanjutan
+     * Notifikasi SO masuk ke admin sales.
+     *
+     * Dipanggil dari lanjutkan() supaya semua jalur ikut terpicu: submit dari
+     * modul AO, kirim ulang setelah dikembalikan, dan lanjutkan manual admin.
+     * Penerima = user ber-profile Admin Sales, ditambah user id 33 sebagai
+     * penerima tetap (permintaan manajer: notif pasti sampai ke admin sales).
      */
-    public function sendLanjutkanNotification($salesOrder)
+    public function notifyAdminSales($salesOrder, $kind = 'lanjutan')
     {
         try {
-            $user = \App\Entities\Account\Superuser::find(33);
-            if ($user) {
-                $user->notify(new \App\Notifications\SoNotification($salesOrder));
+            $recipients = \App\Entities\Account\Superuser::query()->get()
+                ->filter(function ($user) {
+                    return \App\Services\MenuAccessService::profileKeyForUser($user) === 'Admin Sales';
+                });
+
+            $fixed = \App\Entities\Account\Superuser::find(33);
+            if ($fixed) {
+                $recipients->push($fixed);
+            }
+
+            foreach ($recipients->unique('id') as $user) {
+                $user->notify(new \App\Notifications\SoNotification($salesOrder, $kind));
             }
         } catch (\Exception $e) {
-            Log::error('Failed to send SO notification: ' . $e->getMessage());
+            // Notifikasi tidak boleh menggagalkan penyimpanan SO.
+            Log::error('Gagal kirim notifikasi SO: ' . $e->getMessage());
         }
     }
 }

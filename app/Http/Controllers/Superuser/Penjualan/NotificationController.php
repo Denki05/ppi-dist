@@ -4,47 +4,162 @@ namespace App\Http\Controllers\Superuser\Penjualan;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class NotificationController extends Controller
 {
     /**
-     * Ambil data notifikasi (maksimal 5 per tipe)
+     * Daftar tipe notifikasi yang ditampilkan (satu sumber supaya bell,
+     * halaman, dan statistik tidak pernah beda isi — OTP revisi wajib ikut).
      */
-    public function getNotifData()
+    private function visibleTypes()
+    {
+        return [
+            'App\Notifications\DoNotification',
+            'App\Notifications\SoNotification',
+            'App\Notifications\PayableNotification',
+            'App\Notifications\ReceivingNotification',
+            'App\Notifications\InternalRevisionOtpNotification',
+        ];
+    }
+
+    /**
+     * Label/ikon/warna per tipe. Dipakai bell dan halaman daftar supaya
+     * tidak ada dua tempat yang bisa berbeda.
+     */
+    private function metaFor($type)
+    {
+        if (Str::contains($type, 'DoNotification')) {
+            return ['label' => 'Delivery Order', 'short' => 'DO', 'icon' => 'bi-truck', 'color' => 'info'];
+        }
+        if (Str::contains($type, 'SoNotification')) {
+            return ['label' => 'Sales Order', 'short' => 'SO', 'icon' => 'bi-cart', 'color' => 'success'];
+        }
+        if (Str::contains($type, 'PayableNotification')) {
+            return ['label' => 'Payment', 'short' => 'Payment', 'icon' => 'bi-credit-card', 'color' => 'secondary'];
+        }
+        if (Str::contains($type, 'ReceivingNotification')) {
+            return ['label' => 'Receiving', 'short' => 'Receiving', 'icon' => 'bi-box-seam', 'color' => 'primary'];
+        }
+        if (Str::contains($type, 'InternalRevisionOtp')) {
+            return ['label' => 'OTP Revisi', 'short' => 'OTP', 'icon' => 'bi-key', 'color' => 'warning'];
+        }
+
+        return ['label' => 'Notifikasi', 'short' => 'Notif', 'icon' => 'bi-bell', 'color' => 'primary'];
+    }
+
+    /**
+     * Bentuk satu baris notifikasi untuk JSON maupun halaman.
+     */
+    private function formatRow($row)
+    {
+        $data = json_decode($row->data, true);
+        if (!is_array($data)) {
+            $data = [];
+        }
+
+        $created = $row->created_at ? Carbon::parse($row->created_at) : null;
+
+        return [
+            'id' => $row->id,
+            'type' => $row->type,
+            'label' => $this->metaFor($row->type)['label'],
+            'short' => $this->metaFor($row->type)['short'],
+            'icon' => $this->metaFor($row->type)['icon'],
+            'color' => $this->metaFor($row->type)['color'],
+            'data' => $data,
+            'is_unread' => is_null($row->read_at),
+            'created_at' => $row->created_at,
+            'human' => $created ? $created->locale('id')->diffForHumans() : '',
+            'date_key' => $created ? $created->toDateString() : '',
+        ];
+    }
+
+    /**
+     * Data untuk dropdown lonceng.
+     *
+     * Riwayat ikut dikirim (bukan hanya yang belum dibaca) supaya admin tetap
+     * bisa melihat notifikasi lama setelah menandai semua dibaca. Badge tetap
+     * menghitung unread saja.
+     */
+    public function getNotifData(Request $request)
     {
         $userId = Auth::id();
 
-        // Ambil semua notif unread sesuai tipe sekaligus
-        $notifications = DB::table('notifications')
+        $base = DB::table('notifications')
             ->where('notifiable_id', $userId)
-            ->whereNull('read_at')
-            ->whereIn('type', [
-                'App\Notifications\DoNotification',
-                'App\Notifications\SoNotification',
-                'App\Notifications\PayableNotification',
-                'App\Notifications\ReceivingNotification'
-            ])
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->groupBy('type')
-            ->map(function ($items) {
-                return $items->take(5);
-            })
-            ->flatten(1)
-            ->sortByDesc('created_at')
-            ->values();
+            ->whereIn('type', $this->visibleTypes());
 
-        $notifCount = DB::table('notifications')
-            ->where('notifiable_id', $userId)
-            ->whereNull('read_at')
-            ->count();
+        // Badge selalu menghitung total unread, tidak ikut filter chip.
+        $unread = (clone $base)->whereNull('read_at')->count();
+
+        $listQuery = clone $base;
+        $type = $request->query('type');
+        if ($type && in_array($type, $this->visibleTypes(), true)) {
+            $listQuery->where('type', $type);
+        }
+
+        $total = (clone $listQuery)->count();
+        $limit = 10;
+        $page = max(1, (int) $request->query('page', 1));
+
+        $notifications = $listQuery
+            ->orderBy('created_at', 'desc')
+            ->forPage($page, $limit)
+            ->get()
+            ->map(function ($row) {
+                return $this->formatRow($row);
+            })
+            ->values();
 
         return response()->json([
             'notifications' => $notifications,
-            'notifCount'    => $notifCount,
+            'notifCount' => $unread,
+            'page' => $page,
+            'total' => $total,
+            'hasMore' => $page * $limit < $total,
         ]);
+    }
+
+    /**
+     * Halaman View All Notifications dengan pagination.
+     */
+    public function index(Request $request)
+    {
+        $userId = Auth::id();
+        $typeFilter = $request->get('type');
+        $statusFilter = $request->get('status');
+
+        $base = DB::table('notifications')
+            ->where('notifiable_id', $userId)
+            ->whereIn('type', $this->visibleTypes());
+
+        if ($typeFilter && in_array($typeFilter, $this->visibleTypes(), true)) {
+            $base->where('type', $typeFilter);
+        }
+        if ($statusFilter === 'unread') {
+            $base->whereNull('read_at');
+        }
+
+        $stats = [
+            'total' => (clone $base)->count(),
+            'unread' => (clone $base)->whereNull('read_at')->count(),
+        ];
+
+        $notifications = $base->orderBy('created_at', 'desc')
+            ->paginate(20)
+            ->appends($request->query());
+
+        $notifications->getCollection()->transform(function ($row) {
+            return $this->formatRow($row);
+        });
+
+        $types = $this->visibleTypes();
+
+        return view('superuser.penjualan.notification.index', compact('notifications', 'stats', 'typeFilter', 'statusFilter', 'types'));
     }
 
     /**
@@ -123,7 +238,52 @@ class NotificationController extends Controller
     }
 
     /**
-     * Mark semua notif sebagai read
+     * Baca via klik lonceng (GET): tandai dibaca lalu redirect sesuai tipe.
+     */
+    public function read($id)
+    {
+        $notification = $this->getUserNotification($id);
+
+        if (!$notification) {
+            return redirect()->route('superuser.penjualan.notification.index')
+                ->with('error', 'Notif tidak ditemukan atau Anda tidak berhak.');
+        }
+
+        $this->markAsRead($id);
+
+        $data = json_decode($notification->data, true) ?? [];
+        $type = $notification->type ?? '';
+
+        if (Str::contains($type, 'DoNotification')) {
+            if (($data['status'] ?? null) == 2 && !empty($data['id'])) {
+                return redirect()->route('superuser.penjualan.delivery_order.detail', ['id' => $data['id']]);
+            }
+            return redirect()->route('superuser.penjualan.delivery_order.index');
+        }
+
+        if (Str::contains($type, 'SoNotification')) {
+            if (($data['kind'] ?? '') === 'proforma') {
+                return redirect()->route('superuser.penjualan.so_proforma.index');
+            }
+            if (!empty($data['id'])) {
+                return redirect()->route('superuser.penjualan.sales_order.detail', ['id' => $data['id']]);
+            }
+            return redirect()->route('superuser.penjualan.sales_order.index_lanjutan');
+        }
+
+        if (Str::contains($type, 'PayableNotification')) {
+            return redirect()->route('superuser.finance.payable.index');
+        }
+
+        if (Str::contains($type, 'InternalRevisionOtp')) {
+            return redirect()->route('superuser.penjualan.internal_revision.index');
+        }
+
+        return redirect()->route('superuser.penjualan.notification.index');
+    }
+
+    /**
+     * Mark semua notif sebagai read (hanya tipe yang tampil di menu ini).
      */
     public function unread_all_notif(Request $request)
     {
@@ -132,6 +292,7 @@ class NotificationController extends Controller
         try {
             DB::table('notifications')
                 ->where('notifiable_id', $userId)
+                ->whereIn('type', $this->visibleTypes())
                 ->whereNull('read_at')
                 ->update(['read_at' => now()]);
 

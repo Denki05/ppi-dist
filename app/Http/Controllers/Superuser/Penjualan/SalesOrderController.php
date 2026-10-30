@@ -752,6 +752,10 @@ class SalesOrderController extends Controller
 
     public function lanjutkan(Request $request, $id)
     {
+        if (!MenuAccessService::hasCapability(Auth::user(), 'so_lanjutan')) {
+            abort(403);
+        }
+
         if ($request->ajax()) {
             if(Auth::user()->is_superuser == 0){
                 if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){
@@ -768,11 +772,9 @@ class SalesOrderController extends Controller
             DB::beginTransaction();
             try {
                 $workflowService = new \App\Services\SalesOrder\SalesOrderWorkflowService();
-                $result = $workflowService->lanjutkan($sales_order);
-
-                if ($result['type'] === 'lanjutan') {
-                    $workflowService->sendLanjutkanNotification($result['sales_order']);
-                }
+                // Notifikasi admin sales dikirim di dalam lanjutkan() agar jalur
+                // AO dan admin memakai satu pintu (tidak dobel).
+                $workflowService->lanjutkan($sales_order);
 
                 DB::commit();
 
