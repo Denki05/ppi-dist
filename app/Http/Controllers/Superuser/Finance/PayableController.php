@@ -20,6 +20,7 @@ use App\Entities\Penjualan\PackingOrder;
 use App\Helper\LogActivity;
 use App\Notifications\PayableNotification;
 use App\Entities\Account\User;
+use App\Services\Finance\InvoiceDiscountAuditService;
 use Illuminate\Support\Facades\Log;
 use DB;
 use Auth;
@@ -921,6 +922,125 @@ class PayableController extends Controller
         });
 
         return response()->json($rows);
+    }
+
+    private function isDeveloper()
+    {
+        $user = Auth::guard('superuser')->user();
+
+        return $user && method_exists($user, 'hasRole') && $user->hasRole('Developer');
+    }
+
+    public function discountAudit(Request $request, InvoiceDiscountAuditService $audit)
+    {
+        if (!$this->isDeveloper()) {
+            return response()->json(['message' => 'Fitur ini hanya untuk user Developer.'], 403);
+        }
+
+        $request->validate([
+            'year' => 'nullable|integer|min:2000|max:' . (now()->year + 1),
+            'customer' => 'nullable|string|max:100',
+        ]);
+
+        $rows = $audit->scan(
+            [],
+            $request->filled('year') ? (int) $request->year : null,
+            $request->filled('customer') ? $request->customer : null,
+            true
+        );
+
+        $problems = [];
+        $ok = 0;
+
+        foreach ($rows as $row) {
+            if ($row['action'] === 'OK') {
+                $ok++;
+                continue;
+            }
+
+            $problems[] = [
+                'invoice_id' => $row['invoice_id'],
+                'code' => $row['code'],
+                'customer' => $row['addr'],
+                'tagihan' => (float) $row['inv_grand'],
+                'seharusnya' => $row['expected'] !== null ? (float) $row['expected'] : null,
+                'selisih' => $row['selisih'] !== null ? (float) $row['selisih'] : null,
+                'dibayar' => (float) $row['paid'],
+                'action' => $row['action'],
+                'note' => $row['note'],
+            ];
+        }
+
+        return response()->json([
+            'data' => $problems,
+            'total_scanned' => count($rows),
+            'total_ok' => $ok,
+        ]);
+    }
+
+    public function discountAuditFix(Request $request, InvoiceDiscountAuditService $audit)
+    {
+        if (!$this->isDeveloper()) {
+            return response()->json(['message' => 'Fitur ini hanya untuk user Developer.'], 403);
+        }
+
+        $request->validate([
+            'codes' => 'required|array|min:1',
+            'codes.*' => 'string|max:50',
+        ]);
+
+        $codes = collect($request->codes)
+            ->map(function ($code) {
+                return trim($code);
+            })
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $rows = collect($audit->scan($codes, null, null, true))->keyBy('code');
+
+        $fixed = [];
+        $skipped = [];
+        $failed = [];
+
+        foreach ($codes as $code) {
+            $row = $rows->get($code);
+
+            if (!$row) {
+                $skipped[] = ['code' => $code, 'reason' => 'Invoice tidak ditemukan / tidak aktif.'];
+                continue;
+            }
+
+            if ($row['action'] !== 'FIX') {
+                $skipped[] = ['code' => $code, 'reason' => $row['note'] ?: 'Tidak memenuhi syarat perbaikan.'];
+                continue;
+            }
+
+            try {
+                $audit->applyFix($row);
+
+                $fixed[] = [
+                    'code' => $code,
+                    'dari' => (float) $row['inv_grand'],
+                    'menjadi' => (float) $row['expected'],
+                ];
+
+                LogActivity::addToLog('Fix diskon nota ' . $code . ': '
+                    . number_format((float) $row['inv_grand'], 2, ',', '.') . ' => '
+                    . number_format((float) $row['expected'], 2, ',', '.'));
+            } catch (\Throwable $e) {
+                Log::error('Fix discount nota ' . $code . ' gagal: ' . $e->getMessage());
+                $failed[] = ['code' => $code, 'reason' => $e->getMessage()];
+            }
+        }
+
+        return response()->json([
+            'message' => count($fixed) . ' nota diperbaiki, ' . count($skipped) . ' dilewati, ' . count($failed) . ' gagal.',
+            'fixed' => $fixed,
+            'skipped' => $skipped,
+            'failed' => $failed,
+        ]);
     }
 
 
