@@ -767,7 +767,9 @@ class DeliveryOrderController extends Controller
             // Commit transaction
             DB::commit();
 
-            $userIds = [32, 36];
+            // Resi selesai -> yang perlu tahu: Admin Sales (info ke customer)
+            // dan Finance (tagihan). Management tidak perlu notifikasi per-DO.
+            $userIds = [33, 36];
             $users = User::whereIn('id', $userIds)->get();
 
             foreach ($users as $user) {

@@ -2,201 +2,251 @@
 
 @section('content')
 
-<div class="row mb-30">
-    <div class="col-md-6">
-        <h4 style="font-weight: bold;">
-            <i class="fa fa-bell mr-2"></i> Semua Notifikasi
-        </h4>
-        <p class="text-muted mb-0" style="font-size:13px;">
-            {{ $stats['unread'] }} belum dibaca
-        </p>
-    </div>
-    <div class="col-md-6 text-right">
+@php
+    $aktifTipe = request('type');
+    $aktifStatus = request('status');
+
+    $tipeChips = [
+        '' => ['label' => 'Semua', 'icon' => 'bi-collection'],
+        'so' => ['label' => 'SO', 'icon' => 'bi-cart'],
+        'do' => ['label' => 'DO', 'icon' => 'bi-truck'],
+        'pay' => ['label' => 'Payment', 'icon' => 'bi-credit-card'],
+        'otp' => ['label' => 'OTP Revisi', 'icon' => 'bi-key'],
+    ];
+
+    $judulNotif = function ($n) {
+        $data = $n['data'] ?? [];
+        if (strpos($n['type'], 'PengajuanProforma') !== false) {
+            $label = 'Pengajuan Proforma';
+        } elseif (strpos($n['type'], 'SoNotification') !== false) {
+            $label = (($data['kind'] ?? '') === 'proforma') ? 'SO Proforma' : 'SO Lanjutan';
+        } elseif (strpos($n['type'], 'DoNotification') !== false) {
+            $label = 'Delivery Order';
+        } elseif (strpos($n['type'], 'PayableNotification') !== false) {
+            $label = 'Payment';
+        } elseif (strpos($n['type'], 'ReceivingNotification') !== false) {
+            $label = 'Receiving';
+        } elseif (strpos($n['type'], 'InternalRevisionOtp') !== false) {
+            $label = 'OTP Revisi Internal';
+        } else {
+            $label = 'Notifikasi';
+        }
+        $code = $data['code'] ?? null;
+        return $code ? $label . ' · ' . $code : $label;
+    };
+
+    $subjudulNotif = function ($n) {
+        $data = $n['data'] ?? [];
+        if (strpos($n['type'], 'InternalRevisionOtp') !== false) {
+            return trim(($data['otp'] ?? '') . '  ' . ($data['message'] ?? ''));
+        }
+        $parts = [];
+        if (!empty($data['customer'])) $parts[] = $data['customer'];
+        if (!empty($data['customer_kota'])) $parts[] = $data['customer_kota'];
+        if (!empty($data['type_transaction'])) $parts[] = $data['type_transaction'];
+        return implode(' · ', $parts);
+    };
+@endphp
+
+<style>
+    .notif-page .notif-head { display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; }
+    .notif-page .notif-title { font-size:18px; font-weight:700; margin:0; }
+    .notif-page .notif-sub { font-size:12px; color:#8a939d; margin-top:2px; }
+    .notif-page .notif-chips { display:flex; flex-wrap:wrap; gap:6px; }
+    .notif-page .chip { display:inline-flex; align-items:center; gap:5px; padding:5px 10px; border:1px solid #e3e7ec; border-radius:20px; font-size:12px; color:#5b6470; background:#fff; text-decoration:none; }
+    .notif-page .chip:hover { border-color:#b9c6d6; color:#2b3a4b; }
+    .notif-page .chip.on { background:#0d6efd; border-color:#0d6efd; color:#fff; }
+    .notif-page .chip.on-warn { background:#f59f00; border-color:#f59f00; color:#fff; }
+    .notif-page .notif-list { border-top:1px solid #eef1f4; }
+    .notif-page .notif-date { font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:#98a2ad; padding:14px 8px 6px; background:#fafbfc; }
+    .notif-page .notif-row { display:flex; align-items:flex-start; gap:10px; padding:12px 8px; border-bottom:1px solid #f1f3f5; background:#fff; cursor:pointer; transition:background .15s ease; }
+    .notif-page .notif-row:hover { background:#f7f9fc; }
+    .notif-page .notif-row.unread { background:#f8fafc; }
+    .notif-page .notif-row.unread[data-priority="urgent"] { box-shadow:inset 3px 0 0 #dc2626; }
+    .notif-page .notif-row.unread[data-priority="action"] { box-shadow:inset 3px 0 0 #d97706; }
+    .notif-page .notif-row.unread[data-priority="info"] { box-shadow:inset 3px 0 0 #2563eb; }
+    .notif-page .flag { display:inline-block; font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:999px; margin-left:6px; vertical-align:1px; }
+    .notif-page .flag.urgent { background:#fee2e2; color:#b91c1c; }
+    .notif-page .flag.action { background:#fef3c7; color:#b45309; }
+    .notif-page .notif-row .ico { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex:0 0 34px; background:#eef2f7; color:#4a5563; }
+    .notif-page .notif-row.unread .ico { background:#e0edff; color:#0d6efd; }
+    .notif-page .notif-row .ttl { font-size:13.5px; font-weight:600; color:#222d3a; }
+    .notif-page .notif-row .desc { font-size:12px; color:#78828d; margin-top:2px; }
+    .notif-page .notif-row .when { font-size:11px; color:#9aa4af; margin-top:4px; }
+    .notif-page .notif-row .right { margin-left:auto; display:flex; align-items:center; gap:8px; padding-top:2px; }
+    .notif-page .dot { width:8px; height:8px; border-radius:50%; background:#0d6efd; }
+    .notif-page .read-btn { border:1px solid #dfe4ea; background:#fff; color:#6c7681; border-radius:6px; width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; }
+    .notif-page .read-btn:hover { background:#eef2f7; color:#0d6efd; }
+    .notif-page .pager { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 4px; flex-wrap:wrap; font-size:12px; color:#8a939d; }
+    .notif-page .pager a, .notif-page .pager span.pg { padding:4px 9px; border:1px solid #e3e7ec; border-radius:6px; color:#4a5563; text-decoration:none; background:#fff; }
+    .notif-page .pager a:hover { border-color:#b9c6d6; }
+    .notif-page .pager .off { opacity:.45; }
+    .notif-page .empty { text-align:center; padding:56px 10px; color:#98a2ad; }
+    .notif-page .empty i { font-size:34px; display:block; margin-bottom:8px; }
+</style>
+
+<div class="notif-page">
+
+    <div class="notif-head mb-3">
+        <div>
+            <h4 class="notif-title"><i class="bi bi-archive me-1"></i> Arsip notifikasi</h4>
+            <div class="notif-sub">
+                {{ $stats['unread'] }} belum dibaca · {{ $stats['total'] }} total · pengingat harian tampil di lonceng
+            </div>
+        </div>
         @if($stats['unread'] > 0)
         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnMarkAllRead">
-            <i class="fa fa-check-double mr-1"></i> Tandai Semua Dibaca
+            <i class="bi bi-check2-all me-1"></i> Tandai semua dibaca
         </button>
         @endif
     </div>
-</div>
 
-<!-- Filter Tabs -->
-<div class="mb-3">
-    <div class="btn-group btn-group-sm" role="group">
-        <a href="{{ route('superuser.penjualan.notification.index') }}" 
-           class="btn {{ !$typeFilter ? 'btn-primary' : 'btn-outline-primary' }}">
-            Semua
-        </a>
-        <a href="{{ route('superuser.penjualan.notification.index', ['type' => 'App\\Notifications\\DoNotification']) }}" 
-           class="btn {{ $typeFilter === 'App\\Notifications\\DoNotification' ? 'btn-info' : 'btn-outline-info' }}">
-            <i class="fa fa-truck"></i> DO
-        </a>
-        <a href="{{ route('superuser.penjualan.notification.index', ['type' => 'App\\Notifications\\SoNotification']) }}" 
-           class="btn {{ $typeFilter === 'App\\Notifications\\SoNotification' ? 'btn-success' : 'btn-outline-success' }}">
-            <i class="fa fa-shopping-cart"></i> SO
-        </a>
-        <a href="{{ route('superuser.penjualan.notification.index', ['type' => 'App\\Notifications\\PayableNotification']) }}" 
-           class="btn {{ $typeFilter === 'App\\Notifications\\PayableNotification' ? 'btn-secondary' : 'btn-outline-secondary' }}">
-            <i class="fa fa-credit-card"></i> Payment
-        </a>
-        <a href="{{ route('superuser.penjualan.notification.index', ['type' => 'App\\Notifications\\InternalRevisionOtpNotification']) }}" 
-           class="btn {{ $typeFilter === 'App\\Notifications\\InternalRevisionOtpNotification' ? 'btn-warning' : 'btn-outline-warning' }}">
-            <i class="fa fa-key"></i> OTP Revisi
+    <div class="notif-chips mb-3">
+        @foreach($tipeChips as $tipe => $chip)
+            @php
+                $params = [];
+                if ($tipe !== '') $params['type'] = $tipe;
+                if ($aktifStatus) $params['status'] = $aktifStatus;
+            @endphp
+            <a href="{{ route('superuser.penjualan.notification.index', $params) }}"
+               class="chip {{ $aktifTipe === $tipe ? 'on' : '' }}">
+                <i class="bi {{ $chip['icon'] }}"></i> {{ $chip['label'] }}
+            </a>
+        @endforeach
+
+        @php
+            $unreadParams = ['status' => 'unread'];
+            if ($aktifTipe) $unreadParams['type'] = $aktifTipe;
+        @endphp
+        <a href="{{ route('superuser.penjualan.notification.index', $unreadParams) }}"
+           class="chip {{ $aktifStatus === 'unread' ? 'on-warn' : '' }}">
+            <i class="bi bi-dot"></i> Belum dibaca
         </a>
     </div>
-</div>
 
-<!-- Notifications List -->
-<div class="block">
-    <div class="block-content block-content-full">
-        @forelse($notifications as $notif)
+    <div class="notif-list">
+        @php $lastDate = null; @endphp
+        @forelse($notifications as $n)
             @php
-                $data = json_decode($notif->data, true);
-                $isUnread = is_null($notif->read_at);
-                $typeLabel = match(true) {
-                    str_contains($notif->type ?? '', 'DoNotification') => ['DO', 'fa-truck', 'info'],
-                    str_contains($notif->type ?? '', 'SoNotification') => ['SO', 'fa-shopping-cart', 'success'],
-                    str_contains($notif->type ?? '', 'PayableNotification') => ['Payment', 'fa-credit-card', 'secondary'],
-                    str_contains($notif->type ?? '', 'InternalRevisionOtp') => ['OTP Revisi', 'fa-key', 'warning'],
-                    default => ['Notif', 'fa-bell', 'primary'],
-                };
+                $created = $n['created_at'] ? \Illuminate\Support\Carbon::parse($n['created_at']) : null;
+                if (!$created) {
+                    $dateLabel = 'Tanpa tanggal';
+                } elseif ($created->isToday()) {
+                    $dateLabel = 'Hari ini';
+                } elseif ($created->isYesterday()) {
+                    $dateLabel = 'Kemarin';
+                } else {
+                    $dateLabel = $created->format('d M Y');
+                }
             @endphp
 
-            <div class="d-flex align-items-start p-3 {{ $isUnread ? 'bg-light' : '' }}">
-                
-                <!-- Icon -->
-                <div class="mr-3">
-                    <span class="btn btn-{{ $typeLabel[2] }} btn-sm" style="border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center;">
-                        <i class="fa {{ $typeLabel[1] }}"></i>
-                    </span>
-                </div>
+            @if($dateLabel !== $lastDate)
+                <div class="notif-date">{{ $dateLabel }}</div>
+                @php $lastDate = $dateLabel; @endphp
+            @endif
 
-                <!-- Content -->
+            <div class="notif-row {{ $n['is_unread'] ? 'unread' : '' }}" data-priority="{{ $n['priority'] }}"
+                 data-href="{{ route('superuser.penjualan.notification.read', $n['id']) }}"
+                 role="link" tabindex="0">
+                <div class="ico"><i class="bi {{ $n['icon'] }}"></i></div>
                 <div class="flex-grow-1">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <span class="badge badge-{{ $typeLabel[2] }} mr-2">{{ $typeLabel[0] }}</span>
-                            @if($isUnread)
-                                <span class="badge badge-primary">New</span>
-                            @endif
-                        </div>
-                        <small class="text-muted">{{ \Carbon\Carbon::parse($notif->created_at)->diffForHumans() }}</small>
-                    </div>
-
-                    @if(str_contains($notif->type ?? '', 'InternalRevisionOtp'))
-                        <!-- OTP Revisi: kode besar + pesan, tidak tenggelam -->
-                        <div class="mt-1 p-2 rounded" style="background:#fff8e1;border:1px dashed #fcc419;max-width:420px;">
-                            <div style="font-size:1.5em;font-weight:800;letter-spacing:6px;color:#e67700;">{{ $data['otp'] ?? '-' }}</div>
-                            <div class="text-muted" style="font-size:12px;">{{ $data['message'] ?? '' }}</div>
-                        </div>
-                    @else
-                    <!-- Regular Notification -->
-                    <div class="mt-1">
-                        @if(isset($data['code']))
-                            <strong>{{ $data['code'] }}</strong>
-                        @endif
-                        @if(isset($data['customer']))
-                            <span class="text-muted ml-2">{{ $data['customer'] }}</span>
-                        @endif
-                        @if(isset($data['customer_kota']))
-                            <span class="text-muted">({{ $data['customer_kota'] }})</span>
+                    <div class="ttl">
+                        {{ $judulNotif($n) }}
+                        @if($n['priority'] !== 'info')
+                            <span class="flag {{ $n['priority'] }}">{{ $n['priority_label'] }}</span>
                         @endif
                     </div>
+                    @php $sub = $subjudulNotif($n); @endphp
+                    @if($sub !== '')
+                        <div class="desc">{{ $sub }}</div>
                     @endif
-                    <div class="mt-1">
-                        @if(str_contains($notif->type ?? '', 'DoNotification'))
-                            @if(isset($data['status']) && $data['status'] == 2)
-                                <a href="{{ route('superuser.penjualan.delivery_order.detail', $data['id'] ?? 0) }}" 
-                                   class="text-primary" style="font-size:13px;">
-                                    Lihat Detail DO →
-                                </a>
-                            @endif
-                        @elseif(str_contains($notif->type ?? '', 'SoNotification'))
-                            <a href="{{ route('superuser.penjualan.sales_order.index_lanjutan') }}" 
-                               class="text-primary" style="font-size:13px;">
-                                Lihat SO →
-                            </a>
-                        @elseif(str_contains($notif->type ?? '', 'PayableNotification'))
-                            <a href="{{ route('superuser.finance.payable.index') }}" 
-                               class="text-primary" style="font-size:13px;">
-                                Lihat Payable →
-                            </a>
-                        @elseif(str_contains($notif->type ?? '', 'InternalRevisionOtp'))
-                            <a href="{{ route('superuser.penjualan.internal_revision.index') }}" 
-                               class="text-primary" style="font-size:13px;">
-                                Ke Daftar Revisi →
-                            </a>
-                        @endif
+                    <div class="when" title="{{ $created ? $created->format('d M Y H:i') : '' }}">
+                        {{ $n['human'] ?: ($created ? $created->format('d M Y H:i') : '') }}
                     </div>
-                    @if($isUnread)
-                    <div class="mt-1">
-                        @if(str_contains($notif->type ?? '', 'DoNotification'))
-                            <form action="{{ route('superuser.penjualan.notification.mark_as_read_do', ['id' => $notif->id, 'do' => $data['id'] ?? 0]) }}" method="POST" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-xs btn-outline-secondary">
-                                    <i class="fa fa-check"></i> Dibaca
-                                </button>
-                            </form>
-                        @elseif(str_contains($notif->type ?? '', 'SoNotification'))
-                            <form action="{{ route('superuser.penjualan.notification.mark_as_read_so', $notif->id) }}" method="POST" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-xs btn-outline-secondary">
-                                    <i class="fa fa-check"></i> Dibaca
-                                </button>
-                            </form>
-                        @elseif(str_contains($notif->type ?? '', 'PayableNotification'))
-                            <form action="{{ route('superuser.penjualan.notification.mark_as_read_payable', $notif->id) }}" method="POST" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-xs btn-outline-secondary">
-                                    <i class="fa fa-check"></i> Dibaca
-                                </button>
-                            </form>
-                        @else
-                            {{-- Fallback generik (OTP revisi, receiving, tipe baru): cukup tandai dibaca --}}
-                            <form action="{{ route('superuser.penjualan.notification.mark_as_read_only', $notif->id) }}" method="POST" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-xs btn-outline-secondary">
-                                    <i class="fa fa-check"></i> Dibaca
-                                </button>
-                            </form>
-                        @endif
-                    </div>
+                </div>
+                <div class="right">
+                    @if($n['is_unread'])
+                        <span class="dot"></span>
+                        <form method="POST" action="{{ route('superuser.penjualan.notification.mark_as_read_only', $n['id']) }}" class="m-0">
+                            @csrf
+                            <button type="submit" class="read-btn" title="Tandai dibaca">
+                                <i class="bi bi-check2"></i>
+                            </button>
+                        </form>
                     @endif
                 </div>
             </div>
-            <hr class="my-0" style="border-color: #f1f3f5;">
         @empty
-            <div class="text-center py-5 text-muted">
-                <i class="fa fa-bell-slash fa-3x mb-3 d-block"></i>
-                <p>Tidak ada notifikasi.</p>
+            <div class="empty">
+                <i class="bi bi-bell-slash"></i>
+                <div>Belum ada notifikasi.</div>
             </div>
         @endforelse
     </div>
-</div>
 
-<!-- Pagination -->
-@if($notifications->hasPages())
-<div class="d-flex justify-content-center">
-    {{ $notifications->links() }}
+    @if($notifications->lastPage() > 1)
+    <div class="pager">
+        <div>
+            Menampilkan {{ $notifications->firstItem() }}–{{ $notifications->lastItem() }}
+            dari {{ $notifications->total() }}
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            @if($notifications->onFirstPage())
+                <span class="pg off">‹ Sebelumnya</span>
+            @else
+                <a href="{{ $notifications->previousPageUrl() }}">‹ Sebelumnya</a>
+            @endif
+            <span class="pg">{{ $notifications->currentPage() }} / {{ $notifications->lastPage() }}</span>
+            @if($notifications->hasMorePages())
+                <a href="{{ $notifications->nextPageUrl() }}">Berikutnya ›</a>
+            @else
+                <span class="pg off">Berikutnya ›</span>
+            @endif
+        </div>
+    </div>
+    @endif
+
 </div>
-@endif
 
 @endsection
 
 @push('scripts')
 <script>
-$('#btnMarkAllRead').on('click', function() {
-    if (!confirm('Tandai semua notifikasi sebagai sudah dibaca?')) return;
-    
-    $.post('{{ route("superuser.penjualan.notification.unread_all_notif") }}', {
-        _token: '{{ csrf_token() }}'
-    })
-    .done(function() {
-        window.location.reload();
-    })
-    .fail(function() {
-        alert('Gagal menandai notifikasi.');
+(function () {
+    document.querySelectorAll('.notif-row[data-href]').forEach(function (row) {
+        row.addEventListener('click', function (e) {
+            if (e.target.closest('form')) return;
+            window.location.href = row.dataset.href;
+        });
+        row.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                window.location.href = row.dataset.href;
+            }
+        });
     });
-});
+
+    var markAll = document.getElementById('btnMarkAllRead');
+    if (markAll) {
+        markAll.addEventListener('click', function () {
+            if (!confirm('Tandai semua notifikasi sebagai sudah dibaca?')) return;
+
+            fetch('{{ route("superuser.penjualan.notification.unread_all_notif") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            }).then(function (res) {
+                if (!res.ok) throw new Error('Gagal');
+                window.location.reload();
+            }).catch(function () {
+                alert('Gagal menandai notifikasi.');
+            });
+        });
+    }
+})();
 </script>
 @endpush

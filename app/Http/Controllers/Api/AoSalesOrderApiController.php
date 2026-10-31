@@ -131,6 +131,13 @@ class AoSalesOrderApiController extends Controller
                 ]
             );
 
+            // Notif admin sales sekali per pengajuan masuk: kiriman ulang saat
+            // tiket masih menunggu tidak menambah notifikasi baru.
+            if (!$sudah || $sudah->status !== PengajuanProforma::STATUS_MENUNGGU) {
+                $wf = new \App\Services\SalesOrder\SalesOrderWorkflowService();
+                $wf->notifyAdminSalesPengajuan($pengajuan);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Pengajuan diterima, menunggu verifikasi admin sales.',

@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Superuser\Penjualan;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class NotificationController extends Controller
 {
@@ -18,6 +20,7 @@ class NotificationController extends Controller
         return [
             'App\Notifications\DoNotification',
             'App\Notifications\SoNotification',
+            'App\Notifications\PengajuanProformaNotification',
             'App\Notifications\PayableNotification',
             'App\Notifications\ReceivingNotification',
             'App\Notifications\InternalRevisionOtpNotification',
@@ -25,71 +28,253 @@ class NotificationController extends Controller
     }
 
     /**
-     * Ambil data notifikasi (maksimal 5 per tipe)
+     * Filter chip memakai kunci grup (mis. "so") supaya SO Lanjutan/Proforma
+     * dan Pengajuan Proforma bisa tampil di satu tombol yang sama.
      */
-    public function getNotifData()
+    private function typeFilterGroups()
+    {
+        return [
+            'so' => [
+                'App\Notifications\SoNotification',
+                'App\Notifications\PengajuanProformaNotification',
+            ],
+            'do' => ['App\Notifications\DoNotification'],
+            'pay' => ['App\Notifications\PayableNotification'],
+            'otp' => ['App\Notifications\InternalRevisionOtpNotification'],
+        ];
+    }
+
+    /**
+     * Terima kunci grup maupun FQCN lama (bookmark), kembalikan daftar FQCN.
+     */
+    private function resolveTypeFilter($type)
+    {
+        if (!$type) {
+            return null;
+        }
+        if (Str::contains($type, '\\') && in_array($type, $this->visibleTypes(), true)) {
+            return [$type];
+        }
+        $groups = $this->typeFilterGroups();
+
+        return $groups[$type] ?? null;
+    }
+
+    /**
+     * Label/ikon/warna per tipe. Dipakai bell dan halaman daftar supaya
+     * tidak ada dua tempat yang bisa berbeda.
+     */
+    private function metaFor($type)
+    {
+        if (Str::contains($type, 'PengajuanProforma')) {
+            return ['label' => 'Pengajuan Proforma', 'short' => 'Pengajuan', 'icon' => 'bi-file-earmark-plus', 'color' => 'primary'];
+        }
+        if (Str::contains($type, 'DoNotification')) {
+            return ['label' => 'Delivery Order', 'short' => 'DO', 'icon' => 'bi-truck', 'color' => 'info'];
+        }
+        if (Str::contains($type, 'SoNotification')) {
+            return ['label' => 'Sales Order', 'short' => 'SO', 'icon' => 'bi-cart', 'color' => 'success'];
+        }
+        if (Str::contains($type, 'PayableNotification')) {
+            return ['label' => 'Payment', 'short' => 'Payment', 'icon' => 'bi-credit-card', 'color' => 'secondary'];
+        }
+        if (Str::contains($type, 'ReceivingNotification')) {
+            return ['label' => 'Receiving', 'short' => 'Receiving', 'icon' => 'bi-box-seam', 'color' => 'primary'];
+        }
+        if (Str::contains($type, 'InternalRevisionOtp')) {
+            return ['label' => 'OTP Revisi', 'short' => 'OTP', 'icon' => 'bi-key', 'color' => 'warning'];
+        }
+
+        return ['label' => 'Notifikasi', 'short' => 'Notif', 'icon' => 'bi-bell', 'color' => 'primary'];
+    }
+
+    /**
+     * Tingkat prioritas notifikasi. Satu sumber warna di seluruh tampilan:
+     * Mendesak = butuh aksi cepat, Perlu tindakan = menunggu diproses,
+     * Informasi = sekadar pemberitahuan.
+     */
+    private function priorityFor($type, array $data = [])
+    {
+        $override = $data['priority'] ?? null;
+        if (in_array($override, ['urgent', 'action', 'info'], true)) {
+            return $override;
+        }
+
+        if (Str::contains($type, 'InternalRevisionOtp')) {
+            return 'urgent';
+        }
+        if (Str::contains($type, 'PengajuanProforma')) {
+            return 'action';
+        }
+        if (Str::contains($type, 'SoNotification') || Str::contains($type, 'PayableNotification')) {
+            return 'action';
+        }
+
+        return 'info';
+    }
+
+    private function priorityLabel($key)
+    {
+        return [
+            'urgent' => 'Mendesak',
+            'action' => 'Perlu tindakan',
+            'info' => 'Informasi',
+        ][$key] ?? 'Informasi';
+    }
+
+    /**
+     * Bentuk satu baris notifikasi untuk JSON maupun halaman.
+     */
+    private function formatRow($row)
+    {
+        $data = json_decode($row->data, true);
+        if (!is_array($data)) {
+            $data = [];
+        }
+
+        $created = $row->created_at ? Carbon::parse($row->created_at) : null;
+        $priority = $this->priorityFor($row->type, $data);
+
+        return [
+            'id' => $row->id,
+            'type' => $row->type,
+            'label' => $this->metaFor($row->type)['label'],
+            'short' => $this->metaFor($row->type)['short'],
+            'icon' => $this->metaFor($row->type)['icon'],
+            'color' => $this->metaFor($row->type)['color'],
+            'priority' => $priority,
+            'priority_label' => $this->priorityLabel($priority),
+            'data' => $data,
+            'is_unread' => is_null($row->read_at),
+            'created_at' => $row->created_at,
+            'human' => $created ? $created->locale('id')->diffForHumans() : '',
+            'date_key' => $created ? $created->toDateString() : '',
+        ];
+    }
+
+    /**
+     * Data untuk dropdown lonceng.
+     *
+     * Riwayat ikut dikirim (bukan hanya yang belum dibaca) supaya admin tetap
+     * bisa melihat notifikasi lama setelah menandai semua dibaca. Badge tetap
+     * menghitung unread saja.
+     */
+    public function getNotifData(Request $request)
     {
         $userId = Auth::id();
 
-        // Ambil semua notif unread sesuai tipe sekaligus
-        $notifications = DB::table('notifications')
+        $base = DB::table('notifications')
             ->where('notifiable_id', $userId)
+            ->whereIn('type', $this->visibleTypes());
+
+        // Badge selalu menghitung total unread, tidak ikut filter chip.
+        $unread = (clone $base)->whereNull('read_at')->count();
+
+        // Hitungan per prioritas dipakai warna badge, banner mendesak, dan
+        // ringkasan di popup. Dihitung dari type (bukan per baris) supaya
+        // tetap murah walau unread ribuan.
+        $unreadByType = (clone $base)
             ->whereNull('read_at')
-            ->whereIn('type', $this->visibleTypes())
-            ->orderBy('created_at', 'desc')
-            ->get()
+            ->select('type', DB::raw('count(*) as total'))
             ->groupBy('type')
-            ->map(function ($items) {
-                return $items->take(5);
+            ->pluck('total', 'type');
+
+        $priorityCounts = ['urgent' => 0, 'action' => 0, 'info' => 0];
+        foreach ($unreadByType as $type => $total) {
+            $priorityCounts[$this->priorityFor($type)] += (int) $total;
+        }
+
+        // Pengingat hanya memuat notifikasi hari ini & kemarin (sejak 00:00
+        // kemarin). Sisanya cukup dihitung supaya modal bisa memberi tahu
+        // bahwa masih ada notifikasi lain di lonceng/arsip.
+        $recentFrom = Carbon::now()->subDay()->startOfDay();
+        $grandTotal = (clone $base)->count();
+
+        $recent = (clone $base)
+            ->where('created_at', '>=', $recentFrom)
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function ($row) {
+                return $this->formatRow($row);
             })
-            ->flatten(1)
-            ->sortByDesc('created_at')
             ->values();
 
-        $notifCount = DB::table('notifications')
-            ->where('notifiable_id', $userId)
-            ->whereNull('read_at')
-            ->count();
+        $recentTotal = (clone $base)->where('created_at', '>=', $recentFrom)->count();
+        $recentUnread = (clone $base)->whereNull('read_at')->where('created_at', '>=', $recentFrom)->count();
+
+        $listQuery = clone $base;
+        $filterTypes = $this->resolveTypeFilter($request->query('type'));
+        if ($filterTypes) {
+            $listQuery->whereIn('type', $filterTypes);
+        }
+
+        $total = (clone $listQuery)->count();
+        $limit = 10;
+        $page = max(1, (int) $request->query('page', 1));
+
+        $notifications = $listQuery
+            ->orderBy('created_at', 'desc')
+            ->forPage($page, $limit)
+            ->get()
+            ->map(function ($row) {
+                return $this->formatRow($row);
+            })
+            ->values();
 
         return response()->json([
             'notifications' => $notifications,
-            'notifCount'    => $notifCount,
+            'notifCount' => $unread,
+            'priorityCounts' => $priorityCounts,
+            'page' => $page,
+            'total' => $total,
+            'hasMore' => $page * $limit < $total,
+            // Untuk modal pengingat: hanya jendela hari ini & kemarin.
+            'recent' => $recent,
+            'recentTotal' => $recentTotal,
+            'recentUnread' => $recentUnread,
+            'olderTotal' => max(0, $grandTotal - $recentTotal),
+            'olderUnread' => max(0, $unread - $recentUnread),
         ]);
     }
 
     /**
-     * Halaman View All Notifications dengan pagination
+     * Halaman View All Notifications dengan pagination.
      */
     public function index(Request $request)
     {
         $userId = Auth::id();
         $typeFilter = $request->get('type');
+        $statusFilter = $request->get('status');
 
-        $query = DB::table('notifications')
+        $base = DB::table('notifications')
             ->where('notifiable_id', $userId)
-            ->whereIn('type', $this->visibleTypes())
-            ->orderBy('created_at', 'desc');
+            ->whereIn('type', $this->visibleTypes());
 
-        if ($typeFilter) {
-            $query->where('type', $typeFilter);
+        $filterTypes = $this->resolveTypeFilter($typeFilter);
+        if ($filterTypes) {
+            $base->whereIn('type', $filterTypes);
+        }
+        if ($statusFilter === 'unread') {
+            $base->whereNull('read_at');
         }
 
-        $notifications = $query->paginate(20)->withQueryString();
-
-        // Statistik
         $stats = [
-            'total' => DB::table('notifications')
-                ->where('notifiable_id', $userId)
-                ->whereIn('type', $this->visibleTypes())
-                ->count(),
-            'unread' => DB::table('notifications')
-                ->where('notifiable_id', $userId)
-                ->whereNull('read_at')
-                ->whereIn('type', $this->visibleTypes())
-                ->count(),
+            'total' => (clone $base)->count(),
+            'unread' => (clone $base)->whereNull('read_at')->count(),
         ];
 
-        return view('superuser.penjualan.notification.index', compact('notifications', 'stats', 'typeFilter'));
+        $notifications = $base->orderBy('created_at', 'desc')
+            ->paginate(20)
+            ->appends($request->query());
+
+        $notifications->getCollection()->transform(function ($row) {
+            return $this->formatRow($row);
+        });
+
+        $types = $this->visibleTypes();
+
+        return view('superuser.penjualan.notification.index', compact('notifications', 'stats', 'typeFilter', 'statusFilter', 'types'));
     }
 
     /**
@@ -169,7 +354,6 @@ class NotificationController extends Controller
 
     /**
      * Baca via klik lonceng (GET): tandai dibaca lalu redirect sesuai tipe.
-     * Rute POST lama tidak diubah (dipakai form halaman + flows lain).
      */
     public function read($id)
     {
@@ -185,22 +369,35 @@ class NotificationController extends Controller
         $data = json_decode($notification->data, true) ?? [];
         $type = $notification->type ?? '';
 
-        if (str_contains($type, 'DoNotification')) {
+        if (Str::contains($type, 'PengajuanProforma')) {
+            if (!empty($data['id'])) {
+                return redirect()->route('superuser.penjualan.pengajuan_proforma.show', ['id' => $data['id']]);
+            }
+            return redirect()->route('superuser.penjualan.pengajuan_proforma.index');
+        }
+
+        if (Str::contains($type, 'DoNotification')) {
             if (($data['status'] ?? null) == 2 && !empty($data['id'])) {
                 return redirect()->route('superuser.penjualan.delivery_order.detail', ['id' => $data['id']]);
             }
             return redirect()->route('superuser.penjualan.delivery_order.index');
         }
 
-        if (str_contains($type, 'SoNotification')) {
+        if (Str::contains($type, 'SoNotification')) {
+            if (($data['kind'] ?? '') === 'proforma') {
+                return redirect()->route('superuser.penjualan.so_proforma.index');
+            }
+            if (!empty($data['id'])) {
+                return redirect()->route('superuser.penjualan.sales_order.detail', ['id' => $data['id']]);
+            }
             return redirect()->route('superuser.penjualan.sales_order.index_lanjutan');
         }
 
-        if (str_contains($type, 'PayableNotification')) {
+        if (Str::contains($type, 'PayableNotification')) {
             return redirect()->route('superuser.finance.payable.index');
         }
 
-        if (str_contains($type, 'InternalRevisionOtp')) {
+        if (Str::contains($type, 'InternalRevisionOtp')) {
             return redirect()->route('superuser.penjualan.internal_revision.index');
         }
 
@@ -208,7 +405,7 @@ class NotificationController extends Controller
     }
 
     /**
-     * Mark semua notif sebagai read
+     * Mark semua notif sebagai read (hanya tipe yang tampil di menu ini).
      */
     public function unread_all_notif(Request $request)
     {
@@ -217,6 +414,7 @@ class NotificationController extends Controller
         try {
             DB::table('notifications')
                 ->where('notifiable_id', $userId)
+                ->whereIn('type', $this->visibleTypes())
                 ->whereNull('read_at')
                 ->update(['read_at' => now()]);
 

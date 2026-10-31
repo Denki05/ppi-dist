@@ -790,11 +790,9 @@ class SalesOrderController extends Controller
             DB::beginTransaction();
             try {
                 $workflowService = new \App\Services\SalesOrder\SalesOrderWorkflowService();
-                $result = $workflowService->lanjutkan($sales_order);
-
-                if ($result['type'] === 'lanjutan') {
-                    $workflowService->sendLanjutkanNotification($result['sales_order']);
-                }
+                // Notifikasi admin sales dikirim di dalam lanjutkan() agar jalur
+                // AO dan admin memakai satu pintu (tidak dobel).
+                $workflowService->lanjutkan($sales_order);
 
                 DB::commit();
 
