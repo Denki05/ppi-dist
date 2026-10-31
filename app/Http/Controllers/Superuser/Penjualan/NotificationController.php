@@ -52,6 +52,37 @@ class NotificationController extends Controller
     }
 
     /**
+     * Tingkat prioritas notifikasi. Satu sumber warna di seluruh tampilan:
+     * Mendesak = butuh aksi cepat, Perlu tindakan = menunggu diproses,
+     * Informasi = sekadar pemberitahuan.
+     */
+    private function priorityFor($type, array $data = [])
+    {
+        $override = $data['priority'] ?? null;
+        if (in_array($override, ['urgent', 'action', 'info'], true)) {
+            return $override;
+        }
+
+        if (Str::contains($type, 'InternalRevisionOtp')) {
+            return 'urgent';
+        }
+        if (Str::contains($type, 'SoNotification') || Str::contains($type, 'PayableNotification')) {
+            return 'action';
+        }
+
+        return 'info';
+    }
+
+    private function priorityLabel($key)
+    {
+        return [
+            'urgent' => 'Mendesak',
+            'action' => 'Perlu tindakan',
+            'info' => 'Informasi',
+        ][$key] ?? 'Informasi';
+    }
+
+    /**
      * Bentuk satu baris notifikasi untuk JSON maupun halaman.
      */
     private function formatRow($row)
@@ -62,6 +93,7 @@ class NotificationController extends Controller
         }
 
         $created = $row->created_at ? Carbon::parse($row->created_at) : null;
+        $priority = $this->priorityFor($row->type, $data);
 
         return [
             'id' => $row->id,
@@ -70,6 +102,8 @@ class NotificationController extends Controller
             'short' => $this->metaFor($row->type)['short'],
             'icon' => $this->metaFor($row->type)['icon'],
             'color' => $this->metaFor($row->type)['color'],
+            'priority' => $priority,
+            'priority_label' => $this->priorityLabel($priority),
             'data' => $data,
             'is_unread' => is_null($row->read_at),
             'created_at' => $row->created_at,
@@ -96,6 +130,39 @@ class NotificationController extends Controller
         // Badge selalu menghitung total unread, tidak ikut filter chip.
         $unread = (clone $base)->whereNull('read_at')->count();
 
+        // Hitungan per prioritas dipakai warna badge, banner mendesak, dan
+        // ringkasan di popup. Dihitung dari type (bukan per baris) supaya
+        // tetap murah walau unread ribuan.
+        $unreadByType = (clone $base)
+            ->whereNull('read_at')
+            ->select('type', DB::raw('count(*) as total'))
+            ->groupBy('type')
+            ->pluck('total', 'type');
+
+        $priorityCounts = ['urgent' => 0, 'action' => 0, 'info' => 0];
+        foreach ($unreadByType as $type => $total) {
+            $priorityCounts[$this->priorityFor($type)] += (int) $total;
+        }
+
+        // Pengingat hanya memuat notifikasi hari ini & kemarin (sejak 00:00
+        // kemarin). Sisanya cukup dihitung supaya modal bisa memberi tahu
+        // bahwa masih ada notifikasi lain di lonceng/arsip.
+        $recentFrom = Carbon::now()->subDay()->startOfDay();
+        $grandTotal = (clone $base)->count();
+
+        $recent = (clone $base)
+            ->where('created_at', '>=', $recentFrom)
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function ($row) {
+                return $this->formatRow($row);
+            })
+            ->values();
+
+        $recentTotal = (clone $base)->where('created_at', '>=', $recentFrom)->count();
+        $recentUnread = (clone $base)->whereNull('read_at')->where('created_at', '>=', $recentFrom)->count();
+
         $listQuery = clone $base;
         $type = $request->query('type');
         if ($type && in_array($type, $this->visibleTypes(), true)) {
@@ -118,9 +185,16 @@ class NotificationController extends Controller
         return response()->json([
             'notifications' => $notifications,
             'notifCount' => $unread,
+            'priorityCounts' => $priorityCounts,
             'page' => $page,
             'total' => $total,
             'hasMore' => $page * $limit < $total,
+            // Untuk modal pengingat: hanya jendela hari ini & kemarin.
+            'recent' => $recent,
+            'recentTotal' => $recentTotal,
+            'recentUnread' => $recentUnread,
+            'olderTotal' => max(0, $grandTotal - $recentTotal),
+            'olderUnread' => max(0, $unread - $recentUnread),
         ]);
     }
 
