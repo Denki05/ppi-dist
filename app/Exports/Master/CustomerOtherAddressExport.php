@@ -10,22 +10,18 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 
 class CustomerOtherAddressExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize
 {
-    private $columns = [
-        'master_customer_other_addresses.id', 
-        'master_customer_other_addresses.name', 
-        'master_customer_other_addresses.member_default', 
-        'master_customer_other_addresses.text_kota', 
-        'master_customer_other_addresses.officer',
-        'master_customer_other_addresses.account_representative', 
-        'master_customer_other_addresses.account_representative_optional_1', 
-        'master_customer_other_addresses.account_representative_optional_2', 
-        'master_customer_other_addresses.situation',
-        'master_customers.pic' // Adding a column from the joined 'customers' table
-    ];
-
     private $headings = [
-        'ID', 'Name', 'Member Default', 'PIC', 'Officer',
-        'AR1', 'AR2', 'AR3'
+        'id',
+        'kategori',
+        'zona',
+        'customer',
+        'kota',
+        'provinsi',
+        'sm/am',
+        'asm',
+        'pic',
+        'officer',
+        'is_default_member',
     ];
 
     private $status;
@@ -40,10 +36,24 @@ class CustomerOtherAddressExport implements FromQuery, WithHeadings, WithMapping
     public function query()
     {
         return CustomerOtherAddress::query()
-            ->select($this->columns)
-            ->join('master_customers', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id') // Join with customers table
+            ->select([
+                'master_customer_other_addresses.id as id',
+                'master_customer_categories.name as kategori',
+                'master_customer_other_addresses.zone as zona',
+                'master_customer_other_addresses.name as customer',
+                'master_customer_other_addresses.text_kota as kota',
+                'master_customer_other_addresses.text_provinsi as provinsi',
+                'master_customer_other_addresses.sm as sm_am',
+                'master_customer_other_addresses.ams as asm',
+                'master_customer_other_addresses.pic as pic',
+                'master_customer_other_addresses.officer as officer',
+                'master_customer_other_addresses.member_default as is_default_member',
+            ])
+            ->join('master_customers', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id')
+            ->leftJoin('master_customer_categories', 'master_customers.category_id', '=', 'master_customer_categories.id')
             ->where('master_customers.status', $this->status)
-            ->where('master_customers.existence', $this->existence);
+            ->where('master_customers.existence', $this->existence)
+            ->orderBy('master_customer_other_addresses.name');
     }
 
     public function headings(): array
@@ -55,13 +65,16 @@ class CustomerOtherAddressExport implements FromQuery, WithHeadings, WithMapping
     {
         return [
             $row->id,
-            implode(' ', [$row->name, $row->text_kota]),
-            $row->default(),
+            $row->kategori,
+            $row->zona,
+            $row->customer,
+            $row->kota,
+            $row->provinsi,
+            $row->sm_am,
+            $row->asm,
             $row->pic,
             $row->officer,
-            $row->account_representative,
-            $row->account_representative_optional_1,
-            $row->account_representative_optional_2,
+            (int) $row->is_default_member,
         ];
     }
 }

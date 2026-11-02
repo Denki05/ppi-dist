@@ -298,10 +298,8 @@ class SalesOrderPpnController extends Controller
 
     public function lanjutkan(Request $request, $id)
     {
-        if (!MenuAccessService::hasCapability(Auth::user(), 'ppn_lanjutan')) {
-            abort(403);
-        }
-
+        // Submit dari PPN Awal tidak memakai capability ppn_lanjutan.
+        // Capability itu untuk membuka/memproses tahap PPN Lanjutan (admin).
         if ($request->ajax()) {
             if(Auth::user()->is_superuser == 0){
                 if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){

@@ -770,10 +770,8 @@ class SalesOrderController extends Controller
 
     public function lanjutkan(Request $request, $id)
     {
-        if (!MenuAccessService::hasCapability(Auth::user(), 'so_lanjutan')) {
-            abort(403);
-        }
-
+        // Submit dari SO Awal (AO/Marketing) tidak memakai capability so_lanjutan.
+        // Capability itu untuk membuka/memproses tahap SO Lanjutan (admin).
         if ($request->ajax()) {
             if(Auth::user()->is_superuser == 0){
                 if(empty($this->access) || empty($this->access->user) || $this->access->can_approve == 0){

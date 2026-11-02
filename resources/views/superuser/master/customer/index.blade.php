@@ -8,7 +8,7 @@
   <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
 
   <button type="button" class="btn btn-outline-secondary ml-10" data-toggle="modal" data-target="#exampleModal">
-    Export/Import Employee
+    Import Employee
   </button>
 
   <form action="{{ route('superuser.master.customer.other_address.updateLastYearOrder') }}" method="POST" onsubmit="return confirm('Yakin update last year order?')">
@@ -139,57 +139,64 @@
   </div>
 </div>
 
-<div class="modal fade bd-example-modal-lg" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Export / Import Employee</h5>
+        <h5 class="modal-title" id="exampleModalLabel">Import Employee</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <div class="modal-body">
-        <div class="row">
-            <div class="col-md-6">
-              <span class="font-size-h5">Export</span>
-              <p>Export this data to excel-like format</p>
-              <a href="{{ route('superuser.master.customer_other_address.export') }}">
-                <button type="button" class="btn btn-sm btn-noborder btn-info">
-                  <i class="fa fa-file-excel-o mr-5"></i> Export
-                </button>
-              </a>
+        @if(isset($import_custom_message))
+        <div class="alert alert-info mb-20">
+          <b>Note :</b><br>
+          {!! $import_custom_message !!}
+        </div>
+        @endif
+
+        <div class="mb-25">
+          <span class="badge badge-primary mr-5">1</span>
+          <b>Download template</b>
+          <p class="text-muted mb-10">
+            Semua member aktif sudah terisi otomatis: <b>id, kategori, zona, customer, kota, provinsi, is_default_member</b>.
+            Jangan ubah atau hapus baris header dan kolom tersebut.
+          </p>
+          <a href="{{ route('superuser.master.customer_other_address.import_template2') }}" class="btn btn-sm btn-noborder btn-info">
+            <i class="fa fa-download mr-5"></i> Download Template
+          </a>
+        </div>
+
+        <div class="mb-25">
+          <span class="badge badge-primary mr-5">2</span>
+          <b>Isi kolom yang ingin diubah</b>
+          <p class="text-muted mb-5">
+            Hanya isi kolom <b>sm/am, asm, pic, officer</b> pada baris yang ingin diperbarui.
+            Kolom yang dibiarkan kosong tidak akan mengubah data lama.
+          </p>
+          <p class="text-muted mb-0">
+            <b>is_default_member</b>: 1 = YES, 0 = NO. Sudah terisi nilai saat ini; ubah hanya bila perlu.
+            Jika 1, sm/am, asm, dan pic ikut diperbarui di master customer.
+          </p>
+        </div>
+
+        <div>
+          <span class="badge badge-primary mr-5">3</span>
+          <b>Upload &amp; import</b>
+          <p class="text-muted mb-10">Simpan file dalam format Excel (.xlsx), lalu unggah di sini.</p>
+          <form action="{{ route('superuser.master.customer_other_address.import2') }}" method="POST" enctype="multipart/form-data" id="form-import-employee">
+            @csrf
+
+            <div class="custom-file mb-10">
+              <input type="file" class="custom-file-input" id="import_employee_file" name="import_file" accept=".xls,.xlsx" data-toggle="custom-file-input" required>
+              <label class="custom-file-label" for="import_employee_file">Choose file</label>
             </div>
 
-            <div class="col-md-6">
-              <span class="font-size-h5">Import</span>
-              <p>
-                Import your data with the template provided below.<br>
-                <span class="text-danger"><b>Don't</b></span> remove / change the header (first row).<br>
-                Only fill in the column provided, the additional columns will not be processed.
-              </p>
-              @if(isset($import_custom_message))
-              <div class="mb-15">
-                <b>Note :</b> <br>
-                {!! $import_custom_message !!}
-              </div>
-              @endif
-              <a href="{{ route('superuser.master.customer_other_address.import_template2') }}">
-                <button type="button" class="btn btn-sm btn-noborder btn-secondary">
-                  <i class="fa fa-download mr-5"></i> Template
-                </button>
-              </a>
-              <hr>
-              <form action="{{ route('superuser.master.customer_other_address.import2') }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                
-                <div class="custom-file">
-                  <input type="file" class="custom-file-input" id="import_file" name="import_file" data-toggle="custom-file-input" required>
-                  <label class="custom-file-label" for="import_file">Choose file</label>
-                </div>
-                
-                <button type="submit" class="btn mt-10 w-100 btn-alt-success">Import</button>
-              </form>
-            </div>
+            <button type="submit" id="btn-import-employee" class="btn w-100 btn-alt-success" disabled>
+              <i class="fa fa-upload mr-5"></i> Import
+            </button>
+          </form>
         </div>
       </div>
     </div>
@@ -218,6 +225,19 @@
 
   $(document).ready(function () {
     $('.js-select2').select2({});
+
+    // Import Employee: aktifkan tombol import setelah file dipilih.
+    $('#import_employee_file').on('change', function () {
+      var file = this.files && this.files[0];
+      $('#btn-import-employee').prop('disabled', !file);
+      $(this).next('.custom-file-label').text(file ? file.name : 'Choose file');
+    });
+
+    $('#form-import-employee').on('submit', function () {
+      $('#btn-import-employee')
+        .prop('disabled', true)
+        .html('<i class="fa fa-spinner fa-spin mr-5"></i> Mengimpor...');
+    });
 
     let datatableUrl = '{{ route('superuser.master.customer.json') }}';
     let firstDatatableUrl = datatableUrl + '?type_search=all&search_name=all';

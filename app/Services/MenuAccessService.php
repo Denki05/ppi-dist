@@ -241,12 +241,10 @@ class MenuAccessService
 
         $routes = [
             'superuser.penjualan.sales_order.index_lanjutan' => 'so_lanjutan',
-            'superuser.penjualan.sales_order.lanjutkan' => 'so_lanjutan',
             'superuser.penjualan.sales_order.destroy_lanjutan' => 'so_lanjutan',
             'superuser.penjualan.sales_order.tutup_so' => 'so_lanjutan',
             'superuser.penjualan.sales_order.tidak_lanjut_so' => 'so_lanjutan',
             'superuser.penjualan.sales_order_ppn.index_ppn_lanjutan' => 'ppn_lanjutan',
-            'superuser.penjualan.sales_order_ppn.lanjutkan' => 'ppn_lanjutan',
             'superuser.penjualan.sales_order_ppn.destroy_lanjutan' => 'ppn_lanjutan',
             'superuser.penjualan.sales_order_ppn.tutup_so_ppn' => 'ppn_lanjutan',
         ];
