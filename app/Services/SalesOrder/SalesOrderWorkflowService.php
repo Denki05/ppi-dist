@@ -179,22 +179,48 @@ class SalesOrderWorkflowService
     public function notifyAdminSales($salesOrder, $kind = 'lanjutan')
     {
         try {
-            $recipients = \App\Entities\Account\Superuser::query()->get()
-                ->filter(function ($user) {
-                    return \App\Services\MenuAccessService::profileKeyForUser($user) === 'Admin Sales';
-                });
-
-            $fixed = \App\Entities\Account\Superuser::find(33);
-            if ($fixed) {
-                $recipients->push($fixed);
-            }
-
-            foreach ($recipients->unique('id') as $user) {
+            foreach ($this->adminSalesRecipients() as $user) {
                 $user->notify(new \App\Notifications\SoNotification($salesOrder, $kind));
             }
         } catch (\Exception $e) {
             // Notifikasi tidak boleh menggagalkan penyimpanan SO.
             Log::error('Gagal kirim notifikasi SO: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Notifikasi pengajuan proforma baru (estimate dari menu Prospek AO).
+     * Dipanggil dari endpoint terima pengajuan, bukan dari lanjutkan(), karena
+     * jalur itu belum membuat SalesOrder.
+     */
+    public function notifyAdminSalesPengajuan($pengajuan)
+    {
+        try {
+            foreach ($this->adminSalesRecipients() as $user) {
+                $user->notify(new \App\Notifications\PengajuanProformaNotification($pengajuan));
+            }
+        } catch (\Exception $e) {
+            Log::error('Gagal kirim notifikasi pengajuan proforma: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Penerima notifikasi admin sales: user ber-profile Admin Sales, ditambah
+     * user id 33 sebagai penerima tetap (permintaan manajer: notif pasti
+     * sampai ke admin sales).
+     */
+    private function adminSalesRecipients()
+    {
+        $recipients = \App\Entities\Account\Superuser::query()->get()
+            ->filter(function ($user) {
+                return \App\Services\MenuAccessService::profileKeyForUser($user) === 'Admin Sales';
+            });
+
+        $fixed = \App\Entities\Account\Superuser::find(33);
+        if ($fixed) {
+            $recipients->push($fixed);
+        }
+
+        return $recipients->unique('id');
     }
 }

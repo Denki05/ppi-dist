@@ -8,15 +8,17 @@
 
     $tipeChips = [
         '' => ['label' => 'Semua', 'icon' => 'bi-collection'],
-        'App\\Notifications\\SoNotification' => ['label' => 'SO', 'icon' => 'bi-cart'],
-        'App\\Notifications\\DoNotification' => ['label' => 'DO', 'icon' => 'bi-truck'],
-        'App\\Notifications\\PayableNotification' => ['label' => 'Payment', 'icon' => 'bi-credit-card'],
-        'App\\Notifications\\InternalRevisionOtpNotification' => ['label' => 'OTP Revisi', 'icon' => 'bi-key'],
+        'so' => ['label' => 'SO', 'icon' => 'bi-cart'],
+        'do' => ['label' => 'DO', 'icon' => 'bi-truck'],
+        'pay' => ['label' => 'Payment', 'icon' => 'bi-credit-card'],
+        'otp' => ['label' => 'OTP Revisi', 'icon' => 'bi-key'],
     ];
 
     $judulNotif = function ($n) {
         $data = $n['data'] ?? [];
-        if (strpos($n['type'], 'SoNotification') !== false) {
+        if (strpos($n['type'], 'PengajuanProforma') !== false) {
+            $label = 'Pengajuan Proforma';
+        } elseif (strpos($n['type'], 'SoNotification') !== false) {
             $label = (($data['kind'] ?? '') === 'proforma') ? 'SO Proforma' : 'SO Lanjutan';
         } elseif (strpos($n['type'], 'DoNotification') !== false) {
             $label = 'Delivery Order';
@@ -59,7 +61,13 @@
     .notif-page .notif-date { font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:#98a2ad; padding:14px 8px 6px; background:#fafbfc; }
     .notif-page .notif-row { display:flex; align-items:flex-start; gap:10px; padding:12px 8px; border-bottom:1px solid #f1f3f5; background:#fff; cursor:pointer; transition:background .15s ease; }
     .notif-page .notif-row:hover { background:#f7f9fc; }
-    .notif-page .notif-row.unread { background:#f2f7ff; box-shadow:inset 3px 0 0 #0d6efd; }
+    .notif-page .notif-row.unread { background:#f8fafc; }
+    .notif-page .notif-row.unread[data-priority="urgent"] { box-shadow:inset 3px 0 0 #dc2626; }
+    .notif-page .notif-row.unread[data-priority="action"] { box-shadow:inset 3px 0 0 #d97706; }
+    .notif-page .notif-row.unread[data-priority="info"] { box-shadow:inset 3px 0 0 #2563eb; }
+    .notif-page .flag { display:inline-block; font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:999px; margin-left:6px; vertical-align:1px; }
+    .notif-page .flag.urgent { background:#fee2e2; color:#b91c1c; }
+    .notif-page .flag.action { background:#fef3c7; color:#b45309; }
     .notif-page .notif-row .ico { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex:0 0 34px; background:#eef2f7; color:#4a5563; }
     .notif-page .notif-row.unread .ico { background:#e0edff; color:#0d6efd; }
     .notif-page .notif-row .ttl { font-size:13.5px; font-weight:600; color:#222d3a; }
@@ -81,9 +89,9 @@
 
     <div class="notif-head mb-3">
         <div>
-            <h4 class="notif-title"><i class="bi bi-bell me-1"></i> Notifikasi</h4>
+            <h4 class="notif-title"><i class="bi bi-archive me-1"></i> Arsip notifikasi</h4>
             <div class="notif-sub">
-                {{ $stats['unread'] }} belum dibaca · {{ $stats['total'] }} total
+                {{ $stats['unread'] }} belum dibaca · {{ $stats['total'] }} total · pengingat harian tampil di lonceng
             </div>
         </div>
         @if($stats['unread'] > 0)
@@ -137,12 +145,17 @@
                 @php $lastDate = $dateLabel; @endphp
             @endif
 
-            <div class="notif-row {{ $n['is_unread'] ? 'unread' : '' }}"
+            <div class="notif-row {{ $n['is_unread'] ? 'unread' : '' }}" data-priority="{{ $n['priority'] }}"
                  data-href="{{ route('superuser.penjualan.notification.read', $n['id']) }}"
                  role="link" tabindex="0">
                 <div class="ico"><i class="bi {{ $n['icon'] }}"></i></div>
                 <div class="flex-grow-1">
-                    <div class="ttl">{{ $judulNotif($n) }}</div>
+                    <div class="ttl">
+                        {{ $judulNotif($n) }}
+                        @if($n['priority'] !== 'info')
+                            <span class="flag {{ $n['priority'] }}">{{ $n['priority_label'] }}</span>
+                        @endif
+                    </div>
                     @php $sub = $subjudulNotif($n); @endphp
                     @if($sub !== '')
                         <div class="desc">{{ $sub }}</div>

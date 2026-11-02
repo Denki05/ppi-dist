@@ -34,6 +34,7 @@ class PruneOldNotifications extends Command
     protected $types = [
         'App\Notifications\DoNotification',
         'App\Notifications\SoNotification',
+        'App\Notifications\PengajuanProformaNotification',
         'App\Notifications\PayableNotification',
         'App\Notifications\ReceivingNotification',
         'App\Notifications\InternalRevisionOtpNotification',

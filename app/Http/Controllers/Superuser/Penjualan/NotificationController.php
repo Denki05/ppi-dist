@@ -20,10 +20,44 @@ class NotificationController extends Controller
         return [
             'App\Notifications\DoNotification',
             'App\Notifications\SoNotification',
+            'App\Notifications\PengajuanProformaNotification',
             'App\Notifications\PayableNotification',
             'App\Notifications\ReceivingNotification',
             'App\Notifications\InternalRevisionOtpNotification',
         ];
+    }
+
+    /**
+     * Filter chip memakai kunci grup (mis. "so") supaya SO Lanjutan/Proforma
+     * dan Pengajuan Proforma bisa tampil di satu tombol yang sama.
+     */
+    private function typeFilterGroups()
+    {
+        return [
+            'so' => [
+                'App\Notifications\SoNotification',
+                'App\Notifications\PengajuanProformaNotification',
+            ],
+            'do' => ['App\Notifications\DoNotification'],
+            'pay' => ['App\Notifications\PayableNotification'],
+            'otp' => ['App\Notifications\InternalRevisionOtpNotification'],
+        ];
+    }
+
+    /**
+     * Terima kunci grup maupun FQCN lama (bookmark), kembalikan daftar FQCN.
+     */
+    private function resolveTypeFilter($type)
+    {
+        if (!$type) {
+            return null;
+        }
+        if (Str::contains($type, '\\') && in_array($type, $this->visibleTypes(), true)) {
+            return [$type];
+        }
+        $groups = $this->typeFilterGroups();
+
+        return $groups[$type] ?? null;
     }
 
     /**
@@ -32,6 +66,9 @@ class NotificationController extends Controller
      */
     private function metaFor($type)
     {
+        if (Str::contains($type, 'PengajuanProforma')) {
+            return ['label' => 'Pengajuan Proforma', 'short' => 'Pengajuan', 'icon' => 'bi-file-earmark-plus', 'color' => 'primary'];
+        }
         if (Str::contains($type, 'DoNotification')) {
             return ['label' => 'Delivery Order', 'short' => 'DO', 'icon' => 'bi-truck', 'color' => 'info'];
         }
@@ -65,6 +102,9 @@ class NotificationController extends Controller
 
         if (Str::contains($type, 'InternalRevisionOtp')) {
             return 'urgent';
+        }
+        if (Str::contains($type, 'PengajuanProforma')) {
+            return 'action';
         }
         if (Str::contains($type, 'SoNotification') || Str::contains($type, 'PayableNotification')) {
             return 'action';
@@ -164,9 +204,9 @@ class NotificationController extends Controller
         $recentUnread = (clone $base)->whereNull('read_at')->where('created_at', '>=', $recentFrom)->count();
 
         $listQuery = clone $base;
-        $type = $request->query('type');
-        if ($type && in_array($type, $this->visibleTypes(), true)) {
-            $listQuery->where('type', $type);
+        $filterTypes = $this->resolveTypeFilter($request->query('type'));
+        if ($filterTypes) {
+            $listQuery->whereIn('type', $filterTypes);
         }
 
         $total = (clone $listQuery)->count();
@@ -211,8 +251,9 @@ class NotificationController extends Controller
             ->where('notifiable_id', $userId)
             ->whereIn('type', $this->visibleTypes());
 
-        if ($typeFilter && in_array($typeFilter, $this->visibleTypes(), true)) {
-            $base->where('type', $typeFilter);
+        $filterTypes = $this->resolveTypeFilter($typeFilter);
+        if ($filterTypes) {
+            $base->whereIn('type', $filterTypes);
         }
         if ($statusFilter === 'unread') {
             $base->whereNull('read_at');
@@ -327,6 +368,13 @@ class NotificationController extends Controller
 
         $data = json_decode($notification->data, true) ?? [];
         $type = $notification->type ?? '';
+
+        if (Str::contains($type, 'PengajuanProforma')) {
+            if (!empty($data['id'])) {
+                return redirect()->route('superuser.penjualan.pengajuan_proforma.show', ['id' => $data['id']]);
+            }
+            return redirect()->route('superuser.penjualan.pengajuan_proforma.index');
+        }
 
         if (Str::contains($type, 'DoNotification')) {
             if (($data['status'] ?? null) == 2 && !empty($data['id'])) {
