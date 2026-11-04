@@ -140,7 +140,9 @@ class Customer extends Model
         $data = [];
 
         // dd($this->id);
-        $get_member = CustomerOtherAddress::where('customer_id', $this->id)->get();
+        $get_member = CustomerOtherAddress::where('customer_id', $this->id)
+            ->where('status', CustomerOtherAddress::STATUS['ACTIVE'])
+            ->get();
 
         foreach ($get_member as $item) {
             // dd($item->name);
