@@ -10,35 +10,18 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 
 class CustomerOtherAddressExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize
 {
-    private $columns = [
-        'master_customer_other_addresses.id as id', 
-        'master_customer_other_addresses.name', 
-        'master_customer_other_addresses.member_default', 
-        'master_customer_other_addresses.text_kota', 
-        'master_customer_other_addresses.account_representative', 
-        'master_customer_other_addresses.account_representative_optional_1', 
-        'master_customer_other_addresses.account_representative_optional_2', 
-        'master_customer_other_addresses.situation',
-        'master_customers.pic as pic', // Adding a column from the joined 'customers' table
-        'master_customer_other_addresses.officer as officer',
-        'master_customer_other_addresses.account_representative as ar1',
-        'master_customer_other_addresses.account_representative_optional_1 as ar2',
-        'master_customer_other_addresses.account_representative_optional_2 as ar3',
-        'master_customer_categories.name as category_name', // Including category name
-        'master_customer_other_addresses.address', 
-        'master_customer_other_addresses.text_provinsi', 
-        'master_customer_other_addresses.text_kecamatan', 
-        'master_customer_other_addresses.text_kelurahan', 
-        'master_customer_other_addresses.zone',
-        'master_customer_other_addresses.phone',
-        'master_customer_other_addresses.contact_person',
-        'master_customer_other_addresses.setting_income_target',
-        'master_customers.has_tempo',
-    ];
-
     private $headings = [
-        'Id', 'Member Default', 'Nama', 'Owner', 'Category', 'Alamat', 'Pic', 'Office', 'AR1', 'AR2', 'AR3', 'Provinsi',
-        'Kota', 'Kecamatan', 'Kelurahan', 'Zona', 'Nomer Telfon', 'Tipe Pembayaran', 'Target Omset'
+        'id',
+        'kategori',
+        'zona',
+        'customer',
+        'kota',
+        'provinsi',
+        'sm/am',
+        'asm',
+        'pic',
+        'officer',
+        'is_default_member',
     ];
 
     private $status;
@@ -53,11 +36,24 @@ class CustomerOtherAddressExport implements FromQuery, WithHeadings, WithMapping
     public function query()
     {
         return CustomerOtherAddress::query()
-            ->select($this->columns)
-            ->join('master_customers', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id') // Join with customers table
-            ->join('master_customer_categories', 'master_customers.category_id', '=', 'master_customer_categories.id')
+            ->select([
+                'master_customer_other_addresses.id as id',
+                'master_customer_categories.name as kategori',
+                'master_customer_other_addresses.zone as zona',
+                'master_customer_other_addresses.name as customer',
+                'master_customer_other_addresses.text_kota as kota',
+                'master_customer_other_addresses.text_provinsi as provinsi',
+                'master_customer_other_addresses.sm as sm_am',
+                'master_customer_other_addresses.ams as asm',
+                'master_customer_other_addresses.pic as pic',
+                'master_customer_other_addresses.officer as officer',
+                'master_customer_other_addresses.member_default as is_default_member',
+            ])
+            ->join('master_customers', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id')
+            ->leftJoin('master_customer_categories', 'master_customers.category_id', '=', 'master_customer_categories.id')
             ->where('master_customers.status', $this->status)
-            ->where('master_customers.existence', $this->existence);
+            ->where('master_customers.existence', $this->existence)
+            ->orderBy('master_customer_other_addresses.name');
     }
 
     public function headings(): array
@@ -67,29 +63,18 @@ class CustomerOtherAddressExport implements FromQuery, WithHeadings, WithMapping
 
     public function map($row): array
     {
-        $paymentType = $row->has_tempo == 0 ? 'CASH' : 'TEMPO';
-        $memberDefault = $row->member_default == 0 ? 'NO' : 'YES';
-
         return [
-            $row->id, // ID member
-            $memberDefault,
-            $row->name . ' ' . $row->text_kota, // Combine name and city
-            $row->contact_person ?? 'N/A', // Default to 'N/A' if null
-            $row->category_name ?? 'Uncategorized', // Use category name
-            $row->address ?? 'N/A', // Address handling
-            $row->pic ?? 'N/A', // Address handling
-            $row->officer ?? 'N/A', // Address handling
-            $row->ar1 ?? 'N/A', // Address handling
-            $row->ar2 ?? 'N/A', // Address handling
-            $row->ar3 ?? 'N/A', // Address handling
-            $row->text_provinsi ?? 'N/A',
-            $row->text_kota ?? 'N/A',
-            $row->text_kecamatan ?? 'N/A',
-            $row->text_kelurahan ?? 'N/A',
-            $row->zone ?? 'N/A',
-            $row->phone ?? 'N/A', // Phone number
-            $paymentType, // Payment type
-            $row->setting_income_target,
+            $row->id,
+            $row->kategori,
+            $row->zona,
+            $row->customer,
+            $row->kota,
+            $row->provinsi,
+            $row->sm_am,
+            $row->asm,
+            $row->pic,
+            $row->officer,
+            (int) $row->is_default_member,
         ];
     }
 }

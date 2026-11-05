@@ -136,7 +136,9 @@ class Customer extends Model
         $data = [];
 
         // dd($this->id);
-        $get_member = CustomerOtherAddress::where('customer_id', $this->id)->get();
+        $get_member = CustomerOtherAddress::where('customer_id', $this->id)
+            ->where('status', CustomerOtherAddress::STATUS['ACTIVE'])
+            ->get();
 
         foreach ($get_member as $item) {
             // dd($item->name);
@@ -147,8 +149,8 @@ class Customer extends Model
                 'member_default' => $item->default(),
                 'member_latitude' => $item->gps_latitude,
                 'member_longtitude' => $item->gps_longitude,
-                'member_condition' => $item->condition(),
-                'member_status_key' => $item->key_status(),
+                'member_condition' => $item->situation,
+                'member_status_key' => $item->status_key,
             ];
         }
 

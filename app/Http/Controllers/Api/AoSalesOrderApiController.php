@@ -925,7 +925,7 @@ class AoSalesOrderApiController extends Controller
         return $this->metaFromDo($do, $inv);
     }
 
-    protected function metaFromDo($do, $inv = null)
+    protected function metaFromDo($do, $inv = null, $paidTotal = null)
     {
         $out = [
             'do_id' => $do ? (int) $do->id : null,
@@ -935,6 +935,10 @@ class AoSalesOrderApiController extends Controller
             'invoice_id' => null,
             'invoice_code' => null,
             'invoice_status' => null,
+            'invoice_total' => 0,
+            'paid_total' => 0,
+            'is_lunas' => 0,
+            'payment_status' => null,
             'pdf_ready' => false,
             'resi_at' => null,
             'resi' => ['slot1' => false, 'slot2' => false],
@@ -959,9 +963,136 @@ class AoSalesOrderApiController extends Controller
                 $out['invoice_code'] = $inv->code;
                 $out['pdf_ready'] = $this->invoicePdfExists($inv->code);
             }
+
+            // Status bayar hanya dari invoice ACTIVE (VOID/DELETED bukan tagihan).
+            if ((int) $inv->status === Invoicing::STATUS['ACTIVE']) {
+                $grand = (float) ($inv->grand_total_idr ?? 0);
+                $paid = $paidTotal !== null ? (float) $paidTotal : $this->paidTotalForInvoice((int) $inv->id);
+                $isLunas = $grand > 0 && $paid >= ($grand - 0.5);
+                $out['invoice_total'] = $grand;
+                $out['paid_total'] = $paid;
+                $out['is_lunas'] = $isLunas ? 1 : 0;
+                $out['payment_status'] = $paid <= 0 ? 'BELUM' : ($isLunas ? 'LUNAS' : 'SEBAGIAN');
+            }
         }
 
         return $out;
+    }
+
+    /**
+     * Total pembayaran invoice (finance_payable_detail), minus baris terhapus.
+     */
+    protected function paidTotalForInvoice(int $invoiceId): float
+    {
+        if ($invoiceId <= 0) {
+            return 0.0;
+        }
+        try {
+            return (float) DB::table('finance_payable_detail')
+                ->where('invoice_id', $invoiceId)
+                ->whereNull('deleted_at')
+                ->sum('total');
+        } catch (\Exception $e) {
+            return 0.0;
+        }
+    }
+
+    /**
+     * Total hutang customer (semua invoice ACTIVE yang belum lunas).
+     * GET /api/ao/so-awal/customer-outstanding?customer_id=116.1
+     *
+     * Sisa per invoice = grand_total_idr - pembayaran (deleted_at null),
+     * tidak pernah negatif. Rincian bulan memakai bulan created_at invoice.
+     * Invoice sebelum 2024 diabaikan: program baru berjalan mulai 2024,
+     * data 2022-2023 adalah hasil migrasi program lama.
+     */
+    public function customerOutstanding(Request $request)
+    {
+        $customerId = trim((string) $request->query('customer_id', ''));
+        if ($customerId === '') {
+            return response()->json(['success' => false, 'message' => 'customer_id wajib diisi'], 400);
+        }
+
+        // Mulai tahun berjalan program; data migrasi lama tidak dihitung sebagai hutang.
+        $hutangMulai = '2024-01-01 00:00:00';
+
+        try {
+            $rows = DB::table('finance_invoicing as i')
+                ->leftJoin(
+                    DB::raw('(SELECT invoice_id, SUM(total) AS paid FROM finance_payable_detail WHERE deleted_at IS NULL GROUP BY invoice_id) as p'),
+                    'p.invoice_id',
+                    '=',
+                    'i.id'
+                )
+                ->where('i.customer_other_address_id', $customerId)
+                ->where('i.status', Invoicing::STATUS['ACTIVE'])
+                ->whereNull('i.deleted_at')
+                ->where('i.created_at', '>=', $hutangMulai)
+                ->selectRaw('i.id, i.code, i.grand_total_idr, i.created_at, COALESCE(p.paid, 0) as paid')
+                ->orderByDesc('i.created_at')
+                ->get();
+        } catch (\Throwable $e) {
+            Log::error('customerOutstanding gagal', ['customer_id' => $customerId, 'error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Gagal menghitung hutang: ' . $e->getMessage()], 500);
+        }
+
+        $monthStart = now()->startOfMonth()->toDateString();
+        $total = 0.0;
+        $thisMonth = 0.0;
+        $previous = 0.0;
+        $count = 0;
+        $byMonth = [];
+
+        foreach ($rows as $row) {
+            $sisa = (float) $row->grand_total_idr - (float) $row->paid;
+            if ($sisa < 0.5) {
+                continue; // lunas / lebih bayar
+            }
+
+            $count++;
+            $total += $sisa;
+
+            if (substr((string) $row->created_at, 0, 10) >= $monthStart) {
+                $thisMonth += $sisa;
+            } else {
+                $previous += $sisa;
+            }
+
+            $periode = substr((string) $row->created_at, 0, 7) ?: 'tanpa-tanggal';
+            if (!isset($byMonth[$periode])) {
+                $byMonth[$periode] = ['periode' => $periode, 'jumlah' => 0, 'sisa' => 0.0, 'invoices' => []];
+            }
+            $byMonth[$periode]['jumlah']++;
+            $byMonth[$periode]['sisa'] += $sisa;
+            $byMonth[$periode]['invoices'][] = [
+                'invoice_code' => (string) $row->code,
+                'tanggal' => substr((string) $row->created_at, 0, 10),
+                'total' => round((float) $row->grand_total_idr, 2),
+                'dibayar' => round((float) $row->paid, 2),
+                'sisa' => round($sisa, 2),
+            ];
+        }
+
+        krsort($byMonth);
+        $months = [];
+        foreach ($byMonth as $month) {
+            $month['sisa'] = round($month['sisa'], 2);
+            $months[] = $month;
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'customer_other_address_id' => $customerId,
+                'total_hutang' => round($total, 2),
+                'jumlah_invoice' => $count,
+                'periode_bulan' => now()->format('Y-m'),
+                'hutang_bulan_ini' => round($thisMonth, 2),
+                'hutang_sebelumnya' => round($previous, 2),
+                'dihitung_at' => now()->toDateTimeString(),
+                'bulan' => $months,
+            ],
+        ]);
     }
 
     /**
@@ -1090,24 +1221,41 @@ class AoSalesOrderApiController extends Controller
 
         // Batch invoice: baris terbaru per DO.
         $invs = [];
+        $paidSums = [];
         try {
             if ($doIds) {
                 $invRows = Invoicing::whereIn('do_id', $doIds)
                     ->orderBy('id', 'asc')
-                    ->get(['id', 'do_id', 'code', 'status']);
+                    ->get(['id', 'do_id', 'code', 'status', 'grand_total_idr']);
                 foreach ($invRows as $inv) {
                     $invs[(int) $inv->do_id] = $inv;
+                }
+                // Batch total bayar untuk semua invoice pada halaman ini.
+                $invIds = array_values(array_map(function ($inv) {
+                    return (int) $inv->id;
+                }, $invs));
+                if ($invIds) {
+                    $paidRows = DB::table('finance_payable_detail')
+                        ->select('invoice_id', DB::raw('SUM(total) as paid'))
+                        ->whereIn('invoice_id', $invIds)
+                        ->whereNull('deleted_at')
+                        ->groupBy('invoice_id')
+                        ->get();
+                    foreach ($paidRows as $pr) {
+                        $paidSums[(int) $pr->invoice_id] = (float) $pr->paid;
+                    }
                 }
             }
         } catch (\Exception $e) {
         }
 
-        $data = $rows->map(function ($so) use ($usernames, $members, $dos, $invs, $hasAoCol) {
+        $data = $rows->map(function ($so) use ($usernames, $members, $dos, $invs, $paidSums, $hasAoCol) {
             $childId = (string) $so->customer_other_address_id;
             $member = $members[$childId] ?? null;
             $do = $dos[(int) $so->id] ?? null;
             $inv = $do ? ($invs[(int) $do->id] ?? null) : null;
-            $meta = $this->metaFromDo($do, $inv);
+            $paid = $inv ? (float) ($paidSums[(int) $inv->id] ?? 0) : 0;
+            $meta = $this->metaFromDo($do, $inv, $paid);
 
             return array_merge([
                 'so_id' => $so->id,

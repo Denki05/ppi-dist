@@ -753,9 +753,9 @@ class SalesOrderController extends Controller
 
     public function lanjutkan(Request $request, $id)
     {
-        if (!MenuAccessService::hasCapability(Auth::user(), 'so_lanjutan')) {
-            abort(403);
-        }
+        // if (!MenuAccessService::hasCapability(Auth::user(), 'so_lanjutan')) {
+        //     abort(403);
+        // }
 
         if ($request->ajax()) {
             if(Auth::user()->is_superuser == 0){

@@ -21,6 +21,9 @@ Route::group([
     // Checklist akses modul (matriks user x modul).
     Route::get('/module-access', 'Account\ModuleAccessController@index')->name('module_access.index');
 
+    // Siapa yang sedang online (khusus Developer/SuperAdmin, dicek di controller).
+    Route::get('/online', 'Account\OnlineUserController@index')->name('online.index');
+
     Route::group(['as' => 'user.', 'prefix' => '/user'], function () {
         Route::get('/','Account\UserController@index')->name('index');
         Route::get('/create','Account\UserController@create')->name('create');

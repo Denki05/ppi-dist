@@ -1498,6 +1498,7 @@ body.nz-audio-locked .nz-sound-warn {
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="{{ route('superuser.account.log_activity.index') }}">Aktivitas Log</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.account.user.index') }}">Akun</a></li>
+                                <li><a class="dropdown-item" href="{{ route('superuser.account.online.index') }}">Pengguna Online</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.account.sales_person.index') }}">Sales Person</a></li>
                             </ul>
                         </li>

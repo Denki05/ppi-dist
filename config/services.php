@@ -78,6 +78,13 @@ return [
         ],
     ],
 
+    // Push update member (customer other address) dari trans ke database online
+    // (ppi-dist-trial / lssoft88.xyz). Key memakai USER_API_KEY yang sama di kedua app.
+    'crm' => [
+        'base_url' => env('CRM_BASE_URL', 'https://lssoft88.xyz/api'),
+        'key'      => env('CRM_API_KEY', env('USER_API_KEY')),
+    ],
+
     // Sinkronisasi user dari trans (master, ppi_araya) ke trial (pusat user, lssoftxy_unifra).
     // Diisi DI TRANS: TRIAL_SYNC_URL + TRIAL_SYNC_KEY.
     // Diisi DI TRIAL: TRIAL_SYNC_KEY (untuk memvalidasi request masuk).
