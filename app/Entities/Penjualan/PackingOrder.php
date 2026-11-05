@@ -28,6 +28,7 @@ class PackingOrder extends Model
 		'is_kurs_hold',
 		'has_payment',
     	'status',
+		'void_status',
 		'prev_sataus',
 		'count_cancel',
 		'status_mitra',

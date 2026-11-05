@@ -89,6 +89,8 @@ class Kernel extends HttpKernel
 
         // CORS khusus API halal (landing di hosting terpisah)
         'cors.halal' => \App\Http\Middleware\CorsHalal::class,
+
+        'wms.auth' => \App\Http\Middleware\WmsApiAuth::class,
     ];
 
     /**

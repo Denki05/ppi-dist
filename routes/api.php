@@ -7,6 +7,7 @@ use App\Http\Controllers\ReportRequestController;
 use App\Http\Controllers\ProductAssetsController;
 use App\Http\Controllers\Api\PickerApiController;
 use App\Http\Controllers\Api\AoSalesOrderApiController;
+use App\Http\Controllers\Api\WmsAuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -108,6 +109,32 @@ Route::group(['middleware' => 'picker.auth', 'prefix' => 'picker'], function () 
     Route::get('tasks/{id}', [PickerApiController::class, 'getTaskDetail']);
     Route::post('tasks/{id}/pack', [PickerApiController::class, 'packTask']);
     Route::get('tasks/{id}/label', [PickerApiController::class, 'printLabel']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| WMS (SPV Gudang) API Routes
+|--------------------------------------------------------------------------
+| Login WMS memakai handoff SSO modul; token ditukar sekali di exchange.
+| Setelah itu semua request memakai bearer token (tanpa query DB per request).
+*/
+
+Route::post('wms/auth/exchange', [WmsAuthController::class, 'exchange'])
+    ->middleware('throttle:20,1');
+
+Route::group(['prefix' => 'wms', 'middleware' => 'wms.auth'], function () {
+    Route::get('bootstrap', [WmsAuthController::class, 'bootstrap']);
+    Route::get('dashboard', [\App\Http\Controllers\Api\WmsDashboardController::class, 'index']);
+    Route::get('stock', [\App\Http\Controllers\Api\WmsStockController::class, 'index']);
+    Route::get('receiving', [\App\Http\Controllers\Api\WmsReceivingController::class, 'index']);
+    Route::get('receiving/{id}', [\App\Http\Controllers\Api\WmsReceivingController::class, 'show'])->where('id', '[0-9]+');
+    Route::post('receiving/{id}/acc', [\App\Http\Controllers\Api\WmsReceivingController::class, 'acc'])->where('id', '[0-9]+');
+    Route::get('receiving-transaksi', [\App\Http\Controllers\Api\WmsReceivingController::class, 'transaksi']);
+    Route::get('komplain', [\App\Http\Controllers\Api\WmsKomplainController::class, 'index']);
+    Route::get('komplain/{id}', [\App\Http\Controllers\Api\WmsKomplainController::class, 'show'])->where('id', '[0-9]+');
+    Route::post('komplain/{id}/acc', [\App\Http\Controllers\Api\WmsKomplainController::class, 'acc'])->where('id', '[0-9]+');
+    Route::get('mutasi', [\App\Http\Controllers\Api\WmsMutasiController::class, 'index']);
+    Route::get('delivery-orders', [\App\Http\Controllers\Api\WmsDeliveryOrderController::class, 'index']);
 });
 
 // Kemasan & relasi produk-kemasan (ditambahkan agar konsumsi SO valid)
