@@ -85,6 +85,8 @@ class Kernel extends HttpKernel
 
         'picker.auth' => \App\Http\Middleware\PickerApiAuth::class,
 
+        'wms.auth' => \App\Http\Middleware\WmsApiAuth::class,
+
         'ao.apikey' => \App\Http\Middleware\VerifyAoApiKey::class,
 
         // direktori user untuk modul AO (login + one-time access)

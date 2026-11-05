@@ -189,7 +189,7 @@ class UserController extends Controller
                 }
 
                 $modules = isset($post["modules"]) && is_array($post["modules"])
-                	? array_values(array_intersect($post["modules"], ['MIS','CRM','AO','APM','TRS','DSG']))
+                	? array_values(array_intersect($post["modules"], ModuleAccessService::codes()))
                 	: [];
 
                 $profile = $this->submittedProfile($post);
@@ -392,7 +392,7 @@ class UserController extends Controller
                 }
 
                 $modules = isset($post["modules"]) && is_array($post["modules"])
-                	? array_values(array_intersect($post["modules"], ['MIS','CRM','AO','APM','TRS','DSG']))
+                	? array_values(array_intersect($post["modules"], ModuleAccessService::codes()))
                 	: [];
 
                 $data_user = [
@@ -549,7 +549,7 @@ class UserController extends Controller
                 }
 
                 $modules = isset($post["modules"]) && is_array($post["modules"])
-                	? array_values(array_intersect($post["modules"], ['MIS','CRM','AO','APM','TRS','DSG']))
+                	? array_values(array_intersect($post["modules"], ModuleAccessService::codes()))
                 	: [];
 
                 $data_user = [

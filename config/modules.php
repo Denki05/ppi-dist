@@ -69,6 +69,16 @@ return [
             'color'          => '#16a34a',
         ],
 
+        'WMS' => [
+            'label'       => 'WMS',
+            'name'        => 'WMS / SPV Gudang',
+            'description' => 'Operasional gudang dan pengambil alihan SPV logistik.',
+            'url'         => env('MODULE_WMS_URL', 'http://localhost/ppi-wms/public'),
+            'sso_path'    => '/module-sso',
+            'icon'        => 'fa-cubes',
+            'color'       => '#0f766e',
+        ],
+
         'DSG' => [
             'label'       => 'DSG',
             'name'        => 'Design',

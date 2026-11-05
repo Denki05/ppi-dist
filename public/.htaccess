@@ -10,6 +10,10 @@
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
     # Redirect Trailing Slashes If Not A Folder...
+    # Hanya GET/HEAD: POST/PUT dsb ke URL ber-slash (dibuat paket
+    # laravel-trailing-slash) harus tetap sampai ke Laravel. Redirect 301
+    # mengubah POST menjadi GET sehingga rute POST-only balas 405.
+    RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$ [NC]
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
