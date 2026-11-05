@@ -28,11 +28,23 @@ class WmsKomplainController extends Controller
 
         $search = trim((string) $request->query('search'));
 
+        // Hanya tahun berjalan, default bulan berjalan.
+        $month = trim((string) $request->query('month'));
+        $current = date('Y-m');
+
+        if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month) || substr($month, 0, 4) !== substr($current, 0, 4)) {
+            $month = $current;
+        }
+
+        $monthStart = \Carbon\Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+        $monthEnd = $monthStart->copy()->endOfMonth();
+
         $counts = [];
         foreach ($this->statuses as $label => $value) {
             $query = QualityControl2::where('receiving_komplain.status', $value)
                 ->leftJoin('master_customer_other_addresses as customer', 'customer.id', '=', 'receiving_komplain.customer_id')
-                ->leftJoin('master_warehouses as warehouse', 'warehouse.id', '=', 'receiving_komplain.warehouse_id');
+                ->leftJoin('master_warehouses as warehouse', 'warehouse.id', '=', 'receiving_komplain.warehouse_id')
+                ->whereBetween('receiving_komplain.tanggal', [$monthStart->toDateString(), $monthEnd->toDateString()]);
             $this->applySearch($query, $search);
             $counts[$label] = $query->count();
         }
@@ -49,13 +61,14 @@ class WmsKomplainController extends Controller
             )
             ->leftJoin('master_customer_other_addresses as customer', 'customer.id', '=', 'receiving_komplain.customer_id')
             ->leftJoin('master_warehouses as warehouse', 'warehouse.id', '=', 'receiving_komplain.warehouse_id')
-            ->where('receiving_komplain.status', $this->statuses[$status]);
+            ->where('receiving_komplain.status', $this->statuses[$status])
+            ->whereBetween('receiving_komplain.tanggal', [$monthStart->toDateString(), $monthEnd->toDateString()]);
 
         $this->applySearch($paginator, $search);
 
         $paginator = $paginator->orderBy('receiving_komplain.tanggal', 'desc')
             ->orderBy('receiving_komplain.id', 'desc')
-            ->paginate(20);
+            ->paginate(10);
 
         // Total qty per komplain untuk halaman ini (hindari N+1).
         $ids = collect($paginator->items())->pluck('id')->all();
@@ -98,6 +111,7 @@ class WmsKomplainController extends Controller
                 'generated_at' => date('c'),
                 'status'       => $status,
                 'search'       => $search,
+                'month'        => $month,
                 'tabs'         => $tabs,
                 'rows'         => $rows,
                 'permissions'  => [

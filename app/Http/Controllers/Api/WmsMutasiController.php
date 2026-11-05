@@ -38,8 +38,8 @@ class WmsMutasiController extends Controller
 
         $paginator = $this->buildQuery($type, $tab, $search);
         $paginator = $type === 'showroom'
-            ? $paginator->orderBy('penjualan_showroom.tanggal', 'desc')->orderBy('penjualan_showroom.id', 'desc')->paginate(20)
-            : $paginator->orderBy('gudang_mutasi_out.date', 'desc')->orderBy('gudang_mutasi_out.id', 'desc')->paginate(20);
+            ? $paginator->orderBy('penjualan_showroom.tanggal', 'desc')->orderBy('penjualan_showroom.id', 'desc')->paginate(10)
+            : $paginator->orderBy('gudang_mutasi_out.date', 'desc')->orderBy('gudang_mutasi_out.id', 'desc')->paginate(10);
 
         $rows = [];
         $no = ($paginator->currentPage() - 1) * $paginator->perPage();

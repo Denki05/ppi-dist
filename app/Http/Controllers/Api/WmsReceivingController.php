@@ -799,11 +799,23 @@ class WmsReceivingController extends Controller
 
         $search = trim((string) $request->query('search'));
 
+        // Daftar penerimaan: hanya tahun berjalan, default bulan berjalan.
+        $month = trim((string) $request->query('month'));
+        $current = date('Y-m');
+
+        if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month) || substr($month, 0, 4) !== substr($current, 0, 4)) {
+            $month = $current;
+        }
+
+        $monthStart = \Carbon\Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+        $monthEnd = $monthStart->copy()->endOfMonth();
+
         $counts = [];
         foreach ($this->statuses as $label => $value) {
             $query = Receiving::where('receiving.type', $type)
                 ->where('receiving.status', $value)
                 ->leftJoin('master_warehouses', 'master_warehouses.id', '=', 'receiving.warehouse_id');
+            $query->whereBetween('receiving.pbm_date', [$monthStart->toDateString(), $monthEnd->toDateString()]);
             $this->applySearch($query, $search);
             $counts[$label] = $query->count();
         }
@@ -821,11 +833,13 @@ class WmsReceivingController extends Controller
             ->where('receiving.type', $type)
             ->where('receiving.status', $this->statuses[$status]);
 
+        $paginator->whereBetween('receiving.pbm_date', [$monthStart->toDateString(), $monthEnd->toDateString()]);
+
         $this->applySearch($paginator, $search);
 
         $paginator = $paginator->orderBy('receiving.pbm_date', 'desc')
             ->orderBy('receiving.id', 'desc')
-            ->paginate(20);
+            ->paginate(10);
 
         // Kode PO hanya untuk Receiving - Transaksi (type 1).
         $poMap = collect();
@@ -876,6 +890,7 @@ class WmsReceivingController extends Controller
                 'generated_at' => date('c'),
                 'status'       => $status,
                 'search'       => $search,
+                'month'        => $month,
                 'tabs'         => $tabs,
                 'rows'         => $rows,
                 'permissions'  => [

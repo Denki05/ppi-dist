@@ -32,6 +32,35 @@ class WmsStockController extends Controller
         $brand     = trim((string) $request->query('brand'));
         $packaging = (int) $request->query('packaging');
 
+        $brandOptions = DB::table('master_brand_lokal')->orderBy('brand_name')->pluck('brand_name');
+        $packagingOptions = DB::table('master_packaging')->orderBy('pack_name')->get(['id', 'pack_name']);
+
+        // Halaman dibuka tanpa filter: cukup kirim pilihan filter, daftar stok
+        // baru dihitung setelah user memilih/mencari.
+        if ($request->boolean('init')) {
+            return response()->json([
+                'status' => 'success',
+                'data'   => [
+                    'generated_at'      => date('c'),
+                    'init'              => true,
+                    'warehouses'        => $warehouses,
+                    'warehouse_id'      => $warehouseId,
+                    'search'            => '',
+                    'brand'             => '',
+                    'packaging'         => null,
+                    'brands'            => $brandOptions,
+                    'packaging_options' => $packagingOptions,
+                    'rows'              => [],
+                    'meta'              => [
+                        'page'      => 1,
+                        'per_page'  => 10,
+                        'total'     => 0,
+                        'last_page' => 1,
+                    ],
+                ],
+            ]);
+        }
+
         $query = ProductMinStock::with([
                 'product_pack.product',
                 'product_pack.packaging',
@@ -61,7 +90,7 @@ class WmsStockController extends Controller
             });
         }
 
-        $paginator = $query->orderBy('product_packaging_id')->paginate(25);
+        $paginator = $query->orderBy('product_packaging_id')->paginate(10);
 
         // Saldo KS = stock_balance dari pergerakan terakhir tiap kemasan.
         $packIds = collect($paginator->items())
@@ -110,8 +139,8 @@ class WmsStockController extends Controller
                 'search'       => $search,
                 'brand'        => $brand,
                 'packaging'    => $packaging ?: null,
-                'brands'       => DB::table('master_brand_lokal')->orderBy('brand_name')->pluck('brand_name'),
-                'packaging_options' => DB::table('master_packaging')->orderBy('pack_name')->get(['id', 'pack_name']),
+                'brands'       => $brandOptions,
+                'packaging_options' => $packagingOptions,
                 'rows'         => $rows,
                 'meta'         => [
                     'page'      => $paginator->currentPage(),

@@ -35,6 +35,15 @@ class WmsDeliveryOrderController extends Controller
         $search = trim((string) $request->query('search'));
         $onlyUnprinted = $tab === 'SPK' && (string) $request->query('printed') === '0';
 
+        // History Resi dibatasi per bulan; bulan berjalan jadi default.
+        $month = trim((string) $request->query('month'));
+        if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month)) {
+            $month = '';
+        }
+        $month = $tab === 'HISTORY' ? ($month ?: date('Y-m')) : '';
+        $monthStart = $month !== '' ? \Carbon\Carbon::createFromFormat('Y-m', $month)->startOfMonth() : null;
+        $monthEnd   = $monthStart ? $monthStart->copy()->endOfMonth() : null;
+
         $counts = [];
         foreach ($this->tabs as $label => $status) {
             $query = $this->baseQuery($search, $status);
@@ -42,6 +51,9 @@ class WmsDeliveryOrderController extends Controller
                 $query->where(function ($sub) {
                     $sub->whereNull('print_count')->orWhere('print_count', 0);
                 });
+            }
+            if ($label === 'HISTORY' && $monthStart) {
+                $query->whereBetween('penjualan_do.created_at', [$monthStart, $monthEnd]);
             }
             $counts[$label] = $query->count();
         }
@@ -54,7 +66,11 @@ class WmsDeliveryOrderController extends Controller
             });
         }
 
-        $paginator = $paginator->orderBy('penjualan_do.id', 'desc')->paginate(20);
+        if ($monthStart) {
+            $paginator->whereBetween('penjualan_do.created_at', [$monthStart, $monthEnd]);
+        }
+
+        $paginator = $paginator->orderBy('penjualan_do.id', 'desc')->paginate(10);
 
         $rows = [];
         $no = ($paginator->currentPage() - 1) * $paginator->perPage();
@@ -88,6 +104,7 @@ class WmsDeliveryOrderController extends Controller
                 'generated_at' => date('c'),
                 'tab'          => $tab,
                 'only_unprinted' => $onlyUnprinted,
+                'month'        => $month !== '' ? $month : null,
                 'search'       => $search,
                 'tabs'         => $tabs,
                 'rows'         => $rows,
@@ -106,8 +123,10 @@ class WmsDeliveryOrderController extends Controller
      */
     public function show(Request $request, $id)
     {
+        // 'member' sengaja tidak di-eager load: primary key alamat kirim
+        // berupa string desimal (mis. 37.1) dan eager load Eloquent
+        // membulatkannya menjadi 37 sehingga relasinya kosong.
         $do = PackingOrder::with([
-            'member',
             'customer',
             'warehouse',
             'vendor',
@@ -172,9 +191,11 @@ class WmsDeliveryOrderController extends Controller
                     'status_code'       => $status,
                     'status'            => $this->statusLabel($status),
                     'warehouse'         => $do->warehouse->name ?? '-',
-                    'customer'          => $do->customer->name ?? '-',
+                    // Trans menampilkan customer dari alamat kirim (member),
+                    // bukan nama master customer.
+                    'customer'          => $do->member->name ?? ($do->customer->name ?? '-'),
                     'customer_address'  => $do->customer->address ?? '-',
-                    'contact_label'     => $do->member->label ?? '-',
+                    'contact_label'     => $do->member->contact_person ?: ($do->member->pic ?: '-'),
                     'contact_address'   => $do->member->address ?? '-',
                     'contact_phone'     => $do->member->phone ?? '-',
                     'ekspedisi'         => $do->vendor->name ?? '-',
@@ -217,6 +238,38 @@ class WmsDeliveryOrderController extends Controller
         } catch (\Throwable $e) {
             return $this->fail('Print SPK gagal: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Cetak SJ — sama dengan tombol Print DO di Trans (Crystal do.rpt).
+     * File hasil export dibaca ulang dan dikirim sebagai application/pdf.
+     */
+    public function printSuratJalan(Request $request, $id)
+    {
+        $do = PackingOrder::find($id);
+
+        if (!$do) {
+            return $this->fail('DO tidak ditemukan.', 404);
+        }
+
+        $this->loginTransUser($request);
+
+        try {
+            $path = $this->transController()->exportSuratJalanPdf($id);
+        } catch (\Throwable $e) {
+            return $this->fail('Cetak SJ gagal: ' . $e->getMessage());
+        }
+
+        if (!is_file($path)) {
+            return $this->fail('Cetak SJ gagal: file export tidak terbentuk.');
+        }
+
+        $filename = 'SJ-' . ($do->do_code ?: $do->code ?: $id) . '.pdf';
+
+        return response(file_get_contents($path), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
     }
 
     /**

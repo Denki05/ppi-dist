@@ -323,6 +323,54 @@ class DeliveryOrderController extends Controller
         exit();
     }
 
+    /**
+     * Export surat jalan (Crystal do.rpt) ke file PDF dan kembalikan path-nya.
+     * Dipakai endpoint API WMS (print-sj) agar PDF bisa diproksikan.
+     */
+    public function exportSuratJalanPdf($id)
+    {
+        $result = PackingOrder::where('id', $id)->first();
+
+        if ($result === null) {
+            abort(404);
+        }
+
+        $my_report = public_path('cr/do/do.rpt');
+        $my_pdf = public_path('cr/do/export/' . $result->do_code . '.pdf');
+
+        $my_server = "LOCAL";
+        $my_user = "root";
+        $my_password = "";
+        $my_database = "ppi-dist";
+        $COM_Object = "CrystalDesignRunTime.Application";
+
+        //-Create new COM object-depends on your Crystal Report version
+        $crapp= New COM($COM_Object) or die("Unable to Create Object");
+        $creport = $crapp->OpenReport($my_report,1); // call rpt report
+
+        //- Set database logon info - must have
+        $creport->Database->Tables(1)->SetLogOnInfo($my_server, $my_database, $my_user, $my_password);
+
+        //- field prompt or else report will hang - to get through
+        $creport->EnableParameterPrompting = FALSE;
+        $creport->RecordSelectionFormula = "{penjualan_do.id}= $result->id";
+
+
+        //export to PDF process
+        $creport->ExportOptions->DiskFileName=$my_pdf; //export to pdf
+        $creport->ExportOptions->PDFExportAllPages=true;
+        $creport->ExportOptions->DestinationType=1; // export to file
+        $creport->ExportOptions->FormatType=31; // PDF type
+        $creport->Export(false);
+
+        //------ Release the variables ------
+        $creport = null;
+        $crapp = null;
+        $ObjectFactory = null;
+
+        return $my_pdf;
+    }
+
     public function packed(Request $request)
     {
         if (Auth::user()->is_superuser == 0) {
