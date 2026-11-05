@@ -1686,6 +1686,7 @@ class PackingOrderController extends Controller
                 JOIN penjualan_so_item soi ON soi.id = item.so_item_id
                 JOIN master_customer_other_addresses coa ON s.customer_other_address_id = coa.id
                 WHERE d.status = 6
+                    AND YEAR(s.so_date) = 2026
                 GROUP BY d.id, s.customer_other_address_id, s.code, s.brand_name,
                         s.so_date, det.discount_1, item.usd_disc, det.purchase_total_idr, det.discount_idr
             ");

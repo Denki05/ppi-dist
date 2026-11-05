@@ -90,6 +90,8 @@ class WmsKomplainController extends Controller
             $tabs[] = ['status' => $label, 'count' => $count];
         }
 
+        $userId = (string) ($request->attributes->get('wms_user')['sub'] ?? '');
+
         return response()->json([
             'status' => 'success',
             'data'   => [
@@ -98,6 +100,9 @@ class WmsKomplainController extends Controller
                 'search'       => $search,
                 'tabs'         => $tabs,
                 'rows'         => $rows,
+                'permissions'  => [
+                    'can_approve' => $this->canApprove($userId),
+                ],
                 'meta'         => [
                     'page'      => $paginator->currentPage(),
                     'per_page'  => $paginator->perPage(),
@@ -177,6 +182,7 @@ class WmsKomplainController extends Controller
                 'rows'         => $rows,
                 'can_acc'      => $qc->status == QualityControl2::STATUS['ACTIVE'] && $canApprove,
                 'acc_blocked'  => $this->accBlockedReason($qc, $canApprove),
+                'can_pdf'      => (int) $qc->status === QualityControl2::STATUS['ACC'],
             ],
         ]);
     }
@@ -215,6 +221,26 @@ class WmsKomplainController extends Controller
                 'id'     => (int) $qc->id,
                 'status' => 'ACC',
             ],
+        ]);
+    }
+
+    /**
+     * Surat Jalan komplain (PDF) untuk komplain yang sudah ACC.
+     */
+    public function pdf(Request $request, $id)
+    {
+        $qc = QualityControl2::find((int) $id);
+
+        if (!$qc) {
+            return $this->fail('Komplain tidak ditemukan.', 404);
+        }
+
+        $pdf = \PDF::loadView('superuser.gudang.quality_control_2.pdf_sj_komplain', ['result' => $qc])
+            ->setPaper('a5', 'landscape');
+
+        return response($pdf->output(), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $qc->code . '.pdf"',
         ]);
     }
 

@@ -66,6 +66,22 @@ class DeliveryOrderController extends Controller
         });
     }
 
+    /**
+     * Dipakai WMS: otorisasi sudah dilakukan lewat token WMS, jadi akses
+     * menu Trans tidak dicek ulang. Tidak mengubah perilaku UI Trans.
+     */
+    public function allowWms()
+    {
+        $this->access = (object) [
+            'user'        => true,
+            'can_read'    => 1,
+            'can_print'   => 1,
+            'can_approve' => 1,
+        ];
+
+        return $this;
+    }
+
     public function json(Request $request, DeliveryOrdersTable $datatable)
     {
         return $datatable->with('show', $request->show)->build($request);
