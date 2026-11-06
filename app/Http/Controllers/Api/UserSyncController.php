@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\ModuleAccessService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -62,7 +63,7 @@ class UserSyncController extends Controller
                 ? $data['modul_akses']
                 : json_decode((string) $data['modul_akses'], true);
             $mods = is_array($mods)
-                ? array_values(array_intersect($mods, ['MIS', 'CRM', 'AO', 'APM', 'TRS', 'DSG']))
+                ? ModuleAccessService::normalize($mods)
                 : [];
 
             if (Schema::hasColumn('superusers', 'modul_akses')) {

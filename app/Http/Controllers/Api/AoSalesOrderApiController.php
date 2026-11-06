@@ -766,8 +766,9 @@ class AoSalesOrderApiController extends Controller
                     $so->idr_rate = 1; // samakan store PPN (idr_rate=1)
                 }
             }
-            // Auto estimate untuk CASH/TEMPO (samakan SalesOrderStoreService)
-            if (in_array($typeName, ['CASH', 'TEMPO'], true)) {
+            // Auto estimate untuk CASH/TEMPO (samakan SalesOrderStoreService).
+            // PPN tidak memakai estimate/proforma: lanjutkan() langsung ke SO Lanjutan.
+            if (!$isPpn && in_array($typeName, ['CASH', 'TEMPO'], true)) {
                 $so->is_estimate = 1;
                 $so->estimate_code = $this->generateEstimateCode();
             } else {
@@ -846,7 +847,8 @@ class AoSalesOrderApiController extends Controller
             // 1-jalan: SO lanjutan dari estimate CASH => otomatis buatkan dokumen
             // proforma status "terbuat" (warehouse dikosongkan, diisi saat kalkulasi).
             // Idempoten + non-blocking: gagal = admin buat manual seperti biasa.
-            if (!$isIndent && strtoupper(trim((string) $so->type_transaction)) === 'CASH') {
+            // PPN dikecualikan: PPN CASH langsung ke SO/PPN Lanjutan tanpa proforma.
+            if (!$isPpn && !$isIndent && strtoupper(trim((string) $so->type_transaction)) === 'CASH') {
                 try {
                     $this->autoBuatProformaTerbuat($so);
                     $so->refresh();

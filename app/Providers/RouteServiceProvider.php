@@ -37,6 +37,8 @@ class RouteServiceProvider extends ServiceProvider
     {
         $this->mapApiRoutes();
 
+        $this->mapWmsApiRoutes();
+
         $this->mapWebRoutes();
 
         $this->mapSuperuserRoutes();
@@ -69,6 +71,21 @@ class RouteServiceProvider extends ServiceProvider
             ->middleware('api')
             ->namespace($this->namespace)
             ->group(base_path('routes/api.php'));
+    }
+
+    /**
+     * Route WMS dipisah dari grup "api" supaya tidak ikut throttle:60,1
+     * (per IP, dipakai bersama seluruh user WMS). Batasnya diatur di file
+     * route masing-masing (300/menit).
+     *
+     * @return void
+     */
+    protected function mapWmsApiRoutes()
+    {
+        Route::prefix('api')
+            ->middleware('bindings')
+            ->namespace($this->namespace)
+            ->group(base_path('routes/wms_api.php'));
     }
 
     protected function mapSuperuserRoutes()
