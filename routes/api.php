@@ -173,6 +173,7 @@ Route::group(['prefix' => 'wms', 'middleware' => 'wms.auth'], function () {
     Route::post('delivery-orders/{id}/packed', [\App\Http\Controllers\Api\WmsDeliveryOrderController::class, 'packed'])->where('id', '[0-9]+');
     Route::post('delivery-orders/{id}/sending', [\App\Http\Controllers\Api\WmsDeliveryOrderController::class, 'sending'])->where('id', '[0-9]+');
     Route::post('delivery-orders/{id}/sent', [\App\Http\Controllers\Api\WmsDeliveryOrderController::class, 'sent'])->where('id', '[0-9]+');
+    Route::get('performance', [\App\Http\Controllers\Api\WmsDeliveryOrderController::class, 'performance']);
 });
 
 // Kemasan & relasi produk-kemasan (ditambahkan agar konsumsi SO valid)

@@ -18,7 +18,7 @@ return [
 
     // User yang ditandai sebagai pengambil alih operasional (badge Overtake).
     'overtake_user_ids' => array_values(array_filter(array_map('trim',
-        explode(',', env('WMS_OVERTAKE_USER_IDS', '33'))
+        explode(',', env('WMS_OVERTAKE_USER_IDS', '1,33'))
     ))),
 
     // Masa berlaku API token WMS (detik). Default 8 jam.

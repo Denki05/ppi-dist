@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Superuser\Penjualan\DeliveryOrderController as TransDeliveryOrderController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Checker Transaksi (DO) untuk modul WMS.
@@ -365,6 +366,144 @@ class WmsDeliveryOrderController extends Controller
         }
 
         return $this->actionResult($response, $id, 6, 'DO berhasil update resi.');
+    }
+
+    /**
+     * Kinerja logistik untuk dashboard WMS, per bulan.
+     * Bulan berjalan (sejak tanggal 1) dibandingkan dengan bulan lalu.
+     * Kecepatan = DO dibuat sampai berangkat (date_sent, status >= 5);
+     * pergeseran update resi (status 6) memakai updated_at record.
+     * Ditambah aging: dokumen yang belum selesai terlama (status 3/4/5)
+     * dan DO berangkat > 5 hari tanpa resi.
+     */
+    public function performance(Request $request)
+    {
+        $now = now();
+
+        // Riwayat 6 bulan terakhir (bulan berjalan paling baru). Satu respons
+        // berisi semuanya supaya filter bulan di dashboard bisa dipilih tanpa reload.
+        $months = [];
+        $startBase = $now->copy()->startOfMonth();
+        for ($i = 0; $i < 6; $i++) {
+            $start = $startBase->copy()->subMonths($i);
+            $metrik = $this->metricsPeriode($start, $start->copy()->endOfMonth());
+            $metrik['month'] = $start->format('Y-m');
+            $months[$start->format('Y-m')] = $metrik;
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'generated_at' => date('c'),
+                'months'       => $months,
+                'aging'        => $this->agingPending(),
+            ],
+        ]);
+    }
+
+    /**
+     * Metrik kinerja untuk satu periode berangkat DO (partial compare by date_sent).
+     */
+    private function metricsPeriode($start, $end)
+    {
+        $berangkat = DB::table('penjualan_do')
+            ->whereNotNull('date_sent')
+            ->where('date_sent', '!=', '0000-00-00')
+            ->where('date_sent', '>=', $start->toDateString())
+            ->where('date_sent', '<=', $end->toDateString())
+            ->get(['id', 'do_code', 'created_at', 'date_sent', 'updated_at', 'status']);
+
+        $created = DB::table('penjualan_do')
+            ->whereBetween('created_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])
+            ->count();
+
+        $resiDone = 0;
+        $within1Day = 0;
+        $sumBerangkat = 0.0;
+        $sumSampaiResi = 0.0;
+        $nSampaiResi = 0;
+        $best = null;
+
+        foreach ($berangkat as $row) {
+            $tsBerangkat = strtotime($row->date_sent);
+            $tsDibuat    = $row->created_at ? strtotime($row->created_at) : $tsBerangkat;
+            $tsResi      = $row->updated_at ? strtotime($row->updated_at) : null;
+
+            $durasi = max(0.0, ($tsBerangkat - $tsDibuat) / 86400);
+
+            $sumBerangkat += $durasi;
+            if ($durasi <= 1) {
+                $within1Day++;
+            }
+
+            if ((int) $row->status === 6 && $tsResi !== null) {
+                $resiDone++;
+                $sumSampaiResi += max(0.0, ($tsResi - $tsBerangkat) / 86400);
+                $nSampaiResi++;
+            }
+
+            if ($best === null || $durasi < $best['hari']) {
+                $best = [
+                    'code' => $row->do_code ?: ('DO-' . $row->id),
+                    'hari' => round($durasi, 1),
+                ];
+            }
+        }
+
+        $berangkatBase = $berangkat->count();
+
+        return [
+            'created'            => (int) $created,
+            'depart'             => $berangkatBase,
+            'resi_done'          => $resiDone,
+            'avg_days_to_depart' => $berangkatBase ? round($sumBerangkat / $berangkatBase, 2) : null,
+            'within_1day'        => $within1Day,
+            'within_1day_pct'    => $berangkatBase ? (int) round(100 * $within1Day / $berangkatBase) : null,
+            'avg_days_resi_lag'  => $nSampaiResi ? round($sumSampaiResi / $nSampaiResi, 2) : null,
+            'fastest'            => $best,
+        ];
+    }
+
+    /**
+     * Aging dokumen pending: status 3 (List SPK), 4 (Cetak SJ), 5 (Update Resi),
+     * plus DO berangkat > 5 hari tanpa resi.
+     */
+    private function agingPending()
+    {
+        $now = now();
+
+        $aging = [];
+        foreach ([3 => 'list_spk', 4 => 'cetak_sj', 5 => 'update_resi'] as $status => $key) {
+            $table = DB::table('penjualan_do')->where('status', $status)
+                ->whereNotNull('created_at')
+                ->where('created_at', '!=', '0000-00-00 00:00:00');
+
+            $count = (clone $table)->count();
+            $oldest = (clone $table)->orderBy('created_at')->first(['id', 'do_code', 'created_at']);
+
+            $aging[$key] = [
+                'count'       => (int) $count,
+                'oldest_days' => $oldest ? max(0, $now->diffInDays(\Carbon\Carbon::parse($oldest->created_at))) : null,
+                'oldest_code' => $oldest ? ($oldest->do_code ?: ('DO-' . $oldest->id)) : null,
+            ];
+        }
+
+        // DO sudah berangkat tetapi update resi molor.
+        $late = DB::table('penjualan_do')
+            ->where('status', 5)
+            ->whereNotNull('date_sent')
+            ->where('date_sent', '!=', '0000-00-00')
+            ->where('date_sent', '<', $now->copy()->subDays(5)->toDateString())
+            ->orderBy('date_sent')
+            ->get(['id', 'do_code', 'date_sent']);
+
+        $aging['resi_late'] = [
+            'count'       => $late->count(),
+            'oldest_days' => $late->count() ? max(0, $now->diffInDays(\Carbon\Carbon::parse($late->first()->date_sent))) : null,
+            'oldest_code' => $late->count() ? ($late->first()->do_code ?: ('DO-' . $late->first()->id)) : null,
+        ];
+
+        return $aging;
     }
 
     private function baseQuery($search, $status)
