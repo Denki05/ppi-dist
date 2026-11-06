@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Entities\Account\Superuser;
 use App\Entities\Gudang\MutasiOut;
 use App\Entities\Gudang\MutasiShowroom;
+use App\Entities\Setting\UserMenu;
 use App\Http\Controllers\Controller;
 use App\Services\StockService;
 use Illuminate\Http\Request;
@@ -373,6 +375,15 @@ class WmsMutasiController extends Controller
      */
     public function pdf(Request $request, $type, $id)
     {
+        $printMenu = $type === 'showroom'
+            ? 'superuser.gudang.mutasi_showroom'
+            : 'superuser.gudang.mutasi_out';
+
+        if (!$this->menuRight($request, 'can_print', $printMenu)
+            && !$this->menuRight($request, 'can_print', 'superuser.gudang.sj_mutasi_internal')) {
+            return $this->fail('Akun ini tidak punya hak cetak Mutasi di Trans.', 403);
+        }
+
         $mutasi = $this->findMutasi($type, $id);
 
         if (!$mutasi) {
@@ -511,6 +522,8 @@ class WmsMutasiController extends Controller
             ? '/api/wms/mutasi/' . $type . '/' . (int) $mutasi->id . '/image'
             : null;
 
+        // Setara modul Trans: aksi checker tidak dibatasi hak per-menu di controller,
+        // akses halaman yang membatasi.
         return [
             'type'    => $type,
             'step'    => $step,
@@ -526,6 +539,31 @@ class WmsMutasiController extends Controller
                 'print_blocked'  => (int) $mutasi->print_count >= 2 && (int) $userId !== 1,
             ],
         ];
+    }
+
+    private function menuRight(Request $request, $column, $routeName)
+    {
+        return $this->menuRightByUser($this->userId($request), $column, $routeName);
+    }
+
+    private function menuRightByUser($userId, $column, $routeName)
+    {
+        $user = Superuser::find((int) $userId);
+
+        if (!$user) {
+            return false;
+        }
+
+        if ((int) $user->is_superuser === 1) {
+            return true;
+        }
+
+        return UserMenu::where('user_id', $user->id)
+            ->where($column, 1)
+            ->whereHas('menu', function ($query) use ($routeName) {
+                $query->where('route_name', $routeName);
+            })
+            ->exists();
     }
 
     private function userId(Request $request)

@@ -67,17 +67,31 @@ class DeliveryOrderController extends Controller
     }
 
     /**
-     * Dipakai WMS: otorisasi sudah dilakukan lewat token WMS, jadi akses
-     * menu Trans tidak dicek ulang. Tidak mengubah perilaku UI Trans.
+     * Dipakai WMS: user Trans sudah di-set dari token WMS, lalu hak menu DO
+     * dibaca dari setting_user_menu agar sama dengan aturan UI Trans.
      */
     public function allowWms()
     {
-        $this->access = (object) [
-            'user'        => true,
-            'can_read'    => 1,
-            'can_print'   => 1,
-            'can_approve' => 1,
-        ];
+        $user = Auth::user();
+
+        if ($user && (int) $user->is_superuser === 1) {
+            $this->access = (object) [
+                'user'        => true,
+                'can_read'    => 1,
+                'can_print'   => 1,
+                'can_approve' => 1,
+            ];
+
+            return $this;
+        }
+
+        $this->access = $user
+            ? (new UserMenu)->where('user_id', $user->id)
+                ->whereHas('menu', function ($query) {
+                    $query->where('route_name', 'superuser.penjualan.delivery_order');
+                })
+                ->first()
+            : null;
 
         return $this;
     }

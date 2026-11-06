@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Entities\Account\Superuser;
 use App\Entities\Penjualan\PackingOrder;
+use App\Entities\Setting\UserMenu;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Superuser\Penjualan\DeliveryOrderController as TransDeliveryOrderController;
 use Illuminate\Http\Request;
@@ -228,6 +229,10 @@ class WmsDeliveryOrderController extends Controller
      */
     public function printManifest(Request $request, $id)
     {
+        if (!$this->canDo($request, 'can_print')) {
+            return $this->fail('Akun ini tidak punya hak cetak SPK di Trans.', 403);
+        }
+
         if (!PackingOrder::where('id', $id)->exists()) {
             return $this->fail('DO tidak ditemukan.', 404);
         }
@@ -247,6 +252,10 @@ class WmsDeliveryOrderController extends Controller
      */
     public function printSuratJalan(Request $request, $id)
     {
+        if (!$this->canDo($request, 'can_print')) {
+            return $this->fail('Akun ini tidak punya hak cetak SJ di Trans.', 403);
+        }
+
         $do = PackingOrder::find($id);
 
         if (!$do) {
@@ -278,6 +287,10 @@ class WmsDeliveryOrderController extends Controller
      */
     public function packed(Request $request, $id)
     {
+        if (!$this->canDo($request, 'can_approve')) {
+            return $this->fail('Akun ini tidak punya hak proses DO di Trans.', 403);
+        }
+
         $do = PackingOrder::with('do_detail')->find($id);
 
         if (!$do) {
@@ -318,6 +331,10 @@ class WmsDeliveryOrderController extends Controller
      */
     public function sending(Request $request, $id)
     {
+        if (!$this->canDo($request, 'can_approve')) {
+            return $this->fail('Akun ini tidak punya hak proses DO di Trans.', 403);
+        }
+
         if (!PackingOrder::where('id', $id)->exists()) {
             return $this->fail('DO tidak ditemukan.', 404);
         }
@@ -339,6 +356,10 @@ class WmsDeliveryOrderController extends Controller
      */
     public function sent(Request $request, $id)
     {
+        if (!$this->canDo($request, 'can_approve')) {
+            return $this->fail('Akun ini tidak punya hak proses DO di Trans.', 403);
+        }
+
         $do = PackingOrder::with(['do_detail_cost', 'vendor'])->find($id);
 
         if (!$do) {
@@ -547,6 +568,30 @@ class WmsDeliveryOrderController extends Controller
     private function transController()
     {
         return app(TransDeliveryOrderController::class)->allowWms();
+    }
+
+    /**
+     * Hak menu DO milik user token WMS, disamakan dengan guard Trans.
+     */
+    private function canDo(Request $request, $column)
+    {
+        $payload = $request->attributes->get('wms_user', []);
+        $user = Superuser::find((int) ($payload['sub'] ?? 0));
+
+        if (!$user) {
+            return false;
+        }
+
+        if ((int) $user->is_superuser === 1) {
+            return true;
+        }
+
+        return UserMenu::where('user_id', $user->id)
+            ->where($column, 1)
+            ->whereHas('menu', function ($query) {
+                $query->where('route_name', 'superuser.penjualan.delivery_order');
+            })
+            ->exists();
     }
 
     /**
