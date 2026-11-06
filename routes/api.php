@@ -149,7 +149,9 @@ Route::group(['prefix' => 'wms', 'middleware' => 'wms.auth'], function () {
     Route::get('delivery-orders', [\App\Http\Controllers\Api\WmsDeliveryOrderController::class, 'index']);
     Route::get('delivery-orders/{id}', [\App\Http\Controllers\Api\WmsDeliveryOrderController::class, 'show'])->where('id', '[0-9]+');
     Route::get('delivery-orders/{id}/print-spk', [\App\Http\Controllers\Api\WmsDeliveryOrderController::class, 'printManifest'])->where('id', '[0-9]+');
+    Route::get('delivery-orders/{id}/print-sj', [\App\Http\Controllers\Api\WmsDeliveryOrderController::class, 'printSuratJalan'])->where('id', '[0-9]+');
     Route::post('delivery-orders/{id}/packed', [\App\Http\Controllers\Api\WmsDeliveryOrderController::class, 'packed'])->where('id', '[0-9]+');
     Route::post('delivery-orders/{id}/sending', [\App\Http\Controllers\Api\WmsDeliveryOrderController::class, 'sending'])->where('id', '[0-9]+');
     Route::post('delivery-orders/{id}/sent', [\App\Http\Controllers\Api\WmsDeliveryOrderController::class, 'sent'])->where('id', '[0-9]+');
+    Route::get('performance', [\App\Http\Controllers\Api\WmsDeliveryOrderController::class, 'performance']);
 });

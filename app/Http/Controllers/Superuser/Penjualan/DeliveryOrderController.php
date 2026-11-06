@@ -276,14 +276,36 @@ class DeliveryOrderController extends Controller
             }
         }
 
-        $result = PackingOrder::where('id',$id)->first();
-        
-        $my_report = "C:\\xampp\\htdocs\\ppi-dist\public\\cr\\do\\do.rpt"; 
-        $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\do\\export\\'.$result->do_code.'.pdf';
+        $file = $this->exportSuratJalanPdf($id);
 
-        $my_server = "LOCAL"; 
-        $my_user = "root"; 
-        $my_password = ""; 
+        header("Content-Description: File Transfer"); 
+        header("Content-Type: application/octet-stream"); 
+        header("Content-Transfer-Encoding: Binary"); 
+        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
+        ob_clean();
+        flush();
+        readfile ($file);
+        exit();
+    }
+
+    /**
+     * Export surat jalan (Crystal do.rpt) ke file PDF dan kembalikan path-nya.
+     * Dipakai print() dan endpoint API WMS (print-sj).
+     */
+    public function exportSuratJalanPdf($id)
+    {
+        $result = PackingOrder::where('id', $id)->first();
+
+        if ($result === null) {
+            abort(404);
+        }
+
+        $my_report = public_path('cr/do/do.rpt');
+        $my_pdf = public_path('cr/do/export/' . $result->do_code . '.pdf');
+
+        $my_server = "LOCAL";
+        $my_user = "root";
+        $my_password = "";
         $my_database = "ppi-dist";
         $COM_Object = "CrystalDesignRunTime.Application";
 
@@ -311,16 +333,7 @@ class DeliveryOrderController extends Controller
         $crapp = null;
         $ObjectFactory = null;
 
-        $file = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\do\\export\\'.$result->do_code.'.pdf';
-
-        header("Content-Description: File Transfer"); 
-        header("Content-Type: application/octet-stream"); 
-        header("Content-Transfer-Encoding: Binary"); 
-        header("Content-Disposition: attachment; filename=\"". basename($file) ."\""); 
-        ob_clean();
-        flush();
-        readfile ($file);
-        exit();
+        return $my_pdf;
     }
 
     public function packed(Request $request, SalesOrderClosingService $closingService)
