@@ -121,10 +121,6 @@ class WmsMutasiController extends Controller
      */
     public function checklist(Request $request, $type, $id)
     {
-        if (!$this->menuRight($request, 'can_update')) {
-            return $this->fail('Akun ini tidak punya hak ubah Mutasi di Trans.', 403);
-        }
-
         $mutasi = $this->findMutasi($type, $id);
 
         if (!$mutasi) {
@@ -188,10 +184,6 @@ class WmsMutasiController extends Controller
      */
     public function cancel(Request $request, $type, $id)
     {
-        if (!$this->menuRight($request, 'can_update')) {
-            return $this->fail('Akun ini tidak punya hak ubah Mutasi di Trans.', 403);
-        }
-
         $mutasi = $this->findMutasi($type, $id);
 
         if (!$mutasi) {
@@ -249,10 +241,6 @@ class WmsMutasiController extends Controller
      */
     public function next(Request $request, $type, $id)
     {
-        if (!$this->menuRight($request, 'can_update')) {
-            return $this->fail('Akun ini tidak punya hak ubah Mutasi di Trans.', 403);
-        }
-
         $mutasi = $this->findMutasi($type, $id);
 
         if (!$mutasi) {
@@ -284,10 +272,6 @@ class WmsMutasiController extends Controller
      */
     public function updateBarang(Request $request, $type, $id)
     {
-        if (!$this->menuRight($request, 'can_update')) {
-            return $this->fail('Akun ini tidak punya hak ubah Mutasi di Trans.', 403);
-        }
-
         $mutasi = $this->findMutasi($type, $id);
 
         if (!$mutasi) {
@@ -391,7 +375,12 @@ class WmsMutasiController extends Controller
      */
     public function pdf(Request $request, $type, $id)
     {
-        if (!$this->menuRight($request, 'can_print')) {
+        $printMenu = $type === 'showroom'
+            ? 'superuser.gudang.mutasi_showroom'
+            : 'superuser.gudang.mutasi_out';
+
+        if (!$this->menuRight($request, 'can_print', $printMenu)
+            && !$this->menuRight($request, 'can_print', 'superuser.gudang.sj_mutasi_internal')) {
             return $this->fail('Akun ini tidak punya hak cetak Mutasi di Trans.', 403);
         }
 
@@ -533,32 +522,31 @@ class WmsMutasiController extends Controller
             ? '/api/wms/mutasi/' . $type . '/' . (int) $mutasi->id . '/image'
             : null;
 
-        $canUpdate = $this->menuRightByUser($userId, 'can_update');
-        $canPrint  = $this->menuRightByUser($userId, 'can_print');
-
+        // Setara modul Trans: aksi checker tidak dibatasi hak per-menu di controller,
+        // akses halaman yang membatasi.
         return [
             'type'    => $type,
             'step'    => $step,
             'header'  => $header,
             'details' => $rows,
             'flags'   => [
-                'can_checklist'  => $canUpdate && $step === 1,
-                'can_print'      => $canPrint && $step === 2,
-                'can_cancel'     => $canUpdate && $step === 2,
-                'can_next'       => $canUpdate && $step === 2,
-                'can_update'     => $canUpdate && $step === 3 && (int) $mutasi->status_barang !== 2,
+                'can_checklist'  => $step === 1,
+                'can_print'      => $step === 2,
+                'can_cancel'     => $step === 2,
+                'can_next'       => $step === 2,
+                'can_update'     => $step === 3 && (int) $mutasi->status_barang !== 2,
                 'can_view_image' => !empty($mutasi->image),
                 'print_blocked'  => (int) $mutasi->print_count >= 2 && (int) $userId !== 1,
             ],
         ];
     }
 
-    private function menuRight(Request $request, $column)
+    private function menuRight(Request $request, $column, $routeName)
     {
-        return $this->menuRightByUser($this->userId($request), $column);
+        return $this->menuRightByUser($this->userId($request), $column, $routeName);
     }
 
-    private function menuRightByUser($userId, $column)
+    private function menuRightByUser($userId, $column, $routeName)
     {
         $user = Superuser::find((int) $userId);
 
@@ -572,8 +560,8 @@ class WmsMutasiController extends Controller
 
         return UserMenu::where('user_id', $user->id)
             ->where($column, 1)
-            ->whereHas('menu', function ($query) {
-                $query->where('route_name', 'superuser.gudang.sj_mutasi_internal');
+            ->whereHas('menu', function ($query) use ($routeName) {
+                $query->where('route_name', $routeName);
             })
             ->exists();
     }

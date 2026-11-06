@@ -995,8 +995,10 @@ class PackingOrderController extends Controller
                     $this->createInvoiceIfNeeded($getDo->id);
                 }
 
-                // Kirim notifikasi
-                $user = User::find(29);
+                // Kirim notifikasi hanya saat DO baru masuk logistik. Endpoint ini
+                // bisa terpanggil ulang (mis. DO sudah status 3), dan notifikasi
+                // ulang untuk DO yang sama hanya membuat lonceng WMS dobel.
+                $user = $previousStatus < 3 ? User::find(29) : null;
                 if($user){
                     $user->notify(new DoNotification($getDo));
                 }

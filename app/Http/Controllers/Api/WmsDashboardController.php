@@ -30,7 +30,23 @@ class WmsDashboardController extends Controller
                     'siap_kirim'  => PackingOrder::where('status', 4)->count(),
                     'belum_resi'  => PackingOrder::where('status', 5)->count(),
                 ],
+                // Dipisah per tipe agar pengingat dashboard bisa membuka
+                // tab tipe yang benar-benar punya pekerjaan.
                 'mutasi'       => [
+                    'showroom' => [
+                        'perlu_cek'     => MutasiShowroom::where('status', 2)
+                            ->where('status_barang', 0)->count(),
+                        'belum_diambil' => MutasiShowroom::where('status', 2)
+                            ->where('status_barang', 1)->count(),
+                    ],
+                    'gudang'   => [
+                        'perlu_cek'     => MutasiOut::where('status', MutasiOut::STATUS['PUBLISH'])
+                            ->where('status_barang', 0)->count(),
+                        'belum_diambil' => MutasiOut::whereIn('status', [
+                                MutasiOut::STATUS['PUBLISH'],
+                                MutasiOut::STATUS['ACC'],
+                            ])->where('status_barang', 1)->count(),
+                    ],
                     'perlu_cek'     => MutasiOut::where('status', MutasiOut::STATUS['PUBLISH'])
                             ->where('status_barang', 0)->count()
                         + MutasiShowroom::where('status', 2)

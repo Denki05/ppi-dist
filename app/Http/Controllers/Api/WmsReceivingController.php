@@ -163,39 +163,11 @@ class WmsReceivingController extends Controller
     }
 
     /**
-     * ACC penerimaan. Memakai ReceivingService milik Trans agar stok & PO
-     * diproses dengan aturan yang sama.
+     * ACC Receiving diproses Admin di modul Trans, bukan dari WMS.
      */
     public function acc(Request $request, $id)
     {
-        $userId = (string) ($request->attributes->get('wms_user')['sub'] ?? '');
-
-        if (!$this->canApprove($userId)) {
-            return $this->fail('Akun ini tidak punya hak ACC Receiving di Trans.', 403);
-        }
-
-        $receiving = Receiving::where('type', Receiving::TYPE['INBOUND'])->find((int) $id);
-
-        if (!$receiving) {
-            return $this->fail('Receiving tidak ditemukan.', 404);
-        }
-
-        $result = app(ReceivingService::class)->accReceiving($receiving->id, (int) $userId);
-
-        if ($result['status'] !== 'ok') {
-            $code = $result['status'] === 'not_ready' ? 409 : 500;
-
-            return $this->fail($result['message'], $code);
-        }
-
-        return response()->json([
-            'status'  => 'success',
-            'message' => $result['message'],
-            'data'    => [
-                'id'     => (int) $receiving->id,
-                'status' => 'ACC',
-            ],
-        ]);
+        return $this->fail('ACC Receiving dilakukan di modul Trans oleh Admin.', 403);
     }
 
     /**
@@ -946,33 +918,7 @@ class WmsReceivingController extends Controller
 
     public function transaksiAcc(Request $request, $id)
     {
-        $userId = (string) ($request->attributes->get('wms_user')['sub'] ?? '');
-
-        if (!$this->menuRight($userId, 'superuser.gudang.quality_control', 'can_approve')) {
-            return $this->fail('Akun ini tidak punya hak ACC Receiving - Transaksi di Trans.', 403);
-        }
-
-        $receiving = Receiving::where('type', Receiving::TYPE['RETURN'])->find((int) $id);
-
-        if (!$receiving) {
-            return $this->fail('Receiving - Transaksi tidak ditemukan.', 404);
-        }
-
-        if ((int) $receiving->status !== Receiving::STATUS['READY']) {
-            return $this->fail('ACC hanya tersedia untuk dokumen berstatus READY.', 409);
-        }
-
-        $result = app(ReceivingService::class)->accReceiving($receiving->id, (int) $userId);
-
-        if ($result['status'] !== 'ok') {
-            return $this->fail($result['message'], $result['status'] === 'not_ready' ? 409 : 500);
-        }
-
-        return response()->json([
-            'status'  => 'success',
-            'message' => $result['message'],
-            'data'    => ['id' => (int) $receiving->id, 'status' => 'ACC'],
-        ]);
+        return $this->fail('ACC Receiving - Transaksi dilakukan di modul Trans oleh Admin.', 403);
     }
 
     /**
