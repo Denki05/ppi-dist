@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Entities\Account\Superuser;
 use App\Entities\Gudang\MutasiOut;
 use App\Entities\Gudang\MutasiShowroom;
+use App\Entities\Setting\UserMenu;
 use App\Http\Controllers\Controller;
 use App\Services\StockService;
 use Illuminate\Http\Request;
@@ -119,6 +121,10 @@ class WmsMutasiController extends Controller
      */
     public function checklist(Request $request, $type, $id)
     {
+        if (!$this->menuRight($request, 'can_update')) {
+            return $this->fail('Akun ini tidak punya hak ubah Mutasi di Trans.', 403);
+        }
+
         $mutasi = $this->findMutasi($type, $id);
 
         if (!$mutasi) {
@@ -182,6 +188,10 @@ class WmsMutasiController extends Controller
      */
     public function cancel(Request $request, $type, $id)
     {
+        if (!$this->menuRight($request, 'can_update')) {
+            return $this->fail('Akun ini tidak punya hak ubah Mutasi di Trans.', 403);
+        }
+
         $mutasi = $this->findMutasi($type, $id);
 
         if (!$mutasi) {
@@ -239,6 +249,10 @@ class WmsMutasiController extends Controller
      */
     public function next(Request $request, $type, $id)
     {
+        if (!$this->menuRight($request, 'can_update')) {
+            return $this->fail('Akun ini tidak punya hak ubah Mutasi di Trans.', 403);
+        }
+
         $mutasi = $this->findMutasi($type, $id);
 
         if (!$mutasi) {
@@ -270,6 +284,10 @@ class WmsMutasiController extends Controller
      */
     public function updateBarang(Request $request, $type, $id)
     {
+        if (!$this->menuRight($request, 'can_update')) {
+            return $this->fail('Akun ini tidak punya hak ubah Mutasi di Trans.', 403);
+        }
+
         $mutasi = $this->findMutasi($type, $id);
 
         if (!$mutasi) {
@@ -373,6 +391,10 @@ class WmsMutasiController extends Controller
      */
     public function pdf(Request $request, $type, $id)
     {
+        if (!$this->menuRight($request, 'can_print')) {
+            return $this->fail('Akun ini tidak punya hak cetak Mutasi di Trans.', 403);
+        }
+
         $mutasi = $this->findMutasi($type, $id);
 
         if (!$mutasi) {
@@ -511,21 +533,49 @@ class WmsMutasiController extends Controller
             ? '/api/wms/mutasi/' . $type . '/' . (int) $mutasi->id . '/image'
             : null;
 
+        $canUpdate = $this->menuRightByUser($userId, 'can_update');
+        $canPrint  = $this->menuRightByUser($userId, 'can_print');
+
         return [
             'type'    => $type,
             'step'    => $step,
             'header'  => $header,
             'details' => $rows,
             'flags'   => [
-                'can_checklist'  => $step === 1,
-                'can_print'      => $step === 2,
-                'can_cancel'     => $step === 2,
-                'can_next'       => $step === 2,
-                'can_update'     => $step === 3 && (int) $mutasi->status_barang !== 2,
+                'can_checklist'  => $canUpdate && $step === 1,
+                'can_print'      => $canPrint && $step === 2,
+                'can_cancel'     => $canUpdate && $step === 2,
+                'can_next'       => $canUpdate && $step === 2,
+                'can_update'     => $canUpdate && $step === 3 && (int) $mutasi->status_barang !== 2,
                 'can_view_image' => !empty($mutasi->image),
                 'print_blocked'  => (int) $mutasi->print_count >= 2 && (int) $userId !== 1,
             ],
         ];
+    }
+
+    private function menuRight(Request $request, $column)
+    {
+        return $this->menuRightByUser($this->userId($request), $column);
+    }
+
+    private function menuRightByUser($userId, $column)
+    {
+        $user = Superuser::find((int) $userId);
+
+        if (!$user) {
+            return false;
+        }
+
+        if ((int) $user->is_superuser === 1) {
+            return true;
+        }
+
+        return UserMenu::where('user_id', $user->id)
+            ->where($column, 1)
+            ->whereHas('menu', function ($query) {
+                $query->where('route_name', 'superuser.gudang.sj_mutasi_internal');
+            })
+            ->exists();
     }
 
     private function userId(Request $request)

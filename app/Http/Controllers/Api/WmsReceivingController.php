@@ -3,7 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Entities\Account\Superuser;
+use App\Entities\Gudang\PurchaseOrderSummary;
 use App\Entities\Gudang\Receiving;
+use App\Entities\Gudang\ReceivingDetail;
+use App\Entities\Gudang\ReceivingQcLogs;
+use App\Entities\Gudang\StockMove;
+use App\Entities\Master\ProductMinStock;
+use App\Entities\Master\ProductPack;
 use App\Entities\Setting\UserMenu;
 use App\Http\Controllers\Controller;
 use App\Services\Receiving\ReceivingService;
@@ -76,6 +82,19 @@ class WmsReceivingController extends Controller
             $qtyPo = (float) $detail->quantity_po;
             $qtyRi = (float) ($detail->quantity_ri ?? 0);
             $selisih = (float) ($detail->selisih ?? ($qtyPo - $qtyRi));
+            $qcTotal = (float) $logs->sum('qty_qc');
+
+            $qcLogs = [];
+            foreach ($logs as $log) {
+                $qcLogs[] = [
+                    'id'          => (int) $log->id,
+                    'qty'         => (float) $log->qty_qc,
+                    'status'      => $log->status_qc(),
+                    'status_code' => (int) $log->status_qc,
+                    'is_sellable' => (int) $log->is_sellable,
+                    'is_approved' => (int) $log->is_approved,
+                ];
+            }
 
             $stats['items']++;
             $stats['qty_po'] += $qtyPo;
@@ -87,6 +106,7 @@ class WmsReceivingController extends Controller
             $stats['qc_approved'] += $qcApproved;
 
             $rows[] = [
+                'id'          => (int) $detail->id,
                 'no'          => $i + 1,
                 'product'     => $detail->product_pack
                     ? trim($detail->product_pack->code . ' - ' . $detail->product_pack->name, ' -')
@@ -103,6 +123,9 @@ class WmsReceivingController extends Controller
                 'qc_not_ok'   => $qcNotOk,
                 'qc_hold'     => $qcHold,
                 'qc_approved' => $qcApproved,
+                'qc_total'    => $qcTotal,
+                'remaining'   => max($qtyPo - $qcTotal, 0),
+                'qc_logs'     => $qcLogs,
             ];
         }
 
@@ -131,6 +154,10 @@ class WmsReceivingController extends Controller
                 'can_publish'  => $canUpdate && in_array((int) $receiving->status, [Receiving::STATUS['ACTIVE'], Receiving::STATUS['QC']]),
                 'can_cancel'   => $canUpdate && (int) $receiving->status === Receiving::STATUS['QC'],
                 'can_rollback' => $canUpdate && (int) $receiving->status === Receiving::STATUS['READY'],
+                'can_qc'         => $canUpdate && (int) $receiving->status === Receiving::STATUS['QC'],
+                'can_approve_qc' => $canApprove && (int) $receiving->status === Receiving::STATUS['QC'],
+                'can_delete_qc'  => $this->menuRight($userId, 'superuser.gudang.receiving.detail', 'can_delete')
+                    && (int) $receiving->status === Receiving::STATUS['QC'],
             ],
         ]);
     }
@@ -275,6 +302,270 @@ class WmsReceivingController extends Controller
     }
 
     /**
+     * Simpan satu log QC untuk detail receiving inbound (status harus QC).
+     */
+    public function storeQc(Request $request, $id, $detailId)
+    {
+        $userId = (string) ($request->attributes->get('wms_user')['sub'] ?? '');
+
+        if (!$this->canUpdate($userId)) {
+            return $this->fail('Akun ini tidak punya hak ubah Receiving di Trans.', 403);
+        }
+
+        $receiving = Receiving::where('type', Receiving::TYPE['INBOUND'])->find((int) $id);
+
+        if (!$receiving) {
+            return $this->fail('Receiving tidak ditemukan.', 404);
+        }
+
+        if ((int) $receiving->status !== Receiving::STATUS['QC']) {
+            return $this->fail('QC hanya bisa diinput saat status QC.', 409);
+        }
+
+        $detail = ReceivingDetail::where('receiving_id', $receiving->id)->find((int) $detailId);
+
+        if (!$detail) {
+            return $this->fail('Detail receiving tidak ditemukan.', 404);
+        }
+
+        $validator = \Validator::make($request->all(), [
+            'qty_qc'      => 'required|numeric|min:0.1',
+            'status_qc'   => 'required|in:OK,NOT OK,Not OK',
+            'is_sellable' => 'nullable|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->fail(implode(' ', $validator->errors()->all()), 422);
+        }
+
+        $qty = (float) $request->input('qty_qc');
+        $existing = (float) $detail->qcLogs()->sum('qty_qc');
+
+        if ($existing + $qty > (float) $detail->quantity_po) {
+            $sisa = (float) $detail->quantity_po - $existing;
+
+            return $this->fail('Total QC melebihi qty PO. Sisa maksimal: ' . rtrim(rtrim(number_format($sisa, 2, ',', '.'), '0'), ',') . '.', 422);
+        }
+
+        $attributes = [
+            'receiving_details_id' => $detail->id,
+            'product_packaging_id' => $detail->product_packaging_id,
+            'qty_qc'               => $qty,
+            'status_qc'            => strtoupper($request->input('status_qc')) === 'OK' ? 1 : 0,
+            'is_sellable'          => $request->boolean('is_sellable') ? 1 : 0,
+            'is_approved'          => 0,
+        ];
+
+        // receiving_qc_logs.id adalah PRIMARY KEY tanpa AUTO_INCREMENT di Trans;
+        // id diisi manual agar baris kedua dan seterusnya tidak gagal duplicate.
+        $log = null;
+        for ($attempt = 0; $attempt < 3; $attempt++) {
+            try {
+                $log = new ReceivingQcLogs($attributes);
+                $log->id = (int) ReceivingQcLogs::max('id') + 1;
+                $log->save();
+                break;
+            } catch (\Illuminate\Database\QueryException $e) {
+                if ($attempt === 2) {
+                    return $this->fail('Simpan QC gagal: ' . $e->getMessage(), 500);
+                }
+            }
+        }
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'QC berhasil disimpan.',
+            'data'    => ['id' => (int) $log->id],
+        ]);
+    }
+
+    /**
+     * Approve log QC saleable: potong PO summary dan tambahkan stok gudang.
+     * Aturan disamakan dengan approveQc di ReceivingDetailController Trans.
+     */
+    public function approveQc(Request $request, $id, $detailId, $logId)
+    {
+        $userId = (string) ($request->attributes->get('wms_user')['sub'] ?? '');
+
+        if (!$this->canApprove($userId)) {
+            return $this->fail('Akun ini tidak punya hak ACC Receiving di Trans.', 403);
+        }
+
+        $receiving = Receiving::where('type', Receiving::TYPE['INBOUND'])->find((int) $id);
+
+        if (!$receiving) {
+            return $this->fail('Receiving tidak ditemukan.', 404);
+        }
+
+        if ((int) $receiving->status !== Receiving::STATUS['QC']) {
+            return $this->fail('Approve QC hanya tersedia saat status QC.', 409);
+        }
+
+        $detail = ReceivingDetail::where('receiving_id', $receiving->id)->find((int) $detailId);
+
+        if (!$detail) {
+            return $this->fail('Detail receiving tidak ditemukan.', 404);
+        }
+
+        $log = $this->findQcLog($detail, $logId, $request);
+
+        if (!$log) {
+            return $this->fail('Log QC tidak ditemukan pada detail ini.', 404);
+        }
+
+        if ($log->is_approved) {
+            return $this->fail('Log QC ini sudah pernah di-approve.', 409);
+        }
+
+        if ((int) $log->status_qc !== 1 || !$log->is_sellable) {
+            return $this->fail('Hanya log QC OK + Saleable yang bisa di-approve.', 422);
+        }
+
+        try {
+            DB::transaction(function () use ($detail, $receiving, $log, $userId) {
+                $sisaToCut = (float) $log->qty_qc;
+
+                $summaries = PurchaseOrderSummary::where([
+                    ['product_packaging_id', $detail->product_packaging_id],
+                    ['status', 2],
+                ])->orderBy('id')->lockForUpdate()->get();
+
+                foreach ($summaries as $sum) {
+                    if ($sisaToCut <= 0) {
+                        break;
+                    }
+
+                    $ambil = min($sisaToCut, $sum->quantity);
+                    $sum->quantity -= $ambil;
+                    $sisaToCut -= $ambil;
+
+                    if ($sum->quantity <= 0) {
+                        $sum->status = 1;
+                    }
+
+                    $sum->save();
+                }
+
+                if ($sisaToCut > 0) {
+                    throw new \RuntimeException('Stok PO Summary tidak mencukupi untuk produk ini.');
+                }
+
+                $minStock = ProductMinStock::firstOrNew([
+                    'product_packaging_id' => $detail->product_packaging_id,
+                    'warehouse_id'         => $receiving->warehouse_id,
+                ]);
+
+                if (!$minStock->exists) {
+                    $prodPack = ProductPack::find($detail->product_packaging_id);
+                    $minStock->unit_id       = $prodPack->unit_id ?? 1;
+                    $minStock->selling_price = 0;
+                    $minStock->quantity      = 0;
+                }
+
+                $minStock->quantity += (float) $log->qty_qc;
+                $minStock->save();
+
+                StockMove::create([
+                    'warehouse_id'         => $receiving->warehouse_id,
+                    'product_packaging_id' => $detail->product_packaging_id,
+                    'code_transaction'     => 'RI-' . $receiving->code,
+                    'stock_in'             => (float) $log->qty_qc,
+                    'stock_out'            => 0,
+                    'stock_balance'        => $minStock->quantity,
+                    'created_by'           => (int) $userId,
+                ]);
+
+                $log->is_approved = 1;
+                $log->save();
+            });
+        } catch (\RuntimeException $e) {
+            return $this->fail($e->getMessage(), 422);
+        } catch (\Throwable $e) {
+            return $this->fail('Approve QC gagal: ' . $e->getMessage(), 500);
+        }
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'QC berhasil di-approve dan masuk ke stok.',
+            'data'    => ['id' => (int) $log->id],
+        ]);
+    }
+
+    /**
+     * Hapus log QC yang belum masuk stok (belum approved).
+     */
+    public function deleteQc(Request $request, $id, $detailId, $logId)
+    {
+        $userId = (string) ($request->attributes->get('wms_user')['sub'] ?? '');
+
+        if (!$this->menuRight($userId, 'superuser.gudang.receiving.detail', 'can_delete')) {
+            return $this->fail('Akun ini tidak punya hak hapus QC Receiving di Trans.', 403);
+        }
+
+        $receiving = Receiving::where('type', Receiving::TYPE['INBOUND'])->find((int) $id);
+
+        if (!$receiving) {
+            return $this->fail('Receiving tidak ditemukan.', 404);
+        }
+
+        if ((int) $receiving->status !== Receiving::STATUS['QC']) {
+            return $this->fail('Log QC hanya bisa dihapus saat status QC.', 409);
+        }
+
+        $detail = ReceivingDetail::where('receiving_id', $receiving->id)->find((int) $detailId);
+
+        if (!$detail) {
+            return $this->fail('Detail receiving tidak ditemukan.', 404);
+        }
+
+        $log = $this->findQcLog($detail, $logId, $request);
+
+        if (!$log) {
+            return $this->fail('Log QC tidak ditemukan pada detail ini.', 404);
+        }
+
+        if ($log->is_sellable && $log->is_approved) {
+            return $this->fail('Tidak dapat menghapus log QC yang sudah masuk ke stok.', 409);
+        }
+
+        $log->delete();
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Log QC berhasil dihapus.',
+        ]);
+    }
+
+    /**
+     * Cari baris log QC. receiving_qc_logs di Trans tidak memakai AUTO_INCREMENT,
+     * sehingga baris baru bisa ber-id 0; untuk itu pencocokan dilengkapi
+     * qty/status/sellable/approved agar baris yang dipilih benar.
+     */
+    private function findQcLog(ReceivingDetail $detail, $logId, Request $request)
+    {
+        $query = ReceivingQcLogs::where('receiving_details_id', $detail->id);
+
+        if ((int) $logId > 0) {
+            $query->where('id', (int) $logId);
+        } else {
+            if ($request->filled('qty_qc')) {
+                $query->where('qty_qc', (float) $request->input('qty_qc'));
+            }
+            if ($request->filled('status_qc')) {
+                $query->where('status_qc', (int) $request->input('status_qc'));
+            }
+            if ($request->filled('is_sellable')) {
+                $query->where('is_sellable', (int) $request->input('is_sellable'));
+            }
+            if ($request->filled('is_approved')) {
+                $query->where('is_approved', (int) $request->input('is_approved'));
+            }
+        }
+
+        return $query->orderByDesc('created_at')->first();
+    }
+
+    /**
      * Detail receiving type RETURN (menu Receiving - Transaksi) beserta
      * baris QC dan produk retur yang masih bisa ditambahkan.
      */
@@ -296,6 +587,7 @@ class WmsReceivingController extends Controller
         $status = array_search((int) $receiving->status, $this->statuses) ?: 'ACTIVE';
         $canUpdate = $this->menuRight($userId, 'superuser.gudang.quality_control', 'can_update');
         $canApprove = $this->menuRight($userId, 'superuser.gudang.quality_control', 'can_approve');
+        $canDelete = $this->menuRight($userId, 'superuser.gudang.quality_control', 'can_delete');
 
         $details = [];
         $saleReturnId = null;
@@ -400,6 +692,7 @@ class WmsReceivingController extends Controller
                 'available'    => $available,
                 'sale_return_id' => $saleReturnId,
                 'can_update'   => $canUpdate,
+                'can_delete'   => $canDelete,
                 'can_publish'  => $canUpdate && in_array((int) $receiving->status, [Receiving::STATUS['ACTIVE'], Receiving::STATUS['QC']]),
                 'can_acc'      => $canApprove && (int) $receiving->status === Receiving::STATUS['READY'],
                 'can_pdf'      => (int) $receiving->status === Receiving::STATUS['ACC'] && $saleReturnId !== null,
@@ -487,8 +780,8 @@ class WmsReceivingController extends Controller
     {
         $userId = (string) ($request->attributes->get('wms_user')['sub'] ?? '');
 
-        if (!$this->menuRight($userId, 'superuser.gudang.quality_control', 'can_update')) {
-            return $this->fail('Akun ini tidak punya hak ubah Receiving - Transaksi di Trans.', 403);
+        if (!$this->menuRight($userId, 'superuser.gudang.quality_control', 'can_delete')) {
+            return $this->fail('Akun ini tidak punya hak hapus Receiving - Transaksi di Trans.', 403);
         }
 
         $receiving = Receiving::where('type', Receiving::TYPE['RETURN'])->find((int) $id);
@@ -577,8 +870,8 @@ class WmsReceivingController extends Controller
     {
         $userId = (string) ($request->attributes->get('wms_user')['sub'] ?? '');
 
-        if (!$this->menuRight($userId, 'superuser.gudang.quality_control', 'can_update')) {
-            return $this->fail('Akun ini tidak punya hak ubah Receiving - Transaksi di Trans.', 403);
+        if (!$this->menuRight($userId, 'superuser.gudang.quality_control', 'can_delete')) {
+            return $this->fail('Akun ini tidak punya hak hapus Receiving - Transaksi di Trans.', 403);
         }
 
         $receiving = Receiving::where('type', Receiving::TYPE['RETURN'])->find((int) $id);
@@ -896,6 +1189,7 @@ class WmsReceivingController extends Controller
                 'permissions'  => [
                     'can_update'  => $this->menuRight($userId, $menuRoute, 'can_update'),
                     'can_approve' => $this->menuRight($userId, $menuRoute, 'can_approve'),
+                    'can_delete'  => $this->menuRight($userId, $menuRoute, 'can_delete'),
                 ],
                 'meta'         => [
                     'page'      => $paginator->currentPage(),

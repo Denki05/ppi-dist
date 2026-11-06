@@ -145,6 +145,9 @@ Route::post('wms/auth/exchange', [WmsAuthController::class, 'exchange'])
         Route::post('receiving/{id}/publish', [\App\Http\Controllers\Api\WmsReceivingController::class, 'publish'])->where('id', '[0-9]+');
         Route::post('receiving/{id}/cancel', [\App\Http\Controllers\Api\WmsReceivingController::class, 'cancel'])->where('id', '[0-9]+');
         Route::post('receiving/{id}/rollback', [\App\Http\Controllers\Api\WmsReceivingController::class, 'rollback'])->where('id', '[0-9]+');
+        Route::post('receiving/{id}/details/{detailId}/qc', [\App\Http\Controllers\Api\WmsReceivingController::class, 'storeQc'])->where('id', '[0-9]+')->where('detailId', '[0-9]+');
+        Route::post('receiving/{id}/details/{detailId}/qc/{logId}/approve', [\App\Http\Controllers\Api\WmsReceivingController::class, 'approveQc'])->where('id', '[0-9]+')->where('detailId', '[0-9]+')->where('logId', '[0-9]+');
+        Route::post('receiving/{id}/details/{detailId}/qc/{logId}/delete', [\App\Http\Controllers\Api\WmsReceivingController::class, 'deleteQc'])->where('id', '[0-9]+')->where('detailId', '[0-9]+')->where('logId', '[0-9]+');
         Route::get('receiving-transaksi', [\App\Http\Controllers\Api\WmsReceivingController::class, 'transaksi']);
         Route::get('receiving-transaksi/{id}', [\App\Http\Controllers\Api\WmsReceivingController::class, 'transaksiShow'])->where('id', '[0-9]+');
         Route::get('receiving-transaksi/{id}/pdf', [\App\Http\Controllers\Api\WmsReceivingController::class, 'transaksiPdf'])->where('id', '[0-9]+');
