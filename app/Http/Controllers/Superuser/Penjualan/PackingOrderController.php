@@ -982,6 +982,7 @@ class PackingOrderController extends Controller
                     }
                 }
 
+                $previousStatus = (int) $getDo->status;
                 $getDo->status = 3;
                 $getDo->updated_by = Auth::id();
                 $getDo->save();
@@ -1016,7 +1017,7 @@ class PackingOrderController extends Controller
                 return $this->response(200, $response);
 
             } catch (\Exception $e) {
-
+                // dd($e);
                 DB::rollBack();
 
                 $response['notification'] = [

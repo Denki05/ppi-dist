@@ -23,9 +23,18 @@ class WmsStockController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
+        $minus     = $request->boolean('minus');
         $warehouseId = (int) $request->query('warehouse_id');
         if (!in_array($warehouseId, $warehouses->pluck('id')->all(), true)) {
-            $warehouseId = (int) ($warehouses->first()->id ?? 0);
+            // Mode stok minus dari dashboard: pilih gudang yang memang punya
+            // baris minus dulu supaya hasilnya tidak kosong.
+            if ($minus) {
+                $warehouseId = (int) (ProductMinStock::whereIn('warehouse_id', $warehouses->pluck('id'))
+                    ->where('quantity', '<', 0)
+                    ->value('warehouse_id') ?: ($warehouses->first()->id ?? 0));
+            } else {
+                $warehouseId = (int) ($warehouses->first()->id ?? 0);
+            }
         }
 
         $search    = trim((string) $request->query('search'));
@@ -37,7 +46,7 @@ class WmsStockController extends Controller
 
         // Halaman dibuka tanpa filter: cukup kirim pilihan filter, daftar stok
         // baru dihitung setelah user memilih/mencari.
-        if ($request->boolean('init')) {
+        if ($request->boolean('init') && !$minus) {
             return response()->json([
                 'status' => 'success',
                 'data'   => [
@@ -67,6 +76,10 @@ class WmsStockController extends Controller
                 'product_pack.type_product_pack',
             ])
             ->where('warehouse_id', $warehouseId);
+
+        if ($minus) {
+            $query->where('quantity', '<', 0);
+        }
 
         if ($search !== '') {
             $query->whereHas('product_pack', function ($pack) use ($search) {
@@ -139,6 +152,7 @@ class WmsStockController extends Controller
                 'search'       => $search,
                 'brand'        => $brand,
                 'packaging'    => $packaging ?: null,
+                'minus'        => $minus,
                 'brands'       => $brandOptions,
                 'packaging_options' => $packagingOptions,
                 'rows'         => $rows,

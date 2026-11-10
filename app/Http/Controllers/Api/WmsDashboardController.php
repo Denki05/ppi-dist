@@ -7,6 +7,7 @@ use App\Entities\Gudang\MutasiShowroom;
 use App\Entities\Gudang\QualityControl2;
 use App\Entities\Gudang\Receiving;
 use App\Entities\Master\ProductMinStock;
+use App\Entities\Master\Warehouse;
 use App\Entities\Penjualan\PackingOrder;
 use App\Http\Controllers\Controller;
 
@@ -69,7 +70,11 @@ class WmsDashboardController extends Controller
                     'menunggu_acc' => QualityControl2::where('status', QualityControl2::STATUS['ACTIVE'])->count(),
                 ],
                 'stock'        => [
-                    'minus' => ProductMinStock::where('quantity', '<', 0)->count(),
+                    // Modul Stock WMS hanya memuat gudang Araya & QC, jadi
+                    // hitungan minus dibatasi ke gudang yang bisa dibuka.
+                    'minus' => ProductMinStock::where('quantity', '<', 0)
+                        ->whereIn('warehouse_id', Warehouse::whereIn('name', ['Gudang Araya', 'Gudang QC'])->pluck('id'))
+                        ->count(),
                 ],
             ],
         ]);
