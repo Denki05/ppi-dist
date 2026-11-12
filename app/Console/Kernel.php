@@ -37,6 +37,11 @@ class Kernel extends ConsoleKernel
 
         // Bersihkan notifikasi lama: DO 7 hari, tipe lain 90 hari - setiap hari jam 03:45
         $schedule->command('notif:prune --do-days=7 --other-days=90')->daily()->at('03:45');
+
+        // Proses antrean sync master ke trial (queue khusus, tidak mengganggu notifikasi)
+        $schedule->command('queue:work database --queue=trial --stop-when-empty --tries=8 --timeout=120 --sleep=0')
+            ->everyMinute()
+            ->withoutOverlapping(10);
     }
 
     /**

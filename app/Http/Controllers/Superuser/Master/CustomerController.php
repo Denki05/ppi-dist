@@ -15,6 +15,7 @@ use App\Exports\Master\CustomerImportTemplate;
 use App\Helper\UploadMedia;
 use App\Http\Controllers\Controller;
 use App\Imports\Master\CustomerImport;
+use App\Jobs\SyncCustomerToTrial;
 use App\Repositories\CodeRepo;
 use App\Repositories\MasterRepo;
 use DB;
@@ -171,12 +172,21 @@ class CustomerController extends Controller
                 'category' => 'required|integer',
                 'phone' => 'nullable|string',
                 'npwp' => 'nullable|string',
+                // 'ktp' => 'nullable|string',
                 'address' => 'required|string',
                 'owner_name' => 'nullable|string',
                 'website' => 'nullable|string',
                 'plafon_piutang' => 'nullable|numeric',
                 'image_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'sm_am' => 'nullable|string|max:255',
+                'asm' => 'nullable|string|max:255',
+                'pic' => 'nullable|string|max:255',
+                'officer' => 'nullable|string|max:255',
+                'ar1' => 'nullable|string|max:255',
+                'ar2' => 'nullable|string|max:255',
+                'ar3' => 'nullable|string|max:255',
+                // 'notification_email' => 'nullable'
             ]);
 
             if ($validator->fails()) {
@@ -187,6 +197,29 @@ class CustomerController extends Controller
                     'content' => $validator->errors()->all(),
                 ];
   
+                return $this->response(400, $response);
+            }
+
+            $salesColumns = CustomerOtherAddress::salesColumnMap();
+            $missingSalesColumns = [];
+            foreach ([
+                'customer_sm'  => 'sm_am',
+                'customer_asm' => 'asm',
+                'customer_pic' => 'pic',
+            ] as $columnKey => $inputName) {
+                if (trim((string) $request->$inputName) !== '' && empty($salesColumns[$columnKey])) {
+                    $missingSalesColumns[] = $inputName;
+                }
+            }
+
+            if (!empty($missingSalesColumns)) {
+                $response['notification'] = [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => 'Kolom database untuk ' . implode(', ', $missingSalesColumns) . ' tidak tersedia di environment ini.',
+                ];
+
                 return $this->response(400, $response);
             }
 
@@ -232,7 +265,22 @@ class CustomerController extends Controller
                         $customer->category_id = $request->category;
                         $customer->count_member =  1;
                         $customer->zone = $request->zone;
-                        $customer->pic = null;
+
+                        $salesValue = function ($inputName) use ($request) {
+                            $value = trim((string) $request->$inputName);
+
+                            return $value === '' ? null : $value;
+                        };
+
+                        if (!empty($salesColumns['customer_sm'])) {
+                            $customer->{$salesColumns['customer_sm']} = $salesValue('sm_am');
+                        }
+                        if (!empty($salesColumns['customer_asm'])) {
+                            $customer->{$salesColumns['customer_asm']} = $salesValue('asm');
+                        }
+                        if (!empty($salesColumns['customer_pic'])) {
+                            $customer->{$salesColumns['customer_pic']} = $salesValue('pic');
+                        }
 
                         $customer->email = $request->email;
                         $customer->phone = implode(",", [$request->phone1, $request->phone2]);
@@ -291,6 +339,22 @@ class CustomerController extends Controller
                             $other_address->address = $customer->address;
                             $other_address->npwp = $customer->npwp;
                             $other_address->ktp = $customer->ktp;
+                            $other_address->setting_income_target = 0;
+
+                            $memberSalesMap = [
+                                'member_sm'      => 'sm_am',
+                                'member_asm'     => 'asm',
+                                'member_pic'     => 'pic',
+                                'member_officer' => 'officer',
+                                'member_ar1'     => 'ar1',
+                                'member_ar2'     => 'ar2',
+                                'member_ar3'     => 'ar3',
+                            ];
+                            foreach ($memberSalesMap as $columnKey => $inputName) {
+                                if (!empty($salesColumns[$columnKey])) {
+                                    $other_address->{$salesColumns[$columnKey]} = $salesValue($inputName);
+                                }
+                            }
             
                             $other_address->gps_latitude = $customer->gps_latitude;
                             $other_address->gps_longitude = $customer->gps_longitude;
@@ -311,6 +375,8 @@ class CustomerController extends Controller
                             
         
                             DB::commit();
+
+                            SyncCustomerToTrial::dispatch($customer->id);
         
                             $response['notification'] = [
                                 'alert' => 'notify',
@@ -362,10 +428,16 @@ class CustomerController extends Controller
             }
         }
 
-        $data['customer'] = Customer::findOrFail($id);
+        $customer = Customer::findOrFail($id);
+        $data['customer'] = $customer;
         $data['category'] = CustomerCategory::get();
         $data['customer_types'] = MasterRepo::customer_types();
         $data['provinces'] = Province::all();
+        $data['sales_columns'] = CustomerOtherAddress::salesColumnMap();
+        $data['default_member'] = CustomerOtherAddress::where('customer_id', $customer->id)
+            ->where('member_default', CustomerOtherAddress::MEMBER_DEFAULT['YES'])
+            ->where('status', CustomerOtherAddress::STATUS['ACTIVE'])
+            ->first();
         // $data['kabupaten'] = Regency::all();
         // $data['kecamatan'] = District::all();
         // $data['kelurahan'] = Village::all();
@@ -387,6 +459,7 @@ class CustomerController extends Controller
                 // 'code' => 'required|string|unique:master_customers,code,' . $customer->id,
                 'name' => 'required|string',
                 'category' => 'required|integer',
+                'email' => 'nullable|email',
                 'phone' => 'nullable|string',
                 'npwp' => 'nullable|string',
                 'ktp' => 'nullable|string',
@@ -399,7 +472,14 @@ class CustomerController extends Controller
                 'image_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'image_store' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-                'notification_email' => 'nullable'
+                'notification_email' => 'nullable',
+                'sm_am' => 'nullable|string|max:255',
+                'asm' => 'nullable|string|max:255',
+                'pic' => 'nullable|string|max:255',
+                'officer' => 'nullable|string|max:255',
+                'ar1' => 'nullable|string|max:255',
+                'ar2' => 'nullable|string|max:255',
+                'ar3' => 'nullable|string|max:255',
             ]);
 
             if ($validator->fails()) {
@@ -414,73 +494,156 @@ class CustomerController extends Controller
             }
 
             if ($validator->passes()) {
+                $salesColumns = CustomerOtherAddress::salesColumnMap();
+                $salesInputMap = [
+                    'customer_sm'    => 'sm_am',
+                    'customer_asm'   => 'asm',
+                    'customer_pic'   => 'pic',
+                    'member_sm'      => 'sm_am',
+                    'member_asm'     => 'asm',
+                    'member_pic'     => 'pic',
+                    'member_officer' => 'officer',
+                    'member_ar1'     => 'ar1',
+                    'member_ar2'     => 'ar2',
+                    'member_ar3'     => 'ar3',
+                ];
+
+                $missingColumns = [];
+                foreach ($salesInputMap as $columnKey => $inputName) {
+                    if (empty($salesColumns[$columnKey]) && $request->filled($inputName)) {
+                        $missingColumns[] = $inputName;
+                    }
+                }
+
+                if (!empty($missingColumns)) {
+                    $response['notification'] = [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'header' => 'Error',
+                        'content' => 'Kolom database untuk field berikut tidak ditemukan: ' . implode(', ', array_unique($missingColumns)) . '. Periksa struktur tabel master customer/member.',
+                    ];
+
+                    return $this->response(400, $response);
+                }
+
+                $value = function ($key) use ($request) {
+                    $input = $request->input($key);
+
+                    return ($input === null) ? null : trim((string) $input);
+                };
+
                 DB::beginTransaction();
 
-                // $customer->code = $request->code;
-                $customer->name = $request->name;
+                try {
+                    // $customer->code = $request->code;
+                    $customer->name = $request->name;
 
-                $customer->category_id = $request->category;
-                // $customer->type_id = $request->type;
+                    $customer->category_id = $request->category;
+                    // $customer->type_id = $request->type;
 
-                $customer->email = $request->email;
-                $customer->phone = implode(",", [$request->phone1, $request->phone2]);
-                $customer->npwp = implode("/", [$request->name_card_npwp,$request->npwp]);
-                $customer->ktp = implode("/", [$request->name_card_ktp,$request->ktp]);
-                $customer->address = $request->address;
-                $customer->pic = $request->pic;
+                    $customer->email = $request->email;
+                    $customer->phone = implode(",", [$request->phone1, $request->phone2]);
+                    $customer->npwp = implode("/", [$request->name_card_npwp,$request->npwp]);
+                    $customer->ktp = implode("/", [$request->name_card_ktp,$request->ktp]);
+                    $customer->address = $request->address;
 
-                $customer->owner_name = $request->owner_name;
-                $customer->website = $request->website;
-                $customer->plafon_piutang = ($request->plafon_piutang) ? $request->plafon_piutang : 0;
-                $customer->saldo = $request->plafon_piutang;
-                $customer->has_ppn = ($request->has_ppn) ? $request->has_ppn : 0;
-                $customer->has_tempo = ($request->has_tempo) ? $request->has_tempo : 0;
-                $customer->tempo_limit = ($request->tempo_limit) ? $request->tempo_limit : 0;
+                    $customer->owner_name = $request->owner_name;
+                    $customer->website = $request->website;
+                    $customer->plafon_piutang = ($request->plafon_piutang) ? $request->plafon_piutang : 0;
+                    $customer->saldo = $request->plafon_piutang;
+                    $customer->has_ppn = ($request->has_ppn) ? $request->has_ppn : 0;
+                    $customer->has_tempo = ($request->has_tempo) ? $request->has_tempo : 0;
+                    $customer->tempo_limit = ($request->tempo_limit) ? $request->tempo_limit : 0;
 
-                $customer->gps_latitude = $request->gps_latitude;
-                $customer->gps_longitude = $request->gps_longitude;
+                    $customer->gps_latitude = $request->gps_latitude;
+                    $customer->gps_longitude = $request->gps_longitude;
 
-                $customer->provinsi = $request->provinsi;
-                $customer->kota = $request->kota;
-                $customer->kecamatan = $request->kecamatan;
-                $customer->kelurahan = $request->kelurahan;
-                $customer->text_provinsi = $request->text_provinsi;
-                $customer->text_kota = $request->text_kota;
-                $customer->text_kecamatan = $request->text_kecamatan;
-                $customer->text_kelurahan = $request->text_kelurahan;
-                $customer->zone = $request->zone;
+                    $customer->provinsi = $request->provinsi;
+                    $customer->kota = $request->kota;
+                    $customer->kecamatan = $request->kecamatan;
+                    $customer->kelurahan = $request->kelurahan;
+                    $customer->text_provinsi = $request->text_provinsi;
+                    $customer->text_kota = $request->text_kota;
+                    $customer->text_kecamatan = $request->text_kecamatan;
+                    $customer->text_kelurahan = $request->text_kelurahan;
 
-                $customer->zipcode = $request->zipcode;
+                    $customer->zipcode = $request->zipcode;
 
-                if (!empty($request->file('image_npwp'))) {
-                    if (is_file_exists(Customer::$directory_image.$customer->image_npwp)) {
-                        remove_file(Customer::$directory_image.$customer->image_npwp);
+                    if ($salesColumns['customer_sm']) {
+                        $customer->{$salesColumns['customer_sm']} = $value('sm_am');
+                    }
+                    if ($salesColumns['customer_asm']) {
+                        $customer->{$salesColumns['customer_asm']} = $value('asm');
+                    }
+                    if ($salesColumns['customer_pic']) {
+                        $customer->{$salesColumns['customer_pic']} = $value('pic');
                     }
 
-                    $customer->image_npwp = UploadMedia::image($request->file('image_npwp'), Customer::$directory_image);
-                }
+                    if (!empty($request->file('image_npwp'))) {
+                        if (is_file_exists(Customer::$directory_image.$customer->image_npwp)) {
+                            remove_file(Customer::$directory_image.$customer->image_npwp);
+                        }
 
-                if (!empty($request->file('image_ktp'))) {
-                    if (is_file_exists(Customer::$directory_image.$customer->image_ktp)) {
-                        remove_file(Customer::$directory_image.$customer->image_ktp);
+                        $customer->image_npwp = UploadMedia::image($request->file('image_npwp'), Customer::$directory_image);
                     }
 
-                    $customer->image_ktp = UploadMedia::image($request->file('image_ktp'), Customer::$directory_image);
-                }
-                
-                if (!empty($request->file('image_store'))) {
-                    if (is_file_exists(Customer::$directory_image.$customer->image_store)) {
-                        remove_file(Customer::$directory_image.$customer->image_store);
+                    if (!empty($request->file('image_ktp'))) {
+                        if (is_file_exists(Customer::$directory_image.$customer->image_ktp)) {
+                            remove_file(Customer::$directory_image.$customer->image_ktp);
+                        }
+
+                        $customer->image_ktp = UploadMedia::image($request->file('image_ktp'), Customer::$directory_image);
                     }
 
-                    $customer->image_store = UploadMedia::image($request->file('image_store'), Customer::$directory_image);
-                }
+                    if (!empty($request->file('image_store'))) {
+                        if (is_file_exists(Customer::$directory_image.$customer->image_store)) {
+                            remove_file(Customer::$directory_image.$customer->image_store);
+                        }
 
-                $customer->notification_email = ($request->notification_email) ? true : false;
+                        $customer->image_store = UploadMedia::image($request->file('image_store'), Customer::$directory_image);
+                    }
 
-                if ($customer->save()) {
+                    $customer->notification_email = ($request->notification_email) ? true : false;
+
+                    if (!$customer->save()) {
+                        throw new \Exception('Failed to save customer');
+                    }
+
+                    // Hanya member default yang mengikuti data store.
+                    $defaultMember = CustomerOtherAddress::where('customer_id', $customer->id)
+                        ->where('member_default', CustomerOtherAddress::MEMBER_DEFAULT['YES'])
+                        ->where('status', CustomerOtherAddress::STATUS['ACTIVE'])
+                        ->first();
+
+                    if ($defaultMember) {
+                        $memberData = [];
+
+                        foreach (['member_sm' => 'sm_am', 'member_asm' => 'asm', 'member_pic' => 'pic',
+                                  'member_officer' => 'officer', 'member_ar1' => 'ar1',
+                                  'member_ar2' => 'ar2', 'member_ar3' => 'ar3'] as $columnKey => $inputName) {
+                            if (!empty($salesColumns[$columnKey])) {
+                                $memberData[$salesColumns[$columnKey]] = $value($inputName);
+                            }
+                        }
+
+                        if (!empty($memberData)) {
+                            $memberData['updated_at'] = now();
+
+                            DB::table('master_customer_other_addresses')
+                                ->where('id', $defaultMember->id)
+                                ->update($memberData);
+                        }
+                    }
+
+                    // $log_saldo = new CustomerSaldoLog;
+                    // $log_saldo->customer_id = $customer->id;
+                    // $log_saldo->saldo_log = $request->plafon_piutang;
+                    // $log_saldo->note = CustomerSaldoLog::NOTE['SALDO UPDATE'];
+                    // $log_saldo->save();
 
                     DB::commit();
+
+                    SyncCustomerToTrial::dispatch($customer->id);
 
                     $response['notification'] = [
                         'alert' => 'notify',
@@ -491,6 +654,18 @@ class CustomerController extends Controller
                     $response['redirect_to'] = route('superuser.master.customer.index');
 
                     return $this->response(200, $response);
+                } catch (\Exception $e) {
+                    DB::rollback();
+                    \Log::error('Update customer failed: ' . $e->getMessage());
+
+                    $response['notification'] = [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'header' => 'Error',
+                        'content' => 'Gagal menyimpan data customer. Silakan coba lagi.',
+                    ];
+
+                    return $this->response(400, $response);
                 }
             }
         }
@@ -642,6 +817,8 @@ class CustomerController extends Controller
                 if($customer->save()){
                     DB::commit();
 
+                    SyncCustomerToTrial::dispatch($customer->id);
+
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',
@@ -683,6 +860,8 @@ class CustomerController extends Controller
                 $customer->status = Customer::STATUS['INACTIVE'];
                 if($customer->save()){
                     DB::commit();
+
+                    SyncCustomerToTrial::dispatch($customer->id);
 
                     $response['notification'] = [
                         'alert' => 'notify',
@@ -726,6 +905,8 @@ class CustomerController extends Controller
                 if($customer->save()){
                     DB::commit();
 
+                    SyncCustomerToTrial::dispatch($customer->id);
+
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',
@@ -767,6 +948,8 @@ class CustomerController extends Controller
                 $customer->existence = Customer::EXISTENCE['DISABLED'];
                 if($customer->save()){
                     DB::commit();
+
+                    SyncCustomerToTrial::dispatch($customer->id);
 
                     $response['notification'] = [
                         'alert' => 'notify',

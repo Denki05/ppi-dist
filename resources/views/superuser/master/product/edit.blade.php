@@ -121,10 +121,10 @@
                                 <div class="row">
                                   <div class="col">
                                     <div class="form-group row">
-                                      <label for="inputPassword" class="col-sm-2 col-form-label">Catatan</label>
+                                      <label for="inputPassword" class="col-sm-2 col-form-label">Tag Produk</label>
                                       <div class="col-sm-10">
                                         <select class="js-select2 form-control" id="note" name="note" style="width:100%;" placeholder="Pilih Note">
-                                          <option>Pilih Note</option>
+                                          <option>Pilih Tag Produk</option>
                                           @foreach(\App\Entities\Master\Product::NOTE as $note)
                                           <option value="{{ $note }}" {{ ($note == $product->note ) ? 'selected' : '' }}>{{ $note }}</option>
                                           @endforeach

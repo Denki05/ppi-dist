@@ -137,7 +137,7 @@
             </div>
           </div>--}}
           <div class="form-group row">
-            <label for="example-text-input" class="col-2 col-form-label">Note</label>
+            <label for="example-text-input" class="col-2 col-form-label">Tag Produk</label>
             <div class="col-8">
               <input class="form-control" type="text" value="{{ $product->note ?? '-' }}" id="example-text-input" readonly>
             </div>

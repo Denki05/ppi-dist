@@ -17,7 +17,9 @@
   table.data td.c { text-align: center; }
   table.data td.r { text-align: right; }
   table.data tr.total td { font-weight: bold; border-top: 2px solid #000; }
-  .note { margin-top: 8px; font-size: 11px; }
+  table.note { margin-top: 8px; border-collapse: collapse; font-size: 11px; }
+  table.note td { padding: 0; vertical-align: top; line-height: 1.4; }
+  table.note td.note-lbl { width: 45px; white-space: nowrap; }
   .sign { margin-top: 34px; width: 100%; border-collapse: collapse; font-size: 11px; font-weight: bold; }
   .sign td { text-align: center; width: 50%; }
   .page-break { page-break-after: always; }
@@ -91,7 +93,23 @@
   </table>
 
   @if ($page === $totalPages - 1)
-    <div class="note">NOTE : {{ $po->note ?: '' }}</div>
+    @php
+      $noteText = trim((string) $po->note);
+      // Pecah di setiap penanda nomor "2.", "3.", dst (bukan "1."), jika belum ada newline
+      $noteText = preg_replace('/\s+(?=\d+\.\s)/', "\n", $noteText);
+      $noteLines = array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $noteText))));
+    @endphp
+
+    <table class="note">
+      <tr>
+        <td class="note-lbl">NOTE :</td>
+        <td>
+          @foreach ($noteLines as $line)
+            <div>{{ $line }}</div>
+          @endforeach
+        </td>
+      </tr>
+    </table>
 
     <table class="sign">
       <tr>

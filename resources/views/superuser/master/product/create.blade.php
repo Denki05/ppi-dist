@@ -162,9 +162,9 @@
                               <div class="row">
                                 <div class="col">
                                   <div class="form-group">
-                                    <label for="note">Note</label>
+                                    <label for="note">Tag Produk</label>
                                     <select class="js-select2 form-control" id="note" name="note" style="width:100%;" placeholder="Pilih Note">
-                                      <option>Pilih Note</option>
+                                      <option>Pilih Tag Produk</option>
                                       @foreach($product_notes as $note)
                                       <option value="{{ $note }}">{{ $note }}</option>
                                       @endforeach

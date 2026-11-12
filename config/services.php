@@ -95,4 +95,10 @@ return [
         // server trial memakai sertifikat self-signed.
         'verify_tls' => env('TRIAL_SYNC_VERIFY_TLS', true),
     ],
+
+    // Push master store (parent) + member (child) dari trans ke app trial.
+    'trial_master' => [
+        'base_url' => env('TRIAL_MASTER_BASE_URL', env('CRM_BASE_URL', 'https://lssoft88.xyz/api')),
+        'key'      => env('TRIAL_MASTER_API_KEY', env('CRM_API_KEY', env('USER_API_KEY'))),
+    ],
 ];
