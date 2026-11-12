@@ -1559,6 +1559,37 @@ class AoSalesOrderApiController extends Controller
             $creport->Database->Tables(1)->SetLogOnInfo('LOCAL', $db['database'], $db['username'], $db['password']);
             $creport->EnableParameterPrompting = false;
             $creport->RecordSelectionFormula = "{penjualan_do.id} = " . (int) $do->id;
+
+            // Stempel, ttd, dan tanggal pelunasan hanya untuk invoice yang sudah lunas
+            if ($do->so && (int) $do->so->payment_status === 1) {
+                $pay_date = DB::table('finance_payable_detail as pd')
+                    ->join('finance_payable as p', 'p.id', '=', 'pd.payable_id')
+                    ->join('finance_invoicing as i', 'i.id', '=', 'pd.invoice_id')
+                    ->where('i.do_id', $do->id)
+                    ->whereNull('pd.deleted_at')
+                    ->whereNull('p.deleted_at')
+                    ->max('p.pay_date');
+
+                $footer = $creport->Sections->Item(14);
+                for ($i = 1; $i <= $footer->ReportObjects->Count; $i++) {
+                    $obj = $footer->ReportObjects->Item($i);
+                    if ($obj->Name === 'ttdstempel1') {
+                        $obj->Suppress = false;
+                    }
+                }
+
+                if ($pay_date) {
+                    $header = $creport->Sections->Item(2);
+                    for ($i = 1; $i <= $header->ReportObjects->Count; $i++) {
+                        $obj = $header->ReportObjects->Item($i);
+                        if ($obj->Name === 'paydatetext1') {
+                            $obj->SetText('Pelunasan: ' . date('d-m-Y', strtotime($pay_date)));
+                            $obj->Suppress = false;
+                        }
+                    }
+                }
+            }
+
             $creport->ExportOptions->DiskFileName = $tmp;
             $creport->ExportOptions->PDFExportAllPages = true;
             $creport->ExportOptions->DestinationType = 1;

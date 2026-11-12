@@ -118,6 +118,8 @@
     </div>
 </div>
 @endsection
+
+@section('modal')
 <!-- Modal -->
 @foreach($invoice_tax as $row)
 <div class="modal fade bd-example-modal-xl" id="myModal{{$row->id}}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel{{$row->id}}" aria-hidden="true">
@@ -220,6 +222,7 @@
     </div>
 </div>
 @endforeach
+@endsection
 
 @include('superuser.asset.plugin.select2')
 @include('superuser.asset.plugin.datatables')

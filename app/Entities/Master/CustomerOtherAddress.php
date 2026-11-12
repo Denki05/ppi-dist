@@ -5,6 +5,7 @@ namespace App\Entities\Master;
 use App\Entities\Model;
 use App\Entities\Penjualan\SalesOrder;
 use Auth;
+use Illuminate\Support\Facades\Schema;
 
 class CustomerOtherAddress extends Model
 {
@@ -13,6 +14,9 @@ class CustomerOtherAddress extends Model
     protected $fillable = [
         'customer_id', 
         'member_default', 
+        'sm',
+        'ams',
+        'pic',
         'officer', 
         'account_representative', 
         'account_representative_optional_1', 
@@ -148,6 +152,36 @@ class CustomerOtherAddress extends Model
     public function free_ongkir()
     {
         return array_search($this->free_shipping, self::FREE_SHIPPING);
+    }
+
+    /**
+     * Nama kolom sales/AR bisa berbeda antar database (sm/am, asm/ams).
+     * Kembalikan kolom yang benar-benar ada agar penulisan tidak salah kolom.
+     */
+    public static function salesColumnMap()
+    {
+        $pick = function ($table, array $columns) {
+            foreach ($columns as $column) {
+                if (Schema::hasColumn($table, $column)) {
+                    return $column;
+                }
+            }
+
+            return null;
+        };
+
+        return [
+            'customer_sm'      => $pick('master_customers', ['sm', 'am']),
+            'customer_asm'     => $pick('master_customers', ['asm', 'ams']),
+            'customer_pic'     => $pick('master_customers', ['pic']),
+            'member_sm'        => $pick('master_customer_other_addresses', ['sm', 'am']),
+            'member_asm'       => $pick('master_customer_other_addresses', ['ams', 'asm']),
+            'member_pic'       => $pick('master_customer_other_addresses', ['pic']),
+            'member_officer'   => $pick('master_customer_other_addresses', ['officer']),
+            'member_ar1'       => $pick('master_customer_other_addresses', ['account_representative']),
+            'member_ar2'       => $pick('master_customer_other_addresses', ['account_representative_optional_1']),
+            'member_ar3'       => $pick('master_customer_other_addresses', ['account_representative_optional_2']),
+        ];
     }
 
     public function userHasAccess($user)

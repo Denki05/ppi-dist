@@ -667,7 +667,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 </script>
-@endpush
 
 <!-- Notifikasi -->
 @if(session('success'))
@@ -695,3 +694,4 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @endif
+@endpush

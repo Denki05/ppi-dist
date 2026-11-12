@@ -12,6 +12,7 @@ use App\Imports\Master\CustomerOtherAddressImport;
 use App\Imports\Master\CustomerOtherAddressImport2;
 use App\Exports\Master\CustomerOtherAddressExport;
 use App\Http\Controllers\Controller;
+use App\Jobs\SyncCustomerToTrial;
 use Illuminate\Http\Request;
 use App\Entities\Setting\UserMenu;
 use Excel;
@@ -114,7 +115,13 @@ class CustomerOtherAddressController extends Controller
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string',
                 'contact_person' => 'nullable|string',
-                'pic' => 'required|string',
+                'pic' => 'nullable|string|max:255',
+                'sm_am' => 'nullable|string|max:255',
+                'asm' => 'nullable|string|max:255',
+                'officer' => 'nullable|string|max:255',
+                'ar1' => 'nullable|string|max:255',
+                'ar2' => 'nullable|string|max:255',
+                'ar3' => 'nullable|string|max:255',
                 'npwp' => 'nullable|string',
                 'ktp' => 'nullable|string',
                 'phone' => 'nullable|string',
@@ -163,14 +170,53 @@ class CustomerOtherAddressController extends Controller
                     $kd = sprintf("%01s", $tmp);
                 }
 
+                $salesColumns = CustomerOtherAddress::salesColumnMap();
+                $salesInputMap = [
+                    'member_sm'      => 'sm_am',
+                    'member_asm'     => 'asm',
+                    'member_pic'     => 'pic',
+                    'member_officer' => 'officer',
+                    'member_ar1'     => 'ar1',
+                    'member_ar2'     => 'ar2',
+                    'member_ar3'     => 'ar3',
+                ];
+
+                $missingColumns = [];
+                foreach ($salesInputMap as $columnKey => $inputName) {
+                    if (empty($salesColumns[$columnKey]) && $request->filled($inputName)) {
+                        $missingColumns[] = $inputName;
+                    }
+                }
+
+                if (!empty($missingColumns)) {
+                    $response['notification'] = [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'header' => 'Error',
+                        'content' => 'Kolom database untuk field berikut tidak ditemukan: ' . implode(', ', array_unique($missingColumns)) . '. Periksa struktur tabel master member.',
+                    ];
+
+                    return $this->response(400, $response);
+                }
+
+                $salesValue = function ($inputName) use ($request) {
+                    $input = trim((string) $request->input($inputName));
+
+                    return $input === '' ? null : $input;
+                };
+
                 $other_address = new CustomerOtherAddress;
 
                 $other_address->id = $customer->id.'.'.$kd;
                 $other_address->customer_id = $customer->id;
                 $other_address->member_default = 0;
 
-                $other_address->pic = $request->pic;
-                $other_address->account_representative = $request->ar;
+                foreach ($salesInputMap as $columnKey => $inputName) {
+                    if (!empty($salesColumns[$columnKey])) {
+                        $other_address->{$salesColumns[$columnKey]} = $salesValue($inputName);
+                    }
+                }
+
                 $other_address->name = $request->name;
                 $other_address->contact_person = $request->contact_person;
                 $other_address->npwp = implode("/", [$request->name_card_npwp,$request->npwp]);
@@ -178,7 +224,7 @@ class CustomerOtherAddressController extends Controller
                 $other_address->phone = $request->phone;
                 $other_address->address = $request->address;
                 $other_address->free_shipping = $request->free_shipping;
-                $other_address->setting_income_target = $request->target_income;
+                $other_address->setting_income_target = ($request->target_income) ? $request->target_income : 0;
 
                 $other_address->gps_latitude = $request->gps_latitude;
                 $other_address->gps_longitude = $request->gps_longitude;
@@ -210,6 +256,8 @@ class CustomerOtherAddressController extends Controller
                     $updateCust = Customer::where('id', $customer->id)->update([
                         'count_member' => $kd
                     ]);
+
+                    SyncCustomerToTrial::dispatch($customer->id);
 
                     $response['notification'] = [
                         'alert' => 'notify',
@@ -249,10 +297,7 @@ class CustomerOtherAddressController extends Controller
 
         $data['other_address'] = CustomerOtherAddress::findOrFail($address_id);
         $data['provinces'] = Province::all();
-        $data['kota'] = Regency::all();
-        $data['kecamatan'] = District::all();
-        $data['kelurahan'] = Village::all();
-        $data['zipcode'] = Zipcode::all();
+        $data['sales_columns'] = CustomerOtherAddress::salesColumnMap();
 
         return view('superuser.master.customer_other_address.edit', $data);
     }
@@ -268,7 +313,14 @@ class CustomerOtherAddressController extends Controller
                 'phone' => 'nullable|string',
                 'address' => 'required|string',
                 'gps_latitude' => 'nullable|string',
-                'gps_longitude' => 'nullable|string'
+                'gps_longitude' => 'nullable|string',
+                'sm_am' => 'nullable|string|max:255',
+                'asm' => 'nullable|string|max:255',
+                'pic' => 'nullable|string|max:255',
+                'officer' => 'nullable|string|max:255',
+                'ar1' => 'nullable|string|max:255',
+                'ar2' => 'nullable|string|max:255',
+                'ar3' => 'nullable|string|max:255',
             ]);
 
             if ($validator->fails()) {
@@ -290,49 +342,138 @@ class CustomerOtherAddressController extends Controller
                     abort(404);
                 }
 
-                $other_address->name = $request->name;
-                $other_address->customer_id = $other_address->customer_id;
-                $other_address->contact_person = $request->contact_person;
-                $other_address->npwp = implode("/", [$request->name_card_npwp,$request->npwp]);
-                $other_address->ktp = implode("/", [$request->name_card_ktp,$request->ktp]);
-                $other_address->phone = $request->phone;
-                $other_address->address = $request->address;
-                $other_address->account_representative = $request->ar;
-                $other_address->free_shipping = $request->free_shipping;
+                $salesColumns = CustomerOtherAddress::salesColumnMap();
+                $salesInputMap = [
+                    'member_sm'      => 'sm_am',
+                    'member_asm'     => 'asm',
+                    'member_pic'     => 'pic',
+                    'member_officer' => 'officer',
+                    'member_ar1'     => 'ar1',
+                    'member_ar2'     => 'ar2',
+                    'member_ar3'     => 'ar3',
+                ];
 
-                $other_address->gps_latitude = $request->gps_latitude;
-                $other_address->gps_longitude = $request->gps_longitude;
-
-                $other_address->provinsi = $request->provinsi;
-                $other_address->kota = $request->kota;
-                $other_address->kecamatan = $request->kecamatan;
-                $other_address->kelurahan = $request->kelurahan;
-                $other_address->text_provinsi = $request->text_provinsi;
-                $other_address->text_kota = $request->text_kota;
-                $other_address->text_kecamatan = $request->text_kecamatan;
-                $other_address->text_kelurahan = $request->text_kelurahan;
-                $other_address->zone = $request->zone;
-
-                $other_address->zipcode = $request->zipcode;
-
-                if (!empty($request->file('image_npwp'))) {
-                    if (is_file_exists(CustomerOtherAddress::$directory_image.$other_address->image_npwp)) {
-                        remove_file(CustomerOtherAddress::$directory_image.$other_address->image_npwp);
+                $missingColumns = [];
+                foreach ($salesInputMap as $columnKey => $inputName) {
+                    if (empty($salesColumns[$columnKey]) && $request->filled($inputName)) {
+                        $missingColumns[] = $inputName;
                     }
-
-                    $other_address->image_npwp = UploadMedia::image($request->file('image_npwp'), CustomerOtherAddress::$directory_image);
                 }
 
-                if (!empty($request->file('image_ktp'))) {
-                    if (is_file_exists(CustomerOtherAddress::$directory_image.$other_address->image_ktp)) {
-                        remove_file(CustomerOtherAddress::$directory_image.$other_address->image_ktp);
-                    }
+                if (!empty($missingColumns)) {
+                    $response['notification'] = [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'header' => 'Error',
+                        'content' => 'Kolom database untuk field berikut tidak ditemukan: ' . implode(', ', array_unique($missingColumns)) . '. Periksa struktur tabel master member.',
+                    ];
 
-                    $other_address->image_ktp = UploadMedia::image($request->file('image_ktp'), CustomerOtherAddress::$directory_image);
+                    return $this->response(400, $response);
                 }
 
+                $value = function ($key) use ($request) {
+                    $input = $request->input($key);
 
-                if ($other_address->save()) {
+                    return ($input === null) ? null : trim((string) $input);
+                };
+
+                DB::beginTransaction();
+
+                try {
+                    $other_address->name = $request->name;
+                    $other_address->customer_id = $other_address->customer_id;
+                    $other_address->contact_person = $request->contact_person;
+                    $other_address->npwp = implode("/", [$request->name_card_npwp,$request->npwp]);
+                    $other_address->ktp = implode("/", [$request->name_card_ktp,$request->ktp]);
+                    $other_address->phone = $request->phone;
+                    $other_address->address = $request->address;
+                    $other_address->free_shipping = $request->free_shipping;
+                    $other_address->setting_income_target = ($request->target_income) ? $request->target_income : 0;
+
+                    $other_address->gps_latitude = $request->gps_latitude;
+                    $other_address->gps_longitude = $request->gps_longitude;
+
+                    $other_address->provinsi = $request->provinsi;
+                    $other_address->kota = $request->kota;
+                    $other_address->kecamatan = $request->kecamatan;
+                    $other_address->kelurahan = $request->kelurahan;
+                    $other_address->text_provinsi = $request->text_provinsi;
+                    $other_address->text_kota = $request->text_kota;
+                    $other_address->text_kecamatan = $request->text_kecamatan;
+                    $other_address->text_kelurahan = $request->text_kelurahan;
+                    $other_address->zone = $request->zone;
+
+                    $other_address->zipcode = $request->zipcode;
+
+                    if ($salesColumns['member_sm']) {
+                        $other_address->{$salesColumns['member_sm']} = $value('sm_am');
+                    }
+                    if ($salesColumns['member_asm']) {
+                        $other_address->{$salesColumns['member_asm']} = $value('asm');
+                    }
+                    if ($salesColumns['member_pic']) {
+                        $other_address->{$salesColumns['member_pic']} = $value('pic');
+                    }
+                    if ($salesColumns['member_officer']) {
+                        $other_address->{$salesColumns['member_officer']} = $value('officer');
+                    }
+                    if ($salesColumns['member_ar1']) {
+                        $other_address->{$salesColumns['member_ar1']} = $value('ar1');
+                    }
+                    if ($salesColumns['member_ar2']) {
+                        $other_address->{$salesColumns['member_ar2']} = $value('ar2');
+                    }
+                    if ($salesColumns['member_ar3']) {
+                        $other_address->{$salesColumns['member_ar3']} = $value('ar3');
+                    }
+
+                    if (!empty($request->file('image_npwp'))) {
+                        if (is_file_exists(CustomerOtherAddress::$directory_image.$other_address->image_npwp)) {
+                            remove_file(CustomerOtherAddress::$directory_image.$other_address->image_npwp);
+                        }
+
+                        $other_address->image_npwp = UploadMedia::image($request->file('image_npwp'), CustomerOtherAddress::$directory_image);
+                    }
+
+                    if (!empty($request->file('image_ktp'))) {
+                        if (is_file_exists(CustomerOtherAddress::$directory_image.$other_address->image_ktp)) {
+                            remove_file(CustomerOtherAddress::$directory_image.$other_address->image_ktp);
+                        }
+
+                        $other_address->image_ktp = UploadMedia::image($request->file('image_ktp'), CustomerOtherAddress::$directory_image);
+                    }
+
+                    if (!$other_address->save()) {
+                        throw new \Exception('Failed to save member');
+                    }
+
+                    // Member default menjaga data store tetap sama.
+                    if ((int) $other_address->member_default === CustomerOtherAddress::MEMBER_DEFAULT['YES']) {
+                        $customerData = [];
+
+                        if ($salesColumns['customer_sm']) {
+                            $customerData[$salesColumns['customer_sm']] = $value('sm_am');
+                        }
+                        if ($salesColumns['customer_asm']) {
+                            $customerData[$salesColumns['customer_asm']] = $value('asm');
+                        }
+                        if ($salesColumns['customer_pic']) {
+                            $customerData[$salesColumns['customer_pic']] = $value('pic');
+                        }
+
+                        if (!empty($customerData)) {
+                            $customerData['updated_at'] = now();
+
+                            DB::table('master_customers')
+                                ->where('id', $other_address->customer_id)
+                                ->update($customerData);
+                        }
+                    }
+
+                    DB::commit();
+
+                    SyncCustomerToTrial::dispatch($other_address->customer_id);
+
                     $response['notification'] = [
                         'alert' => 'notify',
                         'type' => 'success',
@@ -342,6 +483,18 @@ class CustomerOtherAddressController extends Controller
                     $response['redirect_to'] = route('superuser.master.customer.index');
 
                     return $this->response(200, $response);
+                } catch (\Exception $e) {
+                    DB::rollback();
+                    \Log::error('Update member failed: ' . $e->getMessage());
+
+                    $response['notification'] = [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'header' => 'Error',
+                        'content' => 'Gagal menyimpan data member. Silakan coba lagi.',
+                    ];
+
+                    return $this->response(400, $response);
                 }
             }
         }

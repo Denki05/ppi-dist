@@ -96,4 +96,12 @@ return [
         'verify_tls' => env('TRIAL_SYNC_VERIFY_TLS', true),
     ],
 
+    // Push master store (parent) + member (child) dari trans ke app trial.
+    // Dipisah dari 'crm' agar tujuan sync master bisa beda dengan CRM member.
+    // Fallback ke CRM_BASE_URL/CRM_API_KEY bila variabel khusus ini kosong.
+    'trial_master' => [
+        'base_url' => env('TRIAL_MASTER_BASE_URL', env('CRM_BASE_URL', 'https://drive.lssoft88.xyz/api')),
+        'key'      => env('TRIAL_MASTER_API_KEY', env('CRM_API_KEY', env('USER_API_KEY'))),
+    ],
+
 ];

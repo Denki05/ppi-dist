@@ -291,6 +291,7 @@
 
 @endsection
 
+@section('modal')
 <!-- Modal balik ke so awal + catatan -->
 
 <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -316,6 +317,8 @@
     </div>
   </div>
 </div>
+@endsection
+
 
 
 

@@ -18,7 +18,8 @@ class Customer extends Model
         'owner_name', 'plafon_piutang', 'saldo', 'gps_latitude', 'gps_longitude', 'zone',
         'provinsi', 'kota', 'kecamatan', 'kelurahan',
         'text_provinsi', 'text_kota', 'text_kecamatan', 'text_kelurahan',
-        'zipcode', 'image_npwp', 'image_ktp', 'image_store', 'notification_email', 'status', 'existence', 'pic'
+        'zipcode', 'image_npwp', 'image_ktp', 'image_store', 'notification_email', 'status', 'existence',
+        'sm', 'asm', 'pic'
     ];
     protected $table = 'master_customers';
     public static $directory_image = 'superuser_assets/media/master/customer/';

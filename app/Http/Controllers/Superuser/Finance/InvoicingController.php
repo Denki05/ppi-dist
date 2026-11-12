@@ -776,7 +776,6 @@ class InvoicingController extends Controller
 
         $my_report = "C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\full.rpt"; 
         $my_pdf = 'C:\\xampp\\htdocs\\ppi-dist\\public\\cr\\invoice\\export\\' . $result->code . '-FULL' . '.pdf';
-
         // Variables for server information
         $my_server = "LOCAL";
         $my_user = "root";
@@ -794,6 +793,36 @@ class InvoicingController extends Controller
         // Prevent field prompt and set record selection
         $creport->EnableParameterPrompting = false;
         $creport->RecordSelectionFormula = "{penjualan_do.id} = " . $get_do->id;
+
+        // Stempel, ttd, dan tanggal pelunasan hanya untuk invoice yang sudah lunas
+        $is_paid = $result->do && $result->do->so && (int) $result->do->so->payment_status === 1;
+        if ($is_paid) {
+            $pay_date = \DB::table('finance_payable_detail as pd')
+                ->join('finance_payable as p', 'p.id', '=', 'pd.payable_id')
+                ->where('pd.invoice_id', $result->id)
+                ->whereNull('pd.deleted_at')
+                ->whereNull('p.deleted_at')
+                ->max('p.pay_date');
+
+            $footer = $creport->Sections->Item(14);
+            for ($i = 1; $i <= $footer->ReportObjects->Count; $i++) {
+                $obj = $footer->ReportObjects->Item($i);
+                if ($obj->Name === 'ttdstempel1') {
+                    $obj->Suppress = false;
+                }
+            }
+
+            if ($pay_date) {
+                $header = $creport->Sections->Item(2);
+                for ($i = 1; $i <= $header->ReportObjects->Count; $i++) {
+                    $obj = $header->ReportObjects->Item($i);
+                    if ($obj->Name === 'paydatetext1') {
+                        $obj->SetText('Pelunasan: ' . date('d-m-Y', strtotime($pay_date)));
+                        $obj->Suppress = false;
+                    }
+                }
+            }
+        }
 
         // Export to PDF process
         $creport->ExportOptions->DiskFileName = $my_pdf; // Export to PDF
@@ -1143,6 +1172,21 @@ class InvoicingController extends Controller
         }
     }
     
+    private function isInvoicePaid($invoice)
+    {
+        return $invoice->do && $invoice->do->so && (int) $invoice->do->so->payment_status === 1;
+    }
+
+    private function invoicePayDate($invoice)
+    {
+        return \DB::table('finance_payable_detail as pd')
+            ->join('finance_payable as p', 'p.id', '=', 'pd.payable_id')
+            ->where('pd.invoice_id', $invoice->id)
+            ->whereNull('pd.deleted_at')
+            ->whereNull('p.deleted_at')
+            ->max('p.pay_date');
+    }
+
     public function download_invoice_merge($id, $returnBinary = false)
     {
         if (empty($id) || !is_numeric($id)) {
@@ -1157,7 +1201,9 @@ class InvoicingController extends Controller
         $data = [
                 'result' => $result,
                 'company' => Company::first(), // Pastikan data perusahaan diambil.
-                'watermark' => $result->do->so->payment_status == '1' ? 'PAID' : 'COPY' // Atur sesuai kebutuhan, atau tambahkan logika dinamis.
+                'watermark' => $result->do->so->payment_status == '1' ? 'PAID' : 'COPY', // Atur sesuai kebutuhan, atau tambahkan logika dinamis.
+                'is_paid' => $this->isInvoicePaid($result),
+                'pay_date' => $this->invoicePayDate($result),
             ];
 
         $pdf = PDF::loadView('superuser.finance.invoicing.print_new', $data)
@@ -1187,7 +1233,9 @@ class InvoicingController extends Controller
             $data = [
                 'result' => $result,
                 'company' => Company::first(), // Pastikan data perusahaan diambil.
-                'watermark' => $result->do->so->payment_status == '1' ? 'PAID' : 'COPY' // Atur sesuai kebutuhan, atau tambahkan logika dinamis.
+                'watermark' => $result->do->so->payment_status == '1' ? 'PAID' : 'COPY', // Atur sesuai kebutuhan, atau tambahkan logika dinamis.
+                'is_paid' => $this->isInvoicePaid($result),
+                'pay_date' => $this->invoicePayDate($result),
             ];
 
             $pdf = PDF::loadView('superuser.finance.invoicing.print_new', $data)

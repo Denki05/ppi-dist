@@ -1,6 +1,10 @@
 @extends('superuser.app')
+
+@push('styles')
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.css" rel="stylesheet">
+@endpush
+
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>

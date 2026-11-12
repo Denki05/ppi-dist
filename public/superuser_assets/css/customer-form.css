@@ -1,0 +1,415 @@
+/* Form Customer / Member — layout datar berbasis kartu seksi */
+.cust-form {
+  max-width: 1180px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+/* Stepper: satu kartu per langkah agar tidak perlu scroll panjang */
+.cust-stepper {
+  position: relative;
+  display: flex;
+  padding: 2px 0 0;
+  margin: 0 0 20px;
+}
+
+.cust-stepper::before {
+  content: '';
+  position: absolute;
+  top: 19px;
+  left: 6%;
+  right: 6%;
+  height: 2px;
+  background: #e3eaf2;
+}
+
+.cust-progress-line {
+  position: absolute;
+  top: 19px;
+  left: 6%;
+  height: 2px;
+  background: #2c5f8a;
+  transition: width .25s ease;
+  z-index: 0;
+}
+
+.cust-step {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  text-align: center;
+  cursor: pointer;
+}
+
+.cust-step-icon {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef3f8;
+  color: #8a97a5;
+  font-size: 18px;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #dbe4ee;
+  transition: all .2s ease;
+}
+
+.cust-step p {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #8a97a5;
+}
+
+.cust-step.activated .cust-step-icon {
+  background: #fff;
+  color: #2c5f8a;
+  box-shadow: 0 0 0 1px #2c5f8a;
+}
+
+.cust-step.active .cust-step-icon {
+  background: #2c5f8a;
+  color: #fff;
+  box-shadow: 0 0 0 1px #2c5f8a;
+}
+
+.cust-step.activated p,
+.cust-step.active p {
+  color: #2c5f8a;
+}
+
+.cust-fieldset {
+  display: none;
+}
+
+.cust-fieldset.active {
+  display: block;
+  animation: custFade .25s ease;
+}
+
+@keyframes custFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Matikan perilaku wizard lama tanpa menghapus class f1 (dipakai form.js/plugin lain) */
+.f1.cust-form fieldset {
+  display: block !important;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.cust-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  margin-bottom: 18px;
+  border: 1px solid #e2eaf2;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f8fbfe 0%, #eef4fa 100%);
+}
+
+.cust-hero-icon {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #2c5f8a;
+  color: #fff;
+  font-size: 24px;
+}
+
+.cust-hero h4 {
+  margin: 0 0 2px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #24313d;
+}
+
+.cust-hero p {
+  margin: 0;
+  font-size: 13px;
+  color: #6b7b8a;
+}
+
+.cust-hero .cust-hero-badge {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: #2c5f8a;
+  background: #fff;
+  border: 1px solid #d7e4f0;
+  border-radius: 999px;
+  padding: 6px 12px;
+  white-space: nowrap;
+}
+
+.cust-card {
+  background: #fff;
+  border: 1px solid #e6ecf3;
+  border-radius: 14px;
+  padding: 22px 24px 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 2px rgba(16, 42, 67, .04);
+}
+
+.cust-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #eef2f6;
+}
+
+.cust-card-icon {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef4fa;
+  color: #2c5f8a;
+  font-size: 19px;
+}
+
+.cust-card-head h5 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #24313d;
+}
+
+.cust-card-head p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #7b8a99;
+}
+
+.cust-form .form-group {
+  margin-bottom: 16px;
+}
+
+.cust-form label.cust-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3c4a57;
+  text-align: left;
+}
+
+.cust-form .cust-label .req {
+  color: #dc3545;
+}
+
+/* tab.do.css menempelkan ikon pseudo pada label[for*=1..4]; matikan di form ini */
+.cust-form label.cust-label::before,
+.cust-form label.cust-label::after {
+  content: none !important;
+}
+
+.cust-form .form-control {
+  min-height: 42px;
+  border-radius: 8px;
+  border-color: #dbe3ea;
+  font-size: 14px;
+  color: #2f3d4a;
+}
+
+.cust-form textarea.form-control {
+  min-height: 84px;
+}
+
+.cust-form .form-control:focus {
+  border-color: #7fa9cb;
+  box-shadow: 0 0 0 3px rgba(44, 95, 138, .12);
+}
+
+.cust-form .form-control[readonly] {
+  background: #f4f7fa;
+  color: #5d6c7a;
+}
+
+.cust-help {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  color: #8a97a5;
+}
+
+.cust-subhead {
+  margin: 2px 0 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #7b8a99;
+}
+
+.cust-subhead ~ .cust-subhead {
+  margin-top: 8px;
+  padding-top: 14px;
+  border-top: 1px dashed #e6ecf3;
+}
+
+.cust-check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 1px solid #e6ecf3;
+  border-radius: 9px;
+  background: #fbfcfe;
+  margin-bottom: 10px;
+}
+
+.cust-check input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.cust-check label {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3c4a57;
+  cursor: pointer;
+  text-align: left;
+}
+
+.cust-check .cust-help {
+  margin-top: 0;
+}
+
+.cust-check-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cust-check-row .cust-check {
+  flex: 1 1 140px;
+  margin-bottom: 0;
+}
+
+/* tab.do.css memberi border oranye pada label checkbox terpilih */
+.cust-form .cust-check input:checked + label {
+  color: #3c4a57;
+  border: 0;
+}
+
+.cust-current-img {
+  display: block;
+  max-height: 96px;
+  max-width: 180px;
+  border-radius: 8px;
+  border: 1px solid #e6ecf3;
+  padding: 4px;
+  background: #fff;
+  margin-top: 8px;
+}
+
+.cust-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  margin-bottom: 8px;
+  background: #fff;
+  border: 1px solid #e6ecf3;
+  border-radius: 14px;
+  box-shadow: 0 -6px 18px rgba(16, 42, 67, .07);
+}
+
+.cust-actions .cust-actions-note {
+  margin-right: auto;
+  font-size: 12px;
+  color: #8a97a5;
+}
+
+.cust-actions .btn {
+  border-radius: 9px;
+  padding: 9px 20px;
+  font-weight: 600;
+}
+
+/* Select2 selaras dengan input */
+.cust-form .select2-container {
+  width: 100% !important;
+}
+
+.cust-form .select2-container--default .select2-selection--single {
+  height: 42px;
+  border: 1px solid #dbe3ea;
+  border-radius: 8px;
+  padding: 6px 4px;
+}
+
+.cust-form .select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 40px;
+}
+
+.cust-form .select2-container--default.select2-container--focus .select2-selection--single {
+  border-color: #7fa9cb;
+  box-shadow: 0 0 0 3px rgba(44, 95, 138, .12);
+}
+
+/* Fileinput */
+.cust-form .file-input .file-caption,
+.cust-form .file-input .btn-file {
+  border-radius: 8px;
+}
+
+@media (max-width: 767.98px) {
+  .cust-hero {
+    padding: 16px;
+  }
+
+  .cust-hero .cust-hero-badge {
+    display: none;
+  }
+
+  .cust-step p {
+    display: none;
+  }
+
+  .cust-step-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 15px;
+  }
+
+  .cust-stepper::before,
+  .cust-progress-line {
+    top: 16px;
+  }
+
+  .cust-card {
+    padding: 18px 16px 12px;
+  }
+
+  .cust-actions {
+    padding: 12px 14px;
+  }
+
+  .cust-actions .cust-actions-note {
+    display: none;
+  }
+}

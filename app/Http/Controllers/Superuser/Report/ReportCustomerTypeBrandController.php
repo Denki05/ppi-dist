@@ -200,7 +200,7 @@ class ReportCustomerTypeBrandController extends Controller
                             'customer_id'                   => $row->customerID,
                             'other_address_id'              => $row->otherAddressID,
                             'customer_name'                 => $row->customer_name,
-                            'officer'                       => $row->officer,
+                            // 'officer'                       => $row->officer,
                             'customer_type'                 => $row->customer_type,
                             'customer_kota'                 => $row->customer_kota,
                             'customer_provinsi'             => $row->customer_provinsi,

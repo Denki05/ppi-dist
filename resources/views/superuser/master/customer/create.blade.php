@@ -1,5 +1,9 @@
 @extends('superuser.app')
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('superuser_assets/css/customer-form.css') }}?v=20261110d">
+@endpush
+
 @section('content')
 <nav class="breadcrumb bg-white push">
   <span class="breadcrumb-item">Master</span>
@@ -9,327 +13,384 @@
 <div id="alert-block"></div>
 
 <div class="block">
-            <div class="block-conten" align="center">
-                <div class="col-md-10 col-md-offset-1">
-                	<form data-action="{{ route('superuser.master.customer.store') }}" data-type="POST" enctype="multipart/form-data" class="f1 ajax">
-                		<div class="f1-steps">
-                			<div class="f1-progress">
-                			    <div class="f1-progress-line" data-now-value="25" data-number-of-steps="4" style="width: 25%;"></div>
-                			</div>
-                      <div class="f1-step active">
-                        <div class="f1-step-icon"><i class="mdi mdi-account"></i></div>
-                          <p>Profile</p>
-                      </div>
-                			<div class="f1-step">
-                				<div class="f1-step-icon"><i class="mdi mdi-crosshairs-gps"></i></div>
-                				<p>Geo Tag</p>
-                			</div>
-                			<div class="f1-step">
-                				<div class="f1-step-icon"><i class="mdi mdi-currency-usd"></i></div>
-                				<p>Finance</p>
-                			</div>
-                      <div class="f1-step">
-                				<div class="f1-step-icon"><i class="mdi mdi-file-document-box"></i></div>
-                				<p>Document</p>
-                			</div>
-                		</div>
-                		
-                    <!-- Data Profile -->
-                		<fieldset>
-                		    <h5>Data Profile</h5>
-                          <div class="container">
-                            <div class="row">
-                              <div class="col">
-                                <div class="form-group row">
-                                  <label for="name" class="col-sm-2 col-form-label">Nama <span class="text-danger">*</span></label>
-                                  <div class="col-sm-10">
-                                    <input type="text" id="name" name="name" placeholder="Name Store" class="form-control">
-                                  </div>
-                                </div>
-                              </div>
-                              <div class="col">
-                                <div class="form-group row">
-                                  <label for="category" class="col-sm-2 col-form-label">Category<span class="text-danger">*</span></label>
-                                  <div class="col-sm-10">
-                                    <select class="js-select2 form-control" id="category" name="category" style="width:100%;" placeholder="Pilih Kategori Store">
-                                        <option>Select Category</option>
-                                        @foreach($category as $category)
-                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                        @endforeach
-                                    </select>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <div class="row">
-                              <div class="col">
-                                <div class="form-group row">
-                                  <label for="owner_name" class="col-sm-2 col-form-label">Owner <span class="text-danger">*</span></label>
-                                  <div class="col-sm-10">
-                                    <input type="text" id="owner_name" name="owner_name" placeholder="Owner Store" class="form-control">
-                                  </div>
-                                </div>
-                              </div>
-                              <div class="col">
-                                <!-- <div class="form-group row">
-                                  <label for="phone" class="col-sm-2 col-form-label">Telp <span class="text-danger">*</span></label>
-                                  <div class="col-sm-10">
-                                    <input type="text" name="phone" placeholder="Phone" class="form-control">
-                                  </div>
-                                </div> -->
-                                  <div class="form-group row">
-                                    <label for="ktp" class="col-sm-2 col-form-label">Telepone <span class="text-danger">*</span></label>
-                                    <div class="col-sm-10">
-                                      <!-- <input type="number" class="form-control" id="ktp" name="ktp" min="0" value="0"> -->
-                                      <div class="form-row">
-                                        <div class="col">
-                                          <input type="text" class="form-control" name="phone1" min="0" value="0" placeholder="Telephone 1">
-                                        </div>
-                                        <div class="col">
-                                          <input type="text" class="form-control" name="phone2" min="0" value="0" placeholder="Telephone 2">
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                              </div>
-                            </div>
-                            <div class="row">
-                              <div class="col">
-                                <div class="form-group row">
-                                  <label for="email" class="col-sm-2 col-form-label">email</label>
-                                  <div class="col-sm-10">
-                                    <input type="text" name="email" placeholder="Email" class="form-control">
-                                  </div>
-                                </div>
-                              </div>
-                              <div class="col">
-                                <div class="form-group row">
-                                  <label for="website" class="col-sm-2 col-form-label">Web / Sosmed</label>
-                                  <div class="col-sm-10">
-                                    <input type="text" id="website" name="website" placeholder="Website Store" class="form-control">
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <div class="row">
-                              <div class="mb-3">
-                                <label for="image_store" class="form-label">Image Store</label>
-                                <input class="form-control form-control-lg" id="image_store" name="image_store" type="file">
-                              </div>
-                            </div>
-                          </div>
-                            <div class="f1-buttons">
-                              <a href="{{route('superuser.master.customer.index')}}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
-                              <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
-                            </div>
-                        </fieldset>
-                        
-                        <!-- Geo Tag -->
-                        <fieldset>
-                            <h5>Data Geo Tag</h5>
-                            <div class="container">
-                              <div class="row">
-                                <div class="form-row">
-                                  <div class="form-group col-md-4">
-                                    <label for="provinsi">Provinsi</label>
-                                    <select class="js-select2 form-control" id="provinsi" name="provinsi" style="width:100%;" placeholder="Pilih Provinsi">
-                                      <option>Pilih provinsi</option>
-                                      @foreach ($provinces as $provinsi)
-                                      <option value="{{ $provinsi->prov_id }}">{{ $provinsi->prov_name }}</option>
-                                      @endforeach
-                                    </select>
-                                    <input type="hidden" name="text_provinsi">
-                                  </div>
-                                  <div class="form-group col-md-2">
-                                    <label for="kota">Kota</label>
-                                    <select class="js-select2 form-control" id="kota" name="kota" style="width:100%;" placeholder="Pilih Kota">
-                                      <option>Pilih Kota</option>
-                                    </select>
-                                    <input type="hidden" name="text_kota">
-                                  </div>
-                                  <div class="form-group col-md-2">
-                                    <label for="kecamatan">Kecamatan</label>
-                                    <select class="js-select2 form-control" id="kecamatan" name="kecamatan" style="width:100%;" placeholder="Pilih Kecamatan">
-                                      <option>Pilih Kecamatan</option>
-                                    </select>
-                                    <input type="hidden" name="text_kecamatan">
-                                  </div>
-                                  <div class="form-group col-md-2">
-                                    <label for="kelurahan">Kelurahan</label>
-                                    <select class="js-select2 form-control" id="kelurahan" name="kelurahan" style="width:100%;" placeholder="Pilih Kelurahan">
-                                      <option>Pilih Kelurahan</option>
-                                    </select>
-                                    <input type="hidden" name="text_kelurahan">
-                                  </div>
-                                  <div class="form-group col-md-2">
-                                    <label for="zipcode">Zipcode</label>
-                                    <select class="js-select2 form-control" id="zipcode" name="zipcode" style="width:100%;" placeholder="Pilih Kode Pos">
-                                      <option>Pilih Kode Pos</option>
-                                    </select>
-                                    <input type="hidden" name="text_zipcode">
-                                  </div>
-                                </div>
-                              <div class="row">
-                                <div class="col">
-                                  <div class="form-group row">
-                                    <label for="address" class="col-sm-2 col-form-label">Alamat <span class="text-danger">*</span></label>
-                                    <div class="col-sm-10">
-                                      <!-- <input type="text" name="address" id="address" placeholder="Store Address" class="form-control"> -->
-                                      <textarea class="form-control" id="address" name="address" rows="4"></textarea>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div class="col">
-                                  <div class="form-group row">
-                                      <label for="gps_latitude" class="col-sm-2 col-form-label">GPS Latitude<span class="text-danger">*</span></label>
-                                      <div class="col-sm-10">
-                                        <input type="text" name="gps_latitude" id="gps_latitude" placeholder="Latitude" class="form-control">
-                                      </div>
-                                      <label for="gps_longitude" class="col-sm-2 col-form-label">GPS Longitude<span class="text-danger">*</span></label>
-                                      <div class="col-sm-10">
-                                        <input type="text" name="gps_longitude" id="gps_longitude" placeholder="Longitude" class="form-control">
-                                      </div>
-                                  </div>
-                                </div>
-                              </div>
-                              <div class="row">
-                                <div class="mb-3">
-                                  <label for="image_store" class="form-label">Zone</label>
-                                  <select class="form-control js-select2" name="zone" style="width:100%;">
-                                    <option value="">Pilih Zona</option>
-                                    @foreach(\App\Entities\Master\CustomerOtherAddress::ZONING AS $zone => $zoning)
-                                    <option value="{{ $zoning }}">{{ $zoning }}</option>
-                                    @endforeach
-                                  </select>
-                                </div>
-                              </div>
-                              <div class="f1-buttons">
-                                <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
-                                <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
-                              </div>
-                            </div>
-                        </fieldset>
-                        
-                        <!-- Finance -->
-                        <fieldset>
-                            <h5>Data Finance</h5>
-                            <div class="container">
-                              <div class="row">
-                                <div class="col">
-                                  <div class="form-group row">
-                                    <label for="plafon_piutang" class="col-sm-2 col-form-label">Plafon Piutang <span class="text-danger">*</span></label>
-                                    <div class="col-sm-10">
-                                    <input type="number" class="form-control" id="plafon_piutang" name="plafon_piutang" min="0" value="0" step="0.0001">
-                                    </div>
-                                  </div>
-                                </div>
-                                <!-- <div class="col">
-                                  <div class="form-group row">
-                                    <div class="col-sm-2">Customer PPN</div>
-                                    <div class="col-sm-10">
-                                      <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="1" id="has_ppn" name="has_ppn">
-                                        <span style="font-style: italic;" class="text-danger">*check for customers ppn</span></label><br>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div> -->
-                                <div class="col">
-                                  <div class="form-group row">
-                                    <div class="col-sm-10">
-                                      <div class="form-row">
-                                        <div class="col">
-                                          <input class="form-check-input" type="checkbox" value="1" id="has_ppn" name="has_ppn">
-                                          <span style="font-style: bold;" class="text-danger"><b>*Customers ppn</b></span></label><br>
-                                        </div>
-                                        <div class="col">
-                                          <input class="form-check-input" type="checkbox" value="1" id="has_tempo" name="has_tempo">
-                                          <span style="font-style: bold;" class="text-danger"><b>*Customers tempo</b></span></label><br>
-                                        </div>
-                                        <div class="col">
-                                          <input class="form-control" id="tempo_limit" value="14" name="tempo_limit" placeholder="Tempo limit" disabled>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              <div class="row">
-                                <div class="col">
-                                  <div class="form-group row">
-                                    <label for="ktp" class="col-sm-2 col-form-label">KTP <span class="text-danger">*</span></label>
-                                    <div class="col-sm-10">
-                                      <!-- <input type="number" class="form-control" id="ktp" name="ktp" min="0" value="0"> -->
-                                      <div class="form-row">
-                                        <div class="col">
-                                          <input type="text" class="form-control" name="name_card_ktp" placeholder="Name Card" value="-">
-                                        </div>
-                                        <div class="col">
-                                          <input type="text" class="form-control" name="ktp" min="0" value="0" placeholder="Number Card">
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div class="col">
-                                  <div class="form-group row">
-                                    <label for="npwp" class="col-sm-2 col-form-label">NPWP <span class="text-danger">*</span></label>
-                                    <div class="col-sm-10">
-                                    <div class="form-row">
-                                        <div class="col">
-                                          <input type="text" class="form-control" name="name_card_npwp" placeholder="Name Card" value="-">
-                                        </div>
-                                        <div class="col">
-                                          <input type="text" class="form-control" name="npwp" min="0" value="0" placeholder="Number Card">
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              <div class="f1-buttons">
-                                  <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
-                                  <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
-                              </div>
-                            </div>
-                        </fieldset>
-                        
-                        <!-- Document Image -->
-                        <fieldset>
-                            <h5>Data Document</h5>
-                              <div class="container">
-                                <div class="row">
-                                  <div class="col">
-                                    <div class="form-group">
-                                      <label>Image NPWP</label>
-                                      <input type="file" id="image_npwp" name="image_npwp" data-max-file-size="2000" accept="image/png, image/jpeg">
-                                    </div>
-                                  </div>
-                                  <div class="col">
-                                    <div class="form-group">
-                                      <label>Image KTP</label>
-                                      <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              <div class="f1-buttons">
-                                  <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
-                                  <button type="submit" class="btn btn-primary btn-submit"><i class="fa fa-save"></i> Submit</button>
-                              </div>
-                            </div>
-                        </fieldset>
-                        <br>
-                	</form>
-                </div>
-            </div>
+  <div class="block-content-block">
+    <form data-action="{{ route('superuser.master.customer.store') }}" data-type="POST" enctype="multipart/form-data" class="cust-form ajax">
+      <div class="cust-hero">
+        <div class="cust-hero-icon"><i class="mdi mdi-store"></i></div>
+        <div>
+          <h4>Buat Store Baru</h4>
+          <p>Lengkapi identitas, alamat, sales, dan keuangan store. Member default dibuat otomatis.</p>
         </div>
+        <span class="cust-hero-badge">Store</span>
+      </div>
+
+      <div class="cust-stepper">
+        <div class="cust-progress-line" style="width: 0;"></div>
+        <div class="cust-step active" data-step="0">
+          <div class="cust-step-icon"><i class="mdi mdi-store"></i></div>
+          <p>Identitas Store</p>
+        </div>
+        <div class="cust-step" data-step="1">
+          <div class="cust-step-icon"><i class="mdi mdi-map-marker"></i></div>
+          <p>Alamat & Wilayah</p>
+        </div>
+        <div class="cust-step" data-step="2">
+          <div class="cust-step-icon"><i class="mdi mdi-account-multiple"></i></div>
+          <p>Sales &amp; AR</p>
+        </div>
+        <div class="cust-step" data-step="3">
+          <div class="cust-step-icon"><i class="mdi mdi-currency-usd"></i></div>
+          <p>Keuangan</p>
+        </div>
+        <div class="cust-step" data-step="4">
+          <div class="cust-step-icon"><i class="mdi mdi-file-document-box"></i></div>
+          <p>Dokumen</p>
+        </div>
+      </div>
+        <section class="cust-fieldset active" data-step="0">
+        <div class="cust-card">
+          <div class="cust-card-head">
+            <div class="cust-card-icon"><i class="mdi mdi-account"></i></div>
+            <div>
+              <h5>Identitas Store</h5>
+              <p>Nama, kategori, dan kontak utama store.</p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-8">
+              <div class="form-group">
+                <label class="cust-label" for="name">Nama Store <span class="req">*</span></label>
+                <input type="text" id="name" name="name" placeholder="Contoh: PVJ" class="form-control">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="category">Kategori <span class="req">*</span></label>
+                <select class="js-select2 form-control" id="category" name="category" placeholder="Pilih kategori store">
+                  <option value="">Pilih kategori</option>
+                  @foreach($category as $rowCategory)
+                  <option value="{{ $rowCategory->id }}">{{ $rowCategory->name }}</option>
+                  @endforeach
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="cust-label" for="owner_name">Owner <span class="req">*</span></label>
+                <input type="text" id="owner_name" name="owner_name" placeholder="Nama pemilik store" class="form-control">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label class="cust-label" for="phone1">Telepon 1 <span class="req">*</span></label>
+                <input type="text" class="form-control" id="phone1" name="phone1" placeholder="08xxxxxxxxxx">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label class="cust-label" for="phone2">Telepon 2</label>
+                <input type="text" class="form-control" id="phone2" name="phone2" placeholder="Opsional">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="cust-label" for="email">Email</label>
+                <input type="text" id="email" name="email" placeholder="email@domain.com" class="form-control">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="cust-label" for="website">Web / Sosmed</label>
+                <input type="text" id="website" name="website" placeholder="Instagram / website" class="form-control">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="cust-label" for="image_store">Foto Store</label>
+                <input class="form-control" id="image_store" name="image_store" type="file" accept="image/png, image/jpeg">
+                <small class="cust-help">Opsional. Maksimal 2 MB (JPG/PNG).</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        </section>
+        <section class="cust-fieldset" data-step="1">
+        <div class="cust-card">
+          <div class="cust-card-head">
+            <div class="cust-card-icon"><i class="mdi mdi-map-marker"></i></div>
+            <div>
+              <h5>Alamat &amp; Wilayah</h5>
+              <p>Alamat pengiriman dan titik lokasi store.</p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="provinsi">Provinsi</label>
+                <select class="js-select2 form-control" id="provinsi" name="provinsi" placeholder="Pilih provinsi">
+                  <option value="">Pilih provinsi</option>
+                  @foreach ($provinces as $provinsi)
+                  <option value="{{ $provinsi->prov_id }}">{{ $provinsi->prov_name }}</option>
+                  @endforeach
+                </select>
+                <input type="hidden" name="text_provinsi">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="kota">Kota / Kabupaten</label>
+                <select class="js-select2 form-control" id="kota" name="kota" placeholder="Pilih kota">
+                  <option value="">Pilih kota</option>
+                </select>
+                <input type="hidden" name="text_kota">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="kecamatan">Kecamatan</label>
+                <select class="js-select2 form-control" id="kecamatan" name="kecamatan" placeholder="Pilih kecamatan">
+                  <option value="">Pilih kecamatan</option>
+                </select>
+                <input type="hidden" name="text_kecamatan">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="kelurahan">Kelurahan</label>
+                <select class="js-select2 form-control" id="kelurahan" name="kelurahan" placeholder="Pilih kelurahan">
+                  <option value="">Pilih kelurahan</option>
+                </select>
+                <input type="hidden" name="text_kelurahan">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="zipcode">Kode Pos</label>
+                <select class="js-select2 form-control" id="zipcode" name="zipcode" placeholder="Pilih kode pos">
+                  <option value="">Pilih kode pos</option>
+                </select>
+                <input type="hidden" name="text_zipcode">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="zone">Zona</label>
+                <select class="form-control js-select2" id="zone" name="zone">
+                  <option value="">Pilih zona</option>
+                  @foreach(\App\Entities\Master\CustomerOtherAddress::ZONING AS $zoning)
+                  <option value="{{ $zoning }}">{{ $zoning }}</option>
+                  @endforeach
+                </select>
+                <small class="cust-help">Dipakai untuk pengelompokan rute / gudang.</small>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <div class="form-group">
+                <label class="cust-label" for="address">Alamat Lengkap <span class="req">*</span></label>
+                <textarea class="form-control" id="address" name="address" rows="3" placeholder="Nama jalan, nomor, patokan"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="cust-label" for="gps_latitude">GPS Latitude <span class="req">*</span></label>
+                <input type="text" name="gps_latitude" id="gps_latitude" placeholder="-7.302016" class="form-control">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="cust-label" for="gps_longitude">GPS Longitude <span class="req">*</span></label>
+                <input type="text" name="gps_longitude" id="gps_longitude" placeholder="112.785213" class="form-control">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        </section>
+        <section class="cust-fieldset" data-step="2">
+        <div class="cust-card">
+          <div class="cust-card-head">
+            <div class="cust-card-icon"><i class="mdi mdi-account-multiple"></i></div>
+            <div>
+              <h5>Sales &amp; Account Representative</h5>
+              <p>Nama penanggung jawab sales dan AR store. Data ini juga disalin ke member default.</p>
+            </div>
+          </div>
+          <div class="cust-subhead">Tim Sales</div>
+          <div class="row">
+            <div class="col-md-3">
+              <div class="form-group">
+                <label class="cust-label" for="sm_am">SM / AM</label>
+                <input type="text" id="sm_am" name="sm_am" placeholder="Nama SM / AM" class="form-control">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label class="cust-label" for="asm">ASM / AMS</label>
+                <input type="text" id="asm" name="asm" placeholder="Nama ASM / AMS" class="form-control">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label class="cust-label" for="pic">PIC</label>
+                <input type="text" id="pic" name="pic" placeholder="Nama PIC" class="form-control">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label class="cust-label" for="officer">Officer</label>
+                <input type="text" id="officer" name="officer" placeholder="Nama officer" class="form-control">
+              </div>
+            </div>
+          </div>
+          <div class="cust-subhead">Account Representative</div>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="ar1">AR1</label>
+                <input type="text" id="ar1" name="ar1" placeholder="Account Representative 1" class="form-control">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="ar2">AR2</label>
+                <input type="text" id="ar2" name="ar2" placeholder="Account Representative 2" class="form-control">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="ar3">AR3</label>
+                <input type="text" id="ar3" name="ar3" placeholder="Account Representative 3" class="form-control">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        </section>
+        <section class="cust-fieldset" data-step="3">
+        <div class="cust-card">
+          <div class="cust-card-head">
+            <div class="cust-card-icon"><i class="mdi mdi-currency-usd"></i></div>
+            <div>
+              <h5>Keuangan</h5>
+              <p>Plafon piutang, pajak, tempo, dan data kartu identitas.</p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="plafon_piutang">Plafon Piutang <span class="req">*</span></label>
+                <input type="number" class="form-control" id="plafon_piutang" name="plafon_piutang" min="0" value="0" step="0.0001">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="tempo_limit">Tempo Limit (hari)</label>
+                <input class="form-control" id="tempo_limit" value="14" name="tempo_limit" placeholder="Jumlah hari" disabled>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label">Status Pajak &amp; Tempo</label>
+                <div class="cust-check-row">
+                  <div class="cust-check">
+                    <input type="checkbox" value="1" id="has_ppn" name="has_ppn">
+                    <label for="has_ppn">Customer PPN</label>
+                  </div>
+                  <div class="cust-check">
+                    <input type="checkbox" value="1" id="has_tempo" name="has_tempo">
+                    <label for="has_tempo">Customer Tempo</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="cust-label" for="name_card_ktp">KTP</label>
+                <div class="form-row">
+                  <div class="col">
+                    <input type="text" class="form-control" id="name_card_ktp" name="name_card_ktp" placeholder="Nama pada KTP" value="-">
+                  </div>
+                  <div class="col">
+                    <input type="text" class="form-control" name="ktp" placeholder="Nomor KTP">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="cust-label" for="name_card_npwp">NPWP</label>
+                <div class="form-row">
+                  <div class="col">
+                    <input type="text" class="form-control" id="name_card_npwp" name="name_card_npwp" placeholder="Nama pada NPWP" value="-">
+                  </div>
+                  <div class="col">
+                    <input type="text" class="form-control" name="npwp" placeholder="Nomor NPWP">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        </section>
+        <section class="cust-fieldset" data-step="4">
+        <div class="cust-card">
+          <div class="cust-card-head">
+            <div class="cust-card-icon"><i class="mdi mdi-file-document-box"></i></div>
+            <div>
+              <h5>Dokumen</h5>
+              <p>Unggah foto KTP dan NPWP bila tersedia.</p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="cust-label" for="image_ktp">Foto KTP</label>
+                <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="cust-label" for="image_npwp">Foto NPWP</label>
+                <input type="file" id="image_npwp" name="image_npwp" data-max-file-size="2000" accept="image/png, image/jpeg">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        </section>
+        <div class="cust-actions">
+          <span class="cust-actions-note">Field bertanda <span class="text-danger">*</span> wajib diisi.</span>
+          <a href="{{ route('superuser.master.customer.index') }}" class="btn btn-warning text-white"><i class="fa fa-arrow-left"></i> Batal</a>
+          <button type="button" class="btn btn-light cust-prev" style="display:none;"><i class="fa fa-arrow-left"></i> Sebelumnya</button>
+          <button type="button" class="btn btn-primary cust-next">Lanjut <i class="fa fa-arrow-right"></i></button>
+          <button type="submit" class="btn btn-primary btn-submit cust-submit"><i class="fa fa-save"></i> Simpan Store</button>
+        </div>
+    </form>
+  </div>
+</div>
 @endsection
 
 @include('superuser.asset.plugin.fileinput')
 @include('superuser.asset.plugin.select2')
 
 @push('scripts')
+  <script src="{{ asset('superuser_assets/js/customer-form.js') }}?v=20261110b"></script>
 <script src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_MAPS_API_KEY') }}&callback=initMap&v=weekly&libraries=marker"></script>
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script>
@@ -362,15 +423,8 @@
       },
     });
 
-    $('#has_tempo').click(function () {
-        //check if checkbox is checked
-        if ($(this).is(':checked')) {
-
-            $('#tempo_limit').removeAttr('disabled'); //enable input
-
-        } else {
-            $('#tempo_limit').attr('disabled', true); //disable input
-        }
+    $('#has_tempo').on('change', function () {
+      $('#tempo_limit').prop('disabled', !this.checked);
     });
 
     $('.js-select2').select2()
@@ -489,5 +543,3 @@
         }
     </script>
 @endpush
-
-

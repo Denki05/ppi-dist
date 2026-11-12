@@ -102,6 +102,11 @@
   <div class="header {{ $watermark == 'Paid' ? 'copy' : '' }}">
     {{$watermark}}
   </div>
+  @if (($is_paid ?? false) && ($pay_date ?? null))
+  <div style="position: fixed; top: 62%; left: 0; width: 100%; text-align: center; font-size: 20px; font-weight: bold; color: #000; z-index: 99998;">
+    Pelunasan: {{ date('d-m-Y', strtotime($pay_date)) }}
+  </div>
+  @endif
   <h2 style="text-align: center; margin: 0; padding: 0; margin-bottom: 5px;"><u>INVOICE</u></h2>
   
   <div style="margin-bottom: 15px; font-size: 11px;">

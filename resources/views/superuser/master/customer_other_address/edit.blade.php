@@ -1,4 +1,29 @@
 @extends('superuser.app')
+@php
+  $salesColumns = $sales_columns ?? [];
+  $memberSmColumn = $salesColumns['member_sm'] ?? null;
+  $memberAsmColumn = $salesColumns['member_asm'] ?? null;
+  $memberPicColumn = $salesColumns['member_pic'] ?? null;
+  $memberOfficerColumn = $salesColumns['member_officer'] ?? null;
+  $memberAr1Column = $salesColumns['member_ar1'] ?? null;
+  $memberAr2Column = $salesColumns['member_ar2'] ?? null;
+  $memberAr3Column = $salesColumns['member_ar3'] ?? null;
+  $smLabel = $memberSmColumn === 'am' ? 'AM' : 'SM';
+  $asmLabel = $memberAsmColumn === 'ams' ? 'AMS' : 'ASM';
+  $smValue = $memberSmColumn ? $other_address->{$memberSmColumn} : null;
+  $asmValue = $memberAsmColumn ? $other_address->{$memberAsmColumn} : null;
+  $picValue = $memberPicColumn ? $other_address->{$memberPicColumn} : null;
+  $officerValue = $memberOfficerColumn ? $other_address->{$memberOfficerColumn} : null;
+  $ar1Value = $memberAr1Column ? $other_address->{$memberAr1Column} : null;
+  $ar2Value = $memberAr2Column ? $other_address->{$memberAr2Column} : null;
+  $ar3Value = $memberAr3Column ? $other_address->{$memberAr3Column} : null;
+  $ktp = explode('/', (string) $other_address->ktp);
+  $npwp = explode('/', (string) $other_address->npwp);
+@endphp
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('superuser_assets/css/customer-form.css') }}?v=20261110b">
+@endpush
 
 @section('content')
 <nav class="breadcrumb bg-white push">
@@ -6,287 +31,329 @@
   <a class="breadcrumb-item" href="{{ route('superuser.master.customer.index') }}">Member</a>
   <span class="breadcrumb-item active">Edit</span>
 </nav>
+
 <div class="block">
-  <div class="block-conten" align="center">
-    <div class="col-md-10 col-md-offset-1">
-      <form data-action="{{ route('superuser.master.customer_other_address.update', $other_address->id) }}" data-type="POST" enctype="multipart/form-data" class="f1 ajax">
-        <input type="hidden" name="_method" value="PUT">
-        <div class="f1-steps">
-          <div class="f1-progress">
-            <div class="f1-progress-line" data-now-value="25" data-number-of-steps="4" style="width: 25%;"></div>
+  <div class="block-content-block">
+    <form data-action="{{ route('superuser.master.customer_other_address.update', $other_address->id) }}" data-type="POST" enctype="multipart/form-data" class="cust-form ajax">
+      <input type="hidden" name="_method" value="PUT">
+      <div class="cust-hero">
+        <div class="cust-hero-icon"><i class="mdi mdi-account-edit"></i></div>
+        <div>
+          <h4>Edit Member &mdash; {{ $other_address->name }}</h4>
+          <p>
+            Store induk: <strong>{{ $other_address->store->name ?? '-' }}</strong>
+            @if($other_address->member_default == 1)
+            &middot; member default (perubahan {{ $smLabel }}, {{ $asmLabel }}, PIC ikut ke store)
+            @endif
+          </p>
+        </div>
+        <span class="cust-hero-badge">{{ $other_address->member_default == 1 ? 'Default' : 'Member' }}</span>
+      </div>
+
+      <div class="cust-stepper">
+        <div class="cust-progress-line" style="width: 0;"></div>
+        <div class="cust-step active" data-step="0">
+          <div class="cust-step-icon"><i class="mdi mdi-account"></i></div>
+          <p>Profil Member</p>
+        </div>
+        <div class="cust-step" data-step="1">
+          <div class="cust-step-icon"><i class="mdi mdi-map-marker"></i></div>
+          <p>Alamat & Wilayah</p>
+        </div>
+        <div class="cust-step" data-step="2">
+          <div class="cust-step-icon"><i class="mdi mdi-card-account-details"></i></div>
+          <p>Identitas Pajak</p>
+        </div>
+        <div class="cust-step" data-step="3">
+          <div class="cust-step-icon"><i class="mdi mdi-file-document-box"></i></div>
+          <p>Dokumen</p>
+        </div>
+      </div>
+        <section class="cust-fieldset active" data-step="0">
+        <div class="cust-card">
+          <div class="cust-card-head">
+            <div class="cust-card-icon"><i class="mdi mdi-account"></i></div>
+            <div>
+              <h5>Profil Member</h5>
+              <p>Identitas dan kontak member.</p>
+            </div>
           </div>
-          <div class="f1-step active">
-            <div class="f1-step-icon"><i class="mdi mdi-account"></i></div>
-            <p>Profile</p>
+          <div class="row">
+            <div class="col-md-8">
+              <div class="form-group">
+                <label class="cust-label" for="name">Nama <span class="req">*</span></label>
+                <input type="text" id="name" name="name" placeholder="Nama member" class="form-control" value="{{ $other_address->name }}">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="category">Kategori</label>
+                <input type="text" id="category" name="category" placeholder="Kategori member" class="form-control" value="{{ $other_address->store->category->name }}" readonly>
+              </div>
+            </div>
           </div>
-          <div class="f1-step">
-          	<div class="f1-step-icon"><i class="mdi mdi-crosshairs-gps"></i></div>
-            <p>Geo Tag</p>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="cust-label" for="contact_person">Contact Person <span class="req">*</span></label>
+                <input type="text" id="contact_person" name="contact_person" placeholder="Nama contact person" class="form-control" value="{{ $other_address->contact_person }}">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="cust-label" for="phone">Telp <span class="req">*</span></label>
+                <input type="text" id="phone" name="phone" placeholder="08xxxxxxxxxx" class="form-control" value="{{ $other_address->phone }}">
+              </div>
+            </div>
           </div>
-          <div class="f1-step">
-            <div class="f1-step-icon"><i class="mdi mdi-currency-usd"></i></div>
-            <p>Finance</p>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="sm_am">{{ $smLabel }}</label>
+                <input type="text" id="sm_am" name="sm_am" placeholder="Nama {{ $smLabel }}" class="form-control" value="{{ $smValue }}">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="asm">{{ $asmLabel }}</label>
+                <input type="text" id="asm" name="asm" placeholder="Nama {{ $asmLabel }}" class="form-control" value="{{ $asmValue }}">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="pic">PIC</label>
+                <input type="text" id="pic" name="pic" placeholder="Nama PIC" class="form-control" value="{{ $picValue }}">
+              </div>
+            </div>
           </div>
-          <div class="f1-step">
-          	<div class="f1-step-icon"><i class="mdi mdi-file-document-box"></i></div>
-          	<p>Document</p>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="officer">Officer</label>
+                <input type="text" id="officer" name="officer" placeholder="Nama officer" class="form-control" value="{{ $officerValue }}">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="target_income">Target Incomes</label>
+                <input type="number" id="target_income" name="target_income" placeholder="0" class="form-control" value="{{ $other_address->setting_income_target ?? 0 }}">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <div class="form-group">
+                <label class="cust-label" for="address">Alamat <span class="req">*</span></label>
+                <textarea class="form-control" id="address" name="address" rows="2" placeholder="Alamat member">{{ $other_address->address }}</textarea>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="ar1">AR1</label>
+                <input type="text" id="ar1" name="ar1" placeholder="Account Representative 1" class="form-control" value="{{ $ar1Value }}">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="ar2">AR2</label>
+                <input type="text" id="ar2" name="ar2" placeholder="Account Representative 2" class="form-control" value="{{ $ar2Value }}">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="ar3">AR3</label>
+                <input type="text" id="ar3" name="ar3" placeholder="Account Representative 3" class="form-control" value="{{ $ar3Value }}">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="cust-check">
+                <input type="checkbox" value="1" id="free_shipping" name="free_shipping" @if($other_address->free_shipping == 1) checked @endif>
+                <label for="free_shipping">Free Shipping</label>
+              </div>
+            </div>
+          </div>
+          @if($other_address->member_default == 1)
+          <small class="cust-help">Member ini default. Perubahan {{ $smLabel }}, {{ $asmLabel }}, dan PIC ikut memperbarui data store.</small>
+          @endif
+        </div>
+
+        </section>
+        <section class="cust-fieldset" data-step="1">
+        <div class="cust-card">
+          <div class="cust-card-head">
+            <div class="cust-card-icon"><i class="mdi mdi-map-marker"></i></div>
+            <div>
+              <h5>Alamat &amp; Wilayah</h5>
+              <p>Lokasi pengiriman member.</p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="provinsi">Provinsi</label>
+                <select class="js-select2 form-control" id="provinsi" name="provinsi" placeholder="Pilih provinsi">
+                  <option value="">Pilih provinsi</option>
+                  @foreach ($provinces as $provinsi)
+                  <option value="{{ $provinsi->prov_id }}" {{ ($provinsi->prov_id == $other_address->provinsi) ? 'selected' : '' }}>{{ $provinsi->prov_name }}</option>
+                  @endforeach
+                </select>
+                <input type="hidden" name="text_provinsi" value="{{ $other_address->text_provinsi }}">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="kota">Kota / Kabupaten</label>
+                <select class="js-select2 form-control" id="kota" name="kota" placeholder="Pilih kota">
+                  <option value="{{ $other_address->kota }}">{{ $other_address->text_kota }}</option>
+                </select>
+                <input type="hidden" name="text_kota" value="{{ $other_address->text_kota }}">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="kecamatan">Kecamatan</label>
+                <select class="js-select2 form-control" id="kecamatan" name="kecamatan" placeholder="Pilih kecamatan">
+                  <option value="{{ $other_address->kecamatan }}">{{ $other_address->text_kecamatan }}</option>
+                </select>
+                <input type="hidden" name="text_kecamatan" value="{{ $other_address->text_kecamatan }}">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="kelurahan">Kelurahan</label>
+                <select class="js-select2 form-control" id="kelurahan" name="kelurahan" placeholder="Pilih kelurahan">
+                  <option value="{{ $other_address->kelurahan }}">{{ $other_address->text_kelurahan }}</option>
+                </select>
+                <input type="hidden" name="text_kelurahan" value="{{ $other_address->text_kelurahan }}">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="zipcode">Kode Pos</label>
+                <select class="js-select2 form-control" id="zipcode" name="zipcode" placeholder="Pilih kode pos">
+                  <option value="{{ $other_address->zipcode }}">{{ $other_address->zipcode }}</option>
+                </select>
+                <input type="hidden" name="text_zipcode" value="{{ $other_address->zipcode }}">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="cust-label" for="zone">Zona</label>
+                <select class="form-control js-select2" id="zone" name="zone">
+                  <option value="">Pilih zona</option>
+                  @foreach(\App\Entities\Master\CustomerOtherAddress::ZONING AS $zoning)
+                  <option value="{{ $zoning }}" {{ $other_address->zone == $zoning ? 'selected' : '' }}>{{ $zoning }}</option>
+                  @endforeach
+                  @if($other_address->zone && !in_array($other_address->zone, \App\Entities\Master\CustomerOtherAddress::ZONING))
+                  <option value="{{ $other_address->zone }}" selected>{{ $other_address->zone }}</option>
+                  @endif
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="cust-label" for="gps_latitude">GPS Latitude</label>
+                <input type="text" name="gps_latitude" id="gps_latitude" placeholder="Latitude" class="form-control" value="{{ $other_address->gps_latitude }}">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="cust-label" for="gps_longitude">GPS Longitude</label>
+                <input type="text" name="gps_longitude" id="gps_longitude" placeholder="Longitude" class="form-control" value="{{ $other_address->gps_longitude }}">
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Data Profile -->
-        <fieldset>
-          <h5>Data Profile</h5>
-          <br>
-          <div class="container">
-            <div class="row">
-              <div class="col">
-                <div class="form-group row">
-                  <label for="name" class="col-sm-2 col-form-label">Nama <span class="text-danger">*</span></label>
-                  <div class="col-sm-10">
-                    <input type="text" id="name" name="name" placeholder="Name Store" class="form-control" value="{{$other_address->name}}">
-                  </div>
-                </div>
-              </div>
-              <div class="col">
-                <div class="form-group row">
-                  <label for="name" class="col-sm-2 col-form-label">Category<span class="text-danger">*</span></label>
-                  <div class="col-sm-10">
-                    <input type="text" id="category" name="category" placeholder="Category Member" class="form-control" value="{{$other_address->store->category->name}}" readonly>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col">
-                <div class="form-group row">
-                  <label for="contact_person" class="col-sm-2 col-form-label">Contact Person <span class="text-danger">*</span></label>
-                  <div class="col-sm-10">
-                    <input type="text" id="contact_person" name="contact_person" placeholder="Contact Person" class="form-control" value="{{$other_address->contact_person}}">
-                  </div>
-                </div>
-              </div>
-              <div class="col">
-                <div class="form-group row">
-                  <label for="name" class="col-sm-2 col-form-label">Telp <span class="text-danger">*</span></label>
-                  <div class="col-sm-10">
-                    <input type="text" id="phone" name="phone" placeholder="Telepone" class="form-control" value="{{$other_address->phone}}">
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col">
-                <div class="form-group row">
-                  <label for="contact_person" class="col-sm-2 col-form-label">Officer <span class="text-danger">*</span></label>
-                  <div class="col-sm-10">
-                    <input type="text" id="officer" name="officer" placeholder="Officer" class="form-control" value="{{ $other_address->officer ?? '-' }}">
-                  </div>
-                </div>
-              </div>
-              <div class="col">
-                <div class="form-group row">
-                  <label for="name" class="col-sm-2 col-form-label">Alamat <span class="text-danger">*</span></label>
-                  <div class="col-sm-10">
-                    <textarea class="form-control" name="address" rows="2">{{$other_address->address}}</textarea>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-6">
-                <div class="form-group row">
-                  <label for="ar" class="col-sm-2 col-form-label">AR <span class="text-danger">*</span></label>
-                  <div class="col-sm-10">
-                    <input type="text" id="ar" name="ar" placeholder="Account Representative" class="form-control" value="{{ $other_address->account_representative ?? '-' }}">
-                  </div>
-                </div>
-              </div>
-              <div class="col-6">
-                <div class="form-group row">
-                  <label for="target_income" class="col-sm-2 col-form-label">Target Incomes <span class="text-danger">*</span></label>
-                  <div class="col-sm-10">
-                    <input type="number" id="target_income" name="target_income" placeholder="Target Income's" class="form-control" value="{{ $other_address->setting_income_target ?? 0 }}">
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col">
-                <div class="form-group">
-                  <input type="checkbox" value="1" name="free_shipping" <?php if ($other_address->free_shipping == 1) { ?> checked="checked" <?php } ?>  />
-                  <span class="text-danger"><b>*Free Shipping</b></span></label><br>
-                </div>
-              </div>
-            </div>
-            <div class="f1-buttons">
-              <a href="{{route('superuser.master.customer.index')}}" class="btn btn-warning  btn-md text-white"><i class="fa fa-arrow-left"></i> Back</a>
-              <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
+        </section>
+        <section class="cust-fieldset" data-step="2">
+        <div class="cust-card">
+          <div class="cust-card-head">
+            <div class="cust-card-icon"><i class="mdi mdi-currency-usd"></i></div>
+            <div>
+              <h5>Identitas Pajak</h5>
+              <p>Data KTP dan NPWP member.</p>
             </div>
           </div>
-        </fieldset>
-
-        <!-- Geo Tag -->
-        <fieldset>
-          <h5>Data Geo Tag</h5>
-          <br>
-            <div class="container">
-              <div class="row">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="cust-label" for="name_card_ktp">KTP</label>
                 <div class="form-row">
-                  <div class="form-group col-md-4">
-                    <label for="provinsi">Provinsi</label>
-                    <select class="js-select2 form-control" id="provinsi" name="provinsi" style="width:100%;" placeholder="Pilih Provinsi">
-                      <option>Pilih provinsi</option>
-                      @foreach ($provinces as $provinsi)
-                      <option value="{{ $provinsi->prov_id }}" {{ ($provinsi->prov_id == $other_address->provinsi ) ? 'selected' : '' }}>{{ $provinsi->prov_name }}</option>
-                      @endforeach
-                    </select>
-                    <input type="hidden" name="text_provinsi" value="{{ $other_address->text_provinsi }}">
+                  <div class="col">
+                    <input type="text" class="form-control" id="name_card_ktp" name="name_card_ktp" placeholder="Nama pada KTP" value="{{ $ktp[0] ?? '' }}">
                   </div>
-                  <div class="form-group col-md-2">
-                    <label for="kota">Kota</label>
-                    <select class="js-select2 form-control" id="kota" name="kota" style="width:100%;" placeholder="Pilih Kota">
-                      <option value="{{ $other_address->kota }}">{{ $other_address->text_kota }}</option>
-                    </select>           
-                    <input type="hidden" name="text_kota" value="{{ $other_address->text_kota }}">
+                  <div class="col">
+                    <input type="text" class="form-control" name="ktp" placeholder="Nomor KTP" value="{{ $ktp[1] ?? '' }}">
                   </div>
-                  <div class="form-group col-md-2">
-                    <label for="kecamatan">Kecamatan</label>
-                    <select class="js-select2 form-control" id="kecamatan" name="kecamatan" style="width:100%;" placeholder="Pilih Kecamatan">
-                      <option value="{{ $other_address->kecamatan }}">{{ $other_address->text_kecamatan }}</option>
-                    </select>
-                    <input type="hidden" name="text_kecamatan" value="{{ $other_address->text_kecamatan }}">
-                  </div>          
-                  <div class="form-group col-md-2">
-                    <label for="kelurahan">Kelurahan</label>
-                    <select class="js-select2 form-control" id="kelurahan" name="kelurahan" style="width:100%;" placeholder="Pilih Kelurahan">
-                    <option value="{{ $other_address->kelurahan }}">{{ $other_address->text_kelurahan }}</option>
-                      
-                    </select>
-                    <input type="hidden" name="text_kelurahan" value="{{ $other_address->text_kelurahan }}">
-                  </div>
-                  <div class="form-group col-md-2">
-                    <label for="zipcode">Zipcode</label>
-                    <select class="js-select2 form-control" id="zipcode" name="zipcode" style="width:100%;" placeholder="Pilih Kode Pos">
-                      <option value="{{ $other_address->zipcode }}">{{ $other_address->zipcode }}</option>
-                    </select>
-                    <input type="hidden" name="text_zipcode" value="{{ $other_address->zipcode }}">
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col">
-                  <div class="form-group row">
-                    <label for="name" class="col-sm-2 col-form-label">GPS Latitude</label>
-                    <div class="col-sm-10">
-                      <input type="text" name="gps_latitude" id="gps_latitude" placeholder="Latitude" class="form-control" value="{{$other_address->gps_latitude  ?? '-'}}">
-                    </div>
-                  </div>
-                </div>
-                <div class="col">
-                  <div class="form-group row">
-                    <label for="name" class="col-sm-2 col-form-label">GPS Longitude</label>
-                    <div class="col-sm-10">
-                      <input type="text" name="gps_longitude" id="gps_longitude" placeholder="Latitude" class="form-control" value="{{$other_address->gps_longitude ?? '-'}}">
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="mb-3">
-                  <label for="image_store" class="form-label">Zone</label>
-                  <select class="form-control js-select2" name="zone" style="width:100%;">
-                    <option value="">Pilih Zona</option>
-                    @foreach(\App\Entities\Master\CustomerOtherAddress::ZONING AS $zone => $zoning)
-                    <option value="{{ $zoning }}" {{ ($zoning == $other_address->zone ) ? 'selected' : '' }}>{{ $zoning }}</option>
-                    @endforeach
-                  </select>
-                </div>
-              </div>
-              <div class="f1-buttons">
-                <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
-                <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
-              </div>
-            </div>
-        </fieldset>
-
-        <!-- Finance -->
-        <fieldset>
-          <h5>Data Finance</h5>
-          <br>
-          <div class="container">
-            <div class="row">
-              <div class="col">
-                <div class="form-group row">
-                  <?php 
-                    $ktp = explode("/", $other_address->ktp);
-                  ?>
-                  <label for="ktp" class="col-sm-2 col-form-label">KTP <span class="text-danger">*</span></label>
-                  <div class="col-sm-10">
-                    <div class="form-row">
-                      <div class="col">
-                        <input type="text" class="form-control" name="name_card_ktp" placeholder="Name Card KTP" value="{{ $ktp[0] ?? '' }}">
-                      </div>
-                      <div class="col">
-                        <input type="number" class="form-control" name="ktp" placeholder="Number Card" value="{{ $ktp[1] ?? '' }}">
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="col">
-                <div class="form-group row">
-                  <?php 
-                    $npwp = explode("/", $other_address->npwp);
-                  ?>
-                  <label for="ktp" class="col-sm-2 col-form-label">NPWP <span class="text-danger">*</span></label>
-                  <div class="col-sm-10">
-                    <div class="form-row">
-                      <div class="col">
-                        <input type="text" class="form-control" name="name_card_npwp" placeholder="Name Card NPWP" value="{{ $npwp[0] ?? '' }}">
-                      </div>
-                      <div class="col">
-                        <input type="number" class="form-control" name="npwp" placeholder="Number Card" value="{{ $npwp[1] ?? ''  }}">
-                      </div>
-                    </div>
-                  </div>
-                </div>  
-              </div>
-            </div>
-            <div class="f1-buttons">
-                <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
-                <button type="button" class="btn btn-primary btn-next">Next <i class="fa fa-arrow-right"></i></button>
-            </div>
-          </div>
-        </fieldset>
-
-        <!-- Document -->
-        <fieldset>
-          <h5>Data Document</h5>
-          <br>
-          <div class="container">
-            <div class="row">
-              <div class="col">
-                <div class="form-group">
-                  <label>Image KTP</label>
-                    <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
-                </div>
-              </div>
-              <div class="col">
-                <div class="form-group">
-                  <label>Image NPWP</label>
-                  <input type="file" id="image_npwp" name="image_npwp" data-max-file-size="2000" accept="image/png, image/jpeg">
                 </div>
               </div>
             </div>
-            <div class="f1-buttons">
-              <button type="button" class="btn btn-warning btn-previous"><i class="fa fa-arrow-left"></i> Previous</button>
-              <button type="submit" class="btn btn-primary btn-submit"><i class="fa fa-save"></i> Submit</button>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="cust-label" for="name_card_npwp">NPWP</label>
+                <div class="form-row">
+                  <div class="col">
+                    <input type="text" class="form-control" id="name_card_npwp" name="name_card_npwp" placeholder="Nama pada NPWP" value="{{ $npwp[0] ?? '' }}">
+                  </div>
+                  <div class="col">
+                    <input type="text" class="form-control" name="npwp" placeholder="Nomor NPWP" value="{{ $npwp[1] ?? '' }}">
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </fieldset>
-        <br>
-      </form>
-    </div>
+        </div>
+
+        </section>
+        <section class="cust-fieldset" data-step="3">
+        <div class="cust-card">
+          <div class="cust-card-head">
+            <div class="cust-card-icon"><i class="mdi mdi-file-document-box"></i></div>
+            <div>
+              <h5>Dokumen</h5>
+              <p>Unggah ulang hanya jika ingin mengganti dokumen.</p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="cust-label" for="image_ktp">Foto KTP</label>
+                <input type="file" id="image_ktp" name="image_ktp" data-max-file-size="2000" accept="image/png, image/jpeg">
+                @if($other_address->image_ktp)
+                <img src="{{ $other_address->img_ktp }}" alt="Foto KTP" class="cust-current-img">
+                @endif
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="cust-label" for="image_npwp">Foto NPWP</label>
+                <input type="file" id="image_npwp" name="image_npwp" data-max-file-size="2000" accept="image/png, image/jpeg">
+                @if($other_address->image_npwp)
+                <img src="{{ $other_address->img_npwp }}" alt="Foto NPWP" class="cust-current-img">
+                @endif
+              </div>
+            </div>
+          </div>
+        </div>
+
+        </section>
+        <div class="cust-actions">
+          <span class="cust-actions-note">Field bertanda <span class="text-danger">*</span> wajib diisi.</span>
+          <a href="{{ route('superuser.master.customer.index') }}" class="btn btn-warning text-white"><i class="fa fa-arrow-left"></i> Batal</a>
+          <button type="button" class="btn btn-light cust-prev" style="display:none;"><i class="fa fa-arrow-left"></i> Sebelumnya</button>
+          <button type="button" class="btn btn-primary cust-next">Lanjut <i class="fa fa-arrow-right"></i></button>
+          <button type="submit" class="btn btn-primary btn-submit cust-submit"><i class="fa fa-save"></i> Simpan Perubahan</button>
+        </div>
+    </form>
   </div>
 </div>
 @endsection
@@ -295,6 +362,7 @@
 @include('superuser.asset.plugin.select2')
 
 @push('scripts')
+  <script src="{{ asset('superuser_assets/js/customer-form.js') }}?v=20261110b"></script>
 <script src="{{ asset('utility/superuser/js/form.js') }}"></script>
 <script>
   $(document).ready(function () {
@@ -313,20 +381,6 @@
     });
 
     $('#image_ktp').fileinput({
-      theme: 'explorer-fa',
-      browseOnZoneClick: true,
-      showCancel: false,
-      showClose: false,
-      showUpload: false,
-      browseLabel: '',
-      removeLabel: '',
-      fileActionSettings: {
-        showDrag: false,
-        showRemove: false
-      },
-    });
-
-    $('#image_store').fileinput({
       theme: 'explorer-fa',
       browseOnZoneClick: true,
       showCancel: false,
@@ -443,28 +497,6 @@
         })
       })
     })
-
-    $(function () {
-      $('#category').on('change', function(){
-          let category_id = $('#category').val();
-
-          $.ajax({
-            type : 'POST',
-            url : '{{route('superuser.master.customer.getcustomertype')}}',
-            data : {category_id:category_id},
-            cache : false,
-
-            success: function(msg){
-              $('#type').html(msg);
-            },
-            error : function(data){
-              console.log('error:',data)
-            },
-          })
-        })
-    });
   })
 </script>
 @endpush
-
-
