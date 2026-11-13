@@ -45,6 +45,8 @@ Route::group(['prefix' => 'ao/so-awal', 'middleware' => 'ao.apikey'], function (
     Route::get('/detail/{so_code}', [AoSalesOrderApiController::class, 'detail']);
     Route::delete('/{so_code}', [AoSalesOrderApiController::class, 'destroyApi']);
     Route::post('/store', [AoSalesOrderApiController::class, 'store']);
+    // Bukti chat order CASH (customer existing, tanpa pengajuan)
+    Route::post('/{so_code}/bukti', [AoSalesOrderApiController::class, 'receiveOrderBukti']);
     // Revisi AO: cek status + kirim revisi (hanya jika status=3 di transaksi)
     Route::get('/status/{so_code}', [AoSalesOrderApiController::class, 'status']);
     // Total hutang customer (semua invoice ACTIVE yang belum lunas)

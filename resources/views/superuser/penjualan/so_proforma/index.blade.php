@@ -57,6 +57,8 @@
     </div>
 
 </div>
+
+@include('superuser.penjualan.so_proforma._bukti_modal')
 @endsection
 
 @include('superuser.asset.plugin.swal2')

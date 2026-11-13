@@ -137,9 +137,13 @@
             </div>
           </div>--}}
           <div class="form-group row">
-            <label for="example-text-input" class="col-2 col-form-label">Note</label>
-            <div class="col-8">
-              <input class="form-control" type="text" value="{{ $product->note ?? '-' }}" id="example-text-input" readonly>
+            <label class="col-2 col-form-label">Tag Produk</label>
+            <div class="col-8 pt-2">
+              @forelse($product->note_list as $note)
+                <span class="badge badge-primary mr-1">{{ $note }}</span>
+              @empty
+                <span class="text-muted">-</span>
+              @endforelse
             </div>
           </div>
           <div class="form-group row">

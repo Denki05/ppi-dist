@@ -2,6 +2,7 @@
 
 namespace App\Entities\Master;
 
+use App\Entities\Master\Concerns\HasNoteTags;
 use App\Entities\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 // use Alfa6661\AutoNumber\AutoNumberTrait;
@@ -9,6 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class ProductPack extends Model
 {
     use SoftDeletes;
+    use HasNoteTags;
 
     protected $fillable = [
                         'id', 
@@ -35,11 +37,11 @@ class ProductPack extends Model
     public $incrementing = false;
     
     const NOTE = [
-        'BEST SELLER',
-        'NEW',
-        'RECOMMENDATION',
-        'REGULER',
-        'SAMPLE',
+        'BEST SELLER' => 'BEST SELLER',
+        'NEW' => 'NEW',
+        'RECOMMENDATION' => 'RECOMMENDATION',
+        'REGULER' => 'REGULER',
+        'SAMPLE' => 'SAMPLE',
     ];
 
     const GENDER = [

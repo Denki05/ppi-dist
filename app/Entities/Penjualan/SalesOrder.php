@@ -15,6 +15,8 @@ class SalesOrder extends Model
     protected $table = "penjualan_so";
     protected $fillable =[
     	'so_code',
+        'ao_order_number',
+        'bukti_list',
         'estimate_code',
         'is_proforma',
         'is_estimate',
@@ -97,6 +99,26 @@ class SalesOrder extends Model
         'Santi' => 4,
         'Eric' => 5,
     ];
+
+    /**
+     * Daftar path foto bukti chat dari AO (0-3 file).
+     */
+    public function buktiList()
+    {
+        $value = $this->bukti_list;
+        if (empty($value)) {
+            return [];
+        }
+
+        $decoded = json_decode((string) $value, true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        return array_values(array_filter($decoded, function ($path) {
+            return is_string($path) && trim($path) !== '';
+        }));
+    }
     
     const STEP = [
     	1 => 'AWAL',

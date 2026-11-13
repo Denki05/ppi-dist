@@ -45,6 +45,8 @@
                 </button>
             </a>
 
+            @include('superuser.penjualan.so_proforma._bukti_button')
+
             {{-- Baris ADA pengajuan: Batal by AO (tengah) + Batal by Admin (kanan).
                  Baris TANPA pengajuan (existing): tanpa tombol batal. --}}
             @if($canRevisiBatal ?? false)

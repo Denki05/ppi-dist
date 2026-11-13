@@ -37,6 +37,8 @@
                 </button>
             </a>
 
+            @include('superuser.penjualan.so_proforma._bukti_button')
+
             {{-- Baris ADA pengajuan: Batal by AO (tengah) — estimate dihapus,
                  AO buat baru dan otomatis lanjut ke proforma bernomor baru.
                  Baris TANPA pengajuan (existing): tanpa tombol batal. --}}

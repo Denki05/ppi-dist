@@ -91,7 +91,7 @@ class ProductController extends Controller
         $data['sub_brand_references'] = MasterRepo::sub_brand_references();
         $data['units'] = Unit::get();
         $data['warehouses'] = MasterRepo::warehouses();
-        $data['product_notes'] = Product::NOTE;
+        $data['product_notes'] = Product::noteOptions();
         $data['gender'] = Product::GENDER;
         $data['fragrantica'] = Fragrantica::all();
         $data['factory'] = Vendor::where('type', 2)->get();
@@ -116,7 +116,8 @@ class ProductController extends Controller
                 'code' => 'required|string',
                 'selling_price' => 'nullable|numeric|min:0',
                 'description' => 'nullable|string',
-                'note' => 'nullable|string',
+                'note' => 'nullable|array',
+                'note.*' => 'nullable|string|max:50',
             ]);
 
             if ($validator->fails()) {
@@ -356,7 +357,7 @@ class ProductController extends Controller
         $data['merek'] = BrandLokal::get();
         $data['units'] = MasterRepo::units();
         $data['warehouses'] = MasterRepo::warehouses();
-        $data['product_notes'] = Product::NOTE;
+        $data['product_notes'] = Product::noteOptions();
         $data['vendor'] = Vendor::where('type', 2)->get();
         $data['type'] = ProductType::get();
         $data['pack'] = Packaging::get();
@@ -388,7 +389,8 @@ class ProductController extends Controller
                 // 'buying_price' => 'nullable|numeric|min:0',
                 'selling_price' => 'nullable|numeric|min:0',
                 // 'description' => 'nullable|string',
-                'note' => 'nullable|string',
+                'note' => 'nullable|array',
+                'note.*' => 'nullable|string|max:50',
 
                 // 'default_quantity' => 'required|numeric',
                 // 'default_unit' => 'required|integer',

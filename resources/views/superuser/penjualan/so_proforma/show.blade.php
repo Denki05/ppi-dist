@@ -7,6 +7,15 @@
   <span class="breadcrumb-item active">Show</span>
 </nav>
 
+@php $jumlahBuktiChat = count(optional($results->salesOrder)->buktiList() ?? []); @endphp
+@if($jumlahBuktiChat > 0)
+<div class="mb-3 text-right">
+    <button type="button" class="btn btn-sm btn-alt-info" onclick="showBuktiChat({{ $results->id }}, {{ $jumlahBuktiChat }})">
+        <i class="fa fa-picture-o mr-1"></i> Lihat Bukti Chat AO ({{ $jumlahBuktiChat }})
+    </button>
+</div>
+@endif
+
 <div id="alert-block"></div>
     <div class="row">
         <div class="col-6">
@@ -250,6 +259,7 @@
             </a>
           </div>
         </div>
+    @include('superuser.penjualan.so_proforma._bukti_modal')
 @endsection
 
 @include('superuser.asset.plugin.select2')
