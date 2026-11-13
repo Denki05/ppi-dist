@@ -46,6 +46,8 @@
                 </button>
             </a>
 
+            @include('superuser.penjualan.so_proforma._bukti_button')
+
             <button type="button"
                 class="btn btn-sm btn-circle btn-alt-danger btn-delete-proforma"
                 data-id="{{ $row->id }}"

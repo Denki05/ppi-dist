@@ -36,6 +36,8 @@
                 </button>
             </a>
 
+            @include('superuser.penjualan.so_proforma._bukti_button')
+
             <a href="{{ route('superuser.penjualan.so_proforma.print_so_proforma', $row->id) }}" 
             target="_blank" 
             rel="noopener noreferrer">

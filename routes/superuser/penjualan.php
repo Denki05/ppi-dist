@@ -260,6 +260,7 @@ Route::group([
         Route::post('/statusSiap/{id}', 'SalesOrderProformaController@statusSiap')->name('statusSiap');
         Route::post('/MultiCancel/{id}', 'SalesOrderProformaController@MultiCancel')->name('MultiCancel');
         Route::get('/printProforma/{id}', 'SalesOrderProformaController@printProforma')->name('printProforma');
+        Route::get('/{id}/bukti/{index}', 'SalesOrderProformaController@bukti')->name('bukti')->where(['id' => '[0-9]+', 'index' => '[0-9]+']);
      });
     Route::resource('so_proforma', 'SalesOrderProformaController');
 

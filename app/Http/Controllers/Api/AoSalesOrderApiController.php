@@ -357,6 +357,59 @@ class AoSalesOrderApiController extends Controller
     }
 
     /**
+     * Terima foto bukti chat untuk SO yang dibuat dari menu Order AO
+     * (customer existing, tanpa pengajuan proforma).
+     * POST /api/ao/so-awal/{so_code}/bukti (multipart, X-API-KEY)
+     *
+     * Mengganti total daftar bukti (maks 3), sama seperti pola pengajuan.
+     */
+    public function receiveOrderBukti(Request $request, $so_code)
+    {
+        $so = SalesOrder::where('so_code', $so_code)->first();
+        if (!$so && \Illuminate\Support\Facades\Schema::hasColumn('penjualan_so', 'ao_order_number')) {
+            $so = SalesOrder::where('ao_order_number', $so_code)->first();
+        }
+        if (!$so) {
+            return response()->json(['success' => false, 'message' => 'SO tidak ditemukan: ' . $so_code], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'bukti' => 'required|array|min:1|max:3',
+            'bukti.*' => 'image|mimes:jpg,jpeg,png,webp|max:5120',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
+        }
+
+        $oldList = $so->buktiList();
+        foreach ($oldList as $oldPath) {
+            if (Storage::disk('local')->exists($oldPath)) {
+                Storage::disk('local')->delete($oldPath);
+            }
+        }
+
+        $saved = [];
+        foreach (array_slice((array) $request->file('bukti'), 0, 3) as $file) {
+            $saved[] = $file->store('ao_order_bukti/' . $so->id, 'local');
+        }
+
+        $so->bukti_list = json_encode(array_values($saved));
+        $so->save();
+
+        Log::info('AO order bukti diterima', [
+            'so_code' => $so->so_code,
+            'so_id' => $so->id,
+            'count' => count($saved),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Bukti order diterima (' . count($saved) . '/3).',
+            'count' => count($saved),
+        ]);
+    }
+
+    /**
      * Revisi proforma dari AO pasca-mutasi (tanpa pengajuan/mutasi ulang).
      * POST /api/ao/so-awal/proforma-revision (ao.apikey).
      * Syarat: pengajuan disetujui + flag revisi_ao. Efek: item diganti,
@@ -1624,6 +1677,7 @@ class AoSalesOrderApiController extends Controller
                 'ao_order_number' => $hasAoCol ? ($so->ao_order_number ?? null) : null,
                 'nota_code' => $so->code,
                 'updated_at' => $so->updated_at,
+                'bukti_count' => count($so->buktiList()),
             ], $meta),
         ]);
     }

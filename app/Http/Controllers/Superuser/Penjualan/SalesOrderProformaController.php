@@ -28,6 +28,7 @@ use App\Models\Regency;
 use Illuminate\Http\Request;
 use App\Repositories\CodeRepo;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Validator;
 use Auth;
 use COM;
@@ -525,6 +526,28 @@ class SalesOrderProformaController extends Controller
         $data['vendor'] = Vendor::where('type', 1)->get();
 
         return view($this->view . "show", $data);
+    }
+
+    /**
+     * Sajikan foto bukti chat order AO ke-{index} milik proforma ini.
+     */
+    public function bukti($id, $index)
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_read == 0){
+                abort(403, 'Anda tidak punya akses untuk membuka dokumen terkait');
+            }
+        }
+
+        $proforma = SalesOrderProforma::findOrFail($id);
+        $list = optional($proforma->salesOrder)->buktiList() ?? [];
+        $path = $list[(int) $index] ?? null;
+
+        if (empty($path) || !Storage::disk('local')->exists($path)) {
+            abort(404, 'Bukti tidak ditemukan.');
+        }
+
+        return response()->file(storage_path('app/' . $path));
     }
     
     public function acc(Request $request, $id)
