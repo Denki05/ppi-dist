@@ -2,6 +2,7 @@
 
 namespace App\Entities\Master;
 
+use App\Entities\Master\Concerns\HasNoteTags;
 use App\Entities\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Alfa6661\AutoNumber\AutoNumberTrait;
@@ -9,6 +10,7 @@ use Alfa6661\AutoNumber\AutoNumberTrait;
 class Product extends Model
 {
     use SoftDeletes;
+    use HasNoteTags;
 
     protected $appends = ['image_url', 'image_hd_url'];
     protected $fillable = [
@@ -29,6 +31,24 @@ class Product extends Model
         'REGULER' => 'REGULER',
         'SAMPLE' => 'SAMPLE',
     ];
+
+    public static function noteOptions()
+    {
+        $options = array_values(static::NOTE);
+        $extra = [];
+
+        foreach (static::query()->whereNotNull('note')->distinct()->pluck('note') as $raw) {
+            foreach (static::parseNoteTags($raw) as $tag) {
+                if (!in_array($tag, $options, true) && !in_array($tag, $extra, true)) {
+                    $extra[] = $tag;
+                }
+            }
+        }
+
+        sort($extra);
+
+        return array_merge($options, $extra);
+    }
 
     const GENDER = [
         'MALE' => 'M',

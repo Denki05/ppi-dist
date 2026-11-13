@@ -121,14 +121,14 @@
                                 <div class="row">
                                   <div class="col">
                                     <div class="form-group row">
-                                      <label for="inputPassword" class="col-sm-2 col-form-label">Tag Produk</label>
+                                      <label for="note" class="col-sm-2 col-form-label">Tag Produk</label>
                                       <div class="col-sm-10">
-                                        <select class="js-select2 form-control" id="note" name="note" style="width:100%;" placeholder="Pilih Note">
-                                          <option>Pilih Tag Produk</option>
-                                          @foreach(\App\Entities\Master\Product::NOTE as $note)
-                                          <option value="{{ $note }}" {{ ($note == $product->note ) ? 'selected' : '' }}>{{ $note }}</option>
+                                        <select class="js-select2-tags form-control" id="note" name="note[]" multiple="multiple" style="width:100%;" data-placeholder="Pilih atau ketik tag">
+                                          @foreach($product_notes as $note)
+                                          <option value="{{ $note }}" {{ in_array($note, $product->note_list, true) ? 'selected' : '' }}>{{ $note }}</option>
                                           @endforeach
                                         </select>
+                                        <small class="text-muted">Bisa pilih lebih dari satu, atau ketik tag baru.</small>
                                       </div>
                                     </div>
                                   </div>
@@ -335,6 +335,13 @@
 <script type="text/javascript">
   $(document).ready(function () {
     $('.js-select2').select2()
+
+    $('.js-select2-tags').select2({
+      tags: true,
+      tokenSeparators: [','],
+      placeholder: 'Pilih atau ketik tag',
+      width: '100%'
+    })
 
     $('#image').fileinput({
       theme: 'explorer-fa',

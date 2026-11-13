@@ -163,14 +163,13 @@
                                 <div class="col">
                                   <div class="form-group">
                                     <label for="note">Tag Produk</label>
-                                    <select class="js-select2 form-control" id="note" name="note" style="width:100%;" placeholder="Pilih Note">
-                                      <option>Pilih Tag Produk</option>
+                                    <select class="js-select2-tags form-control" id="note" name="note[]" multiple="multiple" style="width:100%;" data-placeholder="Pilih atau ketik tag">
                                       @foreach($product_notes as $note)
                                       <option value="{{ $note }}">{{ $note }}</option>
                                       @endforeach
                                     </select>
+                                    <small class="text-muted">Bisa pilih lebih dari satu, atau ketik tag baru.</small>
                                   </div>
-                                </div>
                                   <div class="col">
                                     <div class="form-group">
                                       <label for="description">Keterangan</label>
@@ -370,6 +369,13 @@
 <script type="text/javascript">
   $(document).ready(function () {
     $('.js-select2').select2()
+
+    $('.js-select2-tags').select2({
+      tags: true,
+      tokenSeparators: [','],
+      placeholder: 'Pilih atau ketik tag',
+      width: '100%'
+    })
 
     $('#image').fileinput({
       theme: 'explorer-fa',
