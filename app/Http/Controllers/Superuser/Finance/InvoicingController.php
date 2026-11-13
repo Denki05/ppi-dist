@@ -972,7 +972,7 @@ class InvoicingController extends Controller
         }
 
         // $currentDate = Carbon::now();
-        $customer = CustomerOtherAddress::get();
+        $customer = Customer::select('id', 'name', 'text_kota')->get();
 
         $data = [
             'customer' => $customer

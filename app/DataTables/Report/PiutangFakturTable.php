@@ -32,10 +32,10 @@ class PiutangFakturTable extends Table
         ->leftJoin('penjualan_do', 'finance_invoicing.do_id', '=', 'penjualan_do.id')
         ->leftJoin('penjualan_so', 'penjualan_do.so_id', '=', 'penjualan_so.id')
         ->leftJoin('penjualan_do_details', 'penjualan_do.id', '=', 'penjualan_do_details.do_id')
-        ->leftJoin('master_customers', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id')
+        ->leftJoin('master_customers', 'finance_invoicing.customer_id', '=', 'master_customers.id')
         ->select(
-            'master_customer_other_addresses.name AS customer_name',
-            'master_customer_other_addresses.text_kota AS customer_kota',
+            'master_customers.name AS customer_name',
+            'master_customers.text_kota AS customer_kota',
             'master_customer_other_addresses.officer AS officer',
             'finance_invoicing.code AS no_faktur',
 
@@ -116,7 +116,7 @@ class PiutangFakturTable extends Table
         )
         ->whereBetween('penjualan_so.so_date', [$request->startDate, $request->endDate])
         ->when($customer !== 'all', function ($q) use ($customer) {
-            $q->whereIn('master_customer_other_addresses.id', $customer);
+            $q->whereIn('master_customers.id', $customer);
         })
         ->where('penjualan_so.type_so', 'nonppn')
         ->groupBy('finance_invoicing.id')
@@ -124,15 +124,8 @@ class PiutangFakturTable extends Table
             (
                 nilai_faktur - pembayaran
             ) > 100
-
-            AND NOT (
-                ABS(
-                    (nilai_faktur - pembayaran)
-                    - COALESCE(penjualan_do_details.delivery_cost_idr,0)
-                ) <= 100
-            )
             ')
-            ->orderBy('master_customer_other_addresses.name', 'ASC') 
+            ->orderBy('master_customers.name', 'ASC') 
             ->orderBy('finance_invoicing.code', 'ASC')
             ->get();
 
