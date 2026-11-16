@@ -388,8 +388,8 @@ class PengajuanRetryService
         $cost->discount_idr = 0;
         $cost->voucher_idr = 0;
         $cost->purchase_total_idr = $purchase;
-        $cost->delivery_cost_idr = 0;
-        $cost->grand_total_idr = $purchase;
+        $cost->delivery_cost_idr = (float) ($so->delivery_cost_idr ?: 0);
+        $cost->grand_total_idr = $purchase + $cost->delivery_cost_idr;
         $cost->save();
 
         $so->status_proforma = 2; // TERBUAT — samakan alur push AO
