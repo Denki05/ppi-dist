@@ -428,6 +428,7 @@ class AoSalesOrderApiController extends Controller
             'items.*.free' => 'nullable|boolean',
             'discount_value' => 'nullable|numeric|min:0',
             'disc_idr' => 'nullable|numeric|min:0',
+            'delivery_cost_idr' => 'nullable|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -491,7 +492,9 @@ class AoSalesOrderApiController extends Controller
                 $cost->discount_1 = $discIdr;
                 $cost->purchase_total_idr = $purchase;
                 $cost->voucher_idr = (float) ($cost->voucher_idr ?: 0);
-                $cost->delivery_cost_idr = (float) ($cost->delivery_cost_idr ?: 0);
+                $cost->delivery_cost_idr = $request->has('delivery_cost_idr')
+                    ? (float) $request->input('delivery_cost_idr', 0)
+                    : (float) ($cost->delivery_cost_idr ?: 0);
                 $cost->discount_2_percent = (float) ($cost->discount_2_percent ?: 0);
                 $cost->discount_2 = (float) ($cost->discount_2 ?: 0);
                 $cost->discount_idr = (float) ($cost->discount_idr ?: 0);
@@ -700,6 +703,7 @@ class AoSalesOrderApiController extends Controller
         $discIdr     = $this->parseNumber($request->input('disc_idr', $request->input('global_disc_idr', 0)));
         $discUsd     = $this->parseNumber($request->input('disc_usd', $request->input('global_disc_usd', 0)));
         $discKemasan = $this->parseNumber($request->input('disc_kemasan', $request->input('global_disc_kemasan', 0)));
+        $deliveryCost = $this->parseNumber($request->input('delivery_cost_idr', 0));
 
         // --- Normalisasi approval & indent ---
         $approval = $this->parseBool($request->input('approval', 0));
@@ -793,6 +797,9 @@ class AoSalesOrderApiController extends Controller
             $so->disc_idr                    = $discIdr;
             $so->disc_usd                    = $discUsd;
             $so->disc_kemasan                = $discKemasan;
+            if (\Illuminate\Support\Facades\Schema::hasColumn('penjualan_so', 'delivery_cost_idr')) {
+                $so->delivery_cost_idr = $deliveryCost;
+            }
             $so->note                        = $note;
             $so->is_proforma                 = 0;
             $so->code                        = null;
@@ -1742,6 +1749,9 @@ class AoSalesOrderApiController extends Controller
             $so->disc_idr = $this->parseNumber($request->input('disc_idr', $so->disc_idr));
             $so->disc_usd = $this->parseNumber($request->input('disc_usd', $so->disc_usd));
             $so->disc_kemasan = $this->parseNumber($request->input('disc_kemasan', $so->disc_kemasan));
+            if (\Illuminate\Support\Facades\Schema::hasColumn('penjualan_so', 'delivery_cost_idr')) {
+                $so->delivery_cost_idr = $this->parseNumber($request->input('delivery_cost_idr', $so->delivery_cost_idr));
+            }
             if ($request->has('so_indent') || $request->has('is_indent')) {
                 $so->so_indent = $this->parseBool($request->input('so_indent', $request->input('is_indent'))) ? 1 : 0;
             }
@@ -1880,6 +1890,19 @@ class AoSalesOrderApiController extends Controller
     {
         $exists = \App\Entities\Penjualan\SalesOrderProforma::where('so_id', $so->id)->first();
         if ($exists) {
+            // Proforma CASH sudah dibuat oleh workflow lanjutkan() tanpa baris biaya.
+            // Pastikan ongkir dari AO ikut tersimpan agar form kalkulasi admin terisi.
+            $delivery = (float) ($so->delivery_cost_idr ?: 0);
+            if ($delivery > 0) {
+                $cost = \App\Entities\Penjualan\SalesOrderProformaDetails::firstOrNew(
+                    ['so_proforma_id' => $exists->id]
+                );
+                if ((float) ($cost->delivery_cost_idr ?: 0) == 0) {
+                    $cost->delivery_cost_idr = $delivery;
+                    $cost->grand_total_idr = (float) ($cost->grand_total_idr ?: 0) + $delivery;
+                    $cost->save();
+                }
+            }
             return $exists;
         }
 
@@ -1927,8 +1950,8 @@ class AoSalesOrderApiController extends Controller
             $cost->discount_idr = 0;
             $cost->voucher_idr = 0;
             $cost->purchase_total_idr = $purchase;
-            $cost->delivery_cost_idr = 0;
-            $cost->grand_total_idr = $purchase;
+            $cost->delivery_cost_idr = (float) ($so->delivery_cost_idr ?: 0);
+            $cost->grand_total_idr = $purchase + $cost->delivery_cost_idr;
             $cost->save();
 
             // Samakan update() manual: SO masuk tab "terbuat"

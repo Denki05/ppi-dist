@@ -365,7 +365,7 @@
                       <div class="form-group row">
                         <label class="col-sm-4 col-form-label">Ongkir</label>
                         <div class="col-sm-8">
-                          <input type="text" class="form-control" id="delivery_cost_idr" name="delivery_cost_idr">
+                        <input type="text" class="form-control" id="delivery_cost_idr" name="delivery_cost_idr" value="{{ number_format((float)($result->delivery_cost_idr ?? 0), 0, ',', '.') }}">
                         </div>
                       </div>
                       <div class="form-group row">

@@ -54,6 +54,7 @@ class SalesOrder extends Model
         'disc_idr',
         'disc_usd',
         'disc_kemasan',
+        'delivery_cost_idr',
         // ---------------------------------------------
         'indent_status', 
         'count_rev',
@@ -71,6 +72,7 @@ class SalesOrder extends Model
     protected $casts = [
         'is_archived' => 'boolean',
         'archived_at' => 'datetime',
+        'delivery_cost_idr' => 'float',
     ];
 
     const STATUS = [

@@ -656,7 +656,6 @@ class InternalRevisionController extends Controller
             foreach ($after['items'] as $item) {
                 $totalDiscItem = ($item['usd_disc'] + (($item['price'] - $item['usd_disc']) * ($item['percent_disc'] / 100))) * $item['qty'];
                 $subTotalItemUsd = ($item['qty'] * $item['price']) - $totalDiscItem;
-                $totalItemIdr = $subTotalItemUsd * $after['idr_rate'];
 
                 if (!empty($item['do_item_id'])) {
                     PackingOrderItem::where('id', $item['do_item_id'])->update([
@@ -665,7 +664,7 @@ class InternalRevisionController extends Controller
                         'usd_disc' => $item['usd_disc'],
                         'percent_disc' => $item['percent_disc'],
                         'total_disc' => $totalDiscItem,
-                        'total' => $totalItemIdr,
+                        'total' => $subTotalItemUsd,
                         'updated_by' => Auth::id(),
                     ]);
                 } else {
@@ -677,7 +676,7 @@ class InternalRevisionController extends Controller
                         'usd_disc' => $item['usd_disc'],
                         'percent_disc' => $item['percent_disc'],
                         'total_disc' => $totalDiscItem,
-                        'total' => $totalItemIdr,
+                        'total' => $subTotalItemUsd,
                         'created_by' => Auth::id(),
                     ]);
                 }

@@ -5,11 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Pencarian customer (existing + prospek) untuk form estimate AO.
  * GET /api/customers/search/name?q=
- * Response {success, customers:[{id,nama,city,address,phone,cp,owner,provinsi,kecamatan,kelurahan,pic,officer,kategori,zone,jenis}]}
+ * Response {success, customers:[{id,nama,city,address,phone,cp,owner,provinsi,kecamatan,kelurahan,pic,officer,sm,kategori,zone,jenis}]}
  */
 class ApiCustomerSearchController extends Controller
 {
@@ -22,6 +23,15 @@ class ApiCustomerSearchController extends Controller
         }
 
         $like = '%' . $q . '%';
+
+        // Area manager: `sm` di satu environment, `am` di environment lain.
+        $areaColumn         = $this->areaColumn('master_customers');
+        $prospekAreaColumn  = $this->areaColumn('master_customers_prospek');
+
+        // Scope opsional dari AO: pic=customer sendiri, area=sm/am (sales manager).
+        // Tanpa parameter ini respons tetap seperti sebelumnya (semua).
+        $picKeys  = $this->scopeKeys($request->query('pic'));
+        $areaKeys = $this->scopeKeys($request->query('area'));
 
         $existing = DB::table('master_customer_other_addresses as a')
             ->leftJoin('master_customers as c', 'c.id', '=', 'a.customer_id')
@@ -50,12 +60,15 @@ class ApiCustomerSearchController extends Controller
                 'c.kelurahan as parent_kelurahan',
                 'c.pic as pic',
                 'a.officer as officer',
+                DB::raw($areaColumn ? 'c.`' . $areaColumn . '` as sm' : 'NULL as sm'),
                 'cat.name as kategori',
                 'a.zone as zone',
                 DB::raw("'EXISTING' as jenis")
-            )
-            ->limit(50)
-            ->get();
+            );
+
+        $this->applyScope($existing, $picKeys, $areaKeys, $areaColumn);
+
+        $existing = $existing->limit(50)->get();
 
         $prospek = DB::table('master_customer_other_addresses_prospek as a')
             ->leftJoin('master_customers_prospek as c', 'c.id', '=', 'a.customer_id')
@@ -84,16 +97,83 @@ class ApiCustomerSearchController extends Controller
                 'c.kelurahan as parent_kelurahan',
                 'c.pic as pic',
                 'a.officer as officer',
+                DB::raw($prospekAreaColumn ? 'c.`' . $prospekAreaColumn . '` as sm' : 'NULL as sm'),
                 'cat.name as kategori',
                 'a.zone as zone',
                 DB::raw("'PROSPEK' as jenis")
-            )
-            ->limit(50)
-            ->get();
+            );
+
+        $this->applyScope($prospek, $picKeys, $areaKeys, $prospekAreaColumn);
+
+        $prospek = $prospek->limit(50)->get();
 
         return response()->json([
             'success' => true,
             'customers' => $existing->merge($prospek)->values(),
         ]);
+    }
+
+    /**
+     * Nama kolom area manager pada tabel induk: `sm` atau `am`
+     * tergantung environment. Null bila tidak ada.
+     */
+    private function areaColumn(string $table): ?string
+    {
+        $columns = Schema::getColumnListing($table);
+
+        foreach (['sm', 'am'] as $candidate) {
+            if (in_array($candidate, $columns, true)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Normalisasi parameter scope: `pic=erick,erick2` atau `pic[]=...`.
+     */
+    private function scopeKeys($raw): array
+    {
+        if (is_string($raw)) {
+            $raw = explode(',', $raw);
+        }
+
+        if (!is_array($raw)) {
+            return [];
+        }
+
+        $keys = [];
+        foreach ($raw as $value) {
+            $value = strtolower(trim((string) $value));
+            if ($value !== '' && !in_array($value, $keys, true)) {
+                $keys[] = $value;
+            }
+        }
+
+        return $keys;
+    }
+
+    /**
+     * Filter scope di SQL sebelum limit, supaya hasil tidak terpotong
+     * saat satu SM memegang ratusan customer.
+     */
+    private function applyScope($query, array $picKeys, array $areaKeys, ?string $areaColumn): void
+    {
+        $useArea = $areaKeys !== [] && $areaColumn !== null;
+
+        if ($picKeys === [] && !$useArea) {
+            return;
+        }
+
+        $query->where(function ($w) use ($picKeys, $useArea, $areaKeys, $areaColumn) {
+            if ($picKeys !== []) {
+                $w->whereIn(DB::raw('LOWER(TRIM(c.pic))'), $picKeys);
+            }
+
+            if ($useArea) {
+                $w->orWhereIn(DB::raw('LOWER(TRIM(c.`' . $areaColumn . '`))'), $areaKeys);
+            }
+        });
     }
 }
