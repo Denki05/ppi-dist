@@ -1145,7 +1145,10 @@ class AoSalesOrderApiController extends Controller
                     '=',
                     'i.id'
                 )
-                ->where('i.customer_other_address_id', $customerId)
+                ->where(function ($q) use ($customerId) {
+                    $q->where('i.customer_other_address_id', $customerId)
+                      ->orWhere('i.customer_other_address_id', 'like', $customerId . '.%');
+                })
                 ->where('i.status', Invoicing::STATUS['ACTIVE'])
                 ->whereNull('i.deleted_at')
                 ->where('i.created_at', '>=', $hutangMulai)
