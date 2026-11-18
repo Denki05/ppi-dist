@@ -25,6 +25,11 @@ Route::group(['middleware' => 'user.apikey'], function () {
     Route::get('superusers/{id}', [\App\Http\Controllers\Api\ApiUserController::class, 'show']);
     // Pencarian customer untuk form estimate AO
     Route::get('customers/search/name', [\App\Http\Controllers\Api\ApiCustomerSearchController::class, 'searchByName']);
+    // Detail satu outlet untuk penilaian hak akses (read-only SM)
+    Route::get('customers/detail/{id}', [\App\Http\Controllers\Api\ApiCustomerSearchController::class, 'detail'])
+        ->where('id', '[A-Za-z0-9._-]{1,60}');
+    // Daftar market ber-scope untuk menu Customer AO
+    Route::get('customers/market', [\App\Http\Controllers\Api\ApiCustomerSearchController::class, 'marketList']);
 });
 
 // === Sinkronisasi user dari trans (master) -> trial (pusat user) ===

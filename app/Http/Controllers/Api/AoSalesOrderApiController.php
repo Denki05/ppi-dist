@@ -22,6 +22,9 @@ use Illuminate\Support\Facades\Storage;
 
 class AoSalesOrderApiController extends Controller
 {
+    // Cache tempo per customer selama satu request (hindari query berulang di list).
+    protected $tempoCache = [];
+
     /**
      * Terima pengajuan proforma dari modul AO (taskManagement).
      * POST /api/ao/pengajuan/receive (X-API-KEY).
@@ -1002,6 +1005,10 @@ class AoSalesOrderApiController extends Controller
             'invoice_code' => null,
             'invoice_status' => null,
             'invoice_total' => 0,
+            'invoice_date' => null,
+            'has_tempo' => false,
+            'tempo_limit' => 0,
+            'invoice_due_date' => null,
             'paid_total' => 0,
             'is_lunas' => 0,
             'payment_status' => null,
@@ -1039,7 +1046,59 @@ class AoSalesOrderApiController extends Controller
                 $out['paid_total'] = $paid;
                 $out['is_lunas'] = $isLunas ? 1 : 0;
                 $out['payment_status'] = $paid <= 0 ? 'BELUM' : ($isLunas ? 'LUNAS' : 'SEBAGIAN');
+
+                // Jatuh tempo = tanggal buat invoice + tempo customer (master_customers).
+                $out['invoice_date'] = $inv->created_at
+                    ? \Carbon\Carbon::parse($inv->created_at)->toDateString() : null;
+                $tempo = $this->invoiceTempoMeta($inv, $do);
+                $out['has_tempo'] = $tempo['has_tempo'];
+                $out['tempo_limit'] = $tempo['tempo_limit'];
+                if ($out['invoice_date'] && $tempo['tempo_limit'] > 0) {
+                    $out['invoice_due_date'] = \Carbon\Carbon::parse($out['invoice_date'])
+                        ->addDays($tempo['tempo_limit'])->toDateString();
+                }
             }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Setelan tempo customer: has_tempo + tempo_limit (hari).
+     */
+    protected function invoiceTempoMeta($inv, $do = null)
+    {
+        $out = ['has_tempo' => false, 'tempo_limit' => 0];
+        try {
+            $otherId = $inv->customer_other_address_id ?? ($do->customer_other_address_id ?? null);
+            $customerId = $inv->customer_id ?? ($do->customer_id ?? null);
+            if ($otherId) {
+                $cid = DB::table('master_customer_other_addresses')
+                    ->where('id', $otherId)->value('customer_id');
+                if ($cid) {
+                    $customerId = $cid;
+                }
+            }
+            if (!$customerId) {
+                return $out;
+            }
+            $cacheKey = (string) $customerId;
+            if (array_key_exists($cacheKey, $this->tempoCache)) {
+                return $this->tempoCache[$cacheKey];
+            }
+            $cust = DB::table('master_customers')
+                ->where('id', $customerId)
+                ->first(['has_tempo', 'tempo_limit']);
+            if ($cust) {
+                $out['has_tempo'] = !empty($cust->has_tempo);
+                $out['tempo_limit'] = max(0, (int) $cust->tempo_limit);
+            }
+            $this->tempoCache[$cacheKey] = $out;
+        } catch (\Throwable $e) {
+            Log::warning('invoiceTempoMeta gagal', [
+                'invoice_id' => $inv->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
         }
 
         return $out;
@@ -1271,7 +1330,7 @@ class AoSalesOrderApiController extends Controller
             if ($soIds) {
                 $doRows = PackingOrder::whereIn('so_id', $soIds)
                     ->orderBy('id', 'asc')
-                    ->get(['id', 'so_id', 'do_code', 'code', 'status', 'image', 'image2', 'updated_at']);
+                    ->get(['id', 'so_id', 'do_code', 'code', 'status', 'image', 'image2', 'updated_at', 'customer_id', 'customer_other_address_id']);
                 foreach ($doRows as $do) {
                     $sid = (int) $do->so_id;
                     if (!isset($dos[$sid]) || (int) $do->status === 6) {
@@ -1292,7 +1351,7 @@ class AoSalesOrderApiController extends Controller
             if ($doIds) {
                 $invRows = Invoicing::whereIn('do_id', $doIds)
                     ->orderBy('id', 'asc')
-                    ->get(['id', 'do_id', 'code', 'status', 'grand_total_idr']);
+                    ->get(['id', 'do_id', 'code', 'status', 'grand_total_idr', 'created_at']);
                 foreach ($invRows as $inv) {
                     $invs[(int) $inv->do_id] = $inv;
                 }
@@ -1382,6 +1441,7 @@ class AoSalesOrderApiController extends Controller
         return response()->json(['success' => true, 'data' => array_merge([
             'so_id' => $so->id,
             'so_code' => $so->so_code,
+            'so_date' => $so->created_at ? \Carbon\Carbon::parse($so->created_at)->toDateString() : null,
             'status' => $so->status,
             'brand_name' => $so->brand_name,
             'type_transaction' => $so->type_transaction,
