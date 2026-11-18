@@ -38,6 +38,16 @@ class InternalRevisionController extends Controller
         return floatval($value);
     }
 
+    // Qty/harga item dari input type=number memakai titik desimal.
+    // Jangan pakai parseCurrency di sini: ia membuang titik sehingga "0.5" jadi 5.
+    private function parseItemDecimal($value)
+    {
+        if ($value === null || $value === '') {
+            return 0;
+        }
+        return floatval(str_replace(',', '.', trim((string) $value)));
+    }
+
     /**
      * Ambil nama customer dengan fallback berjenjang, supaya tidak blank
      * kalau salah satu sumber datanya kosong:
@@ -241,10 +251,10 @@ class InternalRevisionController extends Controller
                 $afterItems[] = [
                     'do_item_id' => $reqItem['do_item_id'] ?? null, // null = produk baru
                     'product_packaging_id' => $reqItem['product_packaging_id'],
-                    'qty' => $this->parseCurrency($reqItem['qty']),
-                    'price' => $this->parseCurrency($reqItem['price']),
-                    'usd_disc' => $this->parseCurrency($reqItem['usd_disc'] ?? 0),
-                    'percent_disc' => $this->parseCurrency($reqItem['percent_disc'] ?? 0),
+                    'qty' => $this->parseItemDecimal($reqItem['qty']),
+                    'price' => $this->parseItemDecimal($reqItem['price']),
+                    'usd_disc' => $this->parseItemDecimal($reqItem['usd_disc'] ?? 0),
+                    'percent_disc' => $this->parseItemDecimal($reqItem['percent_disc'] ?? 0),
                     'is_new_product' => empty($reqItem['do_item_id']),
                 ];
             }
@@ -252,8 +262,8 @@ class InternalRevisionController extends Controller
             $after = [
                 'items' => $afterItems,
                 'idr_rate' => $this->parseCurrency($request->idr_rate ?? $before['idr_rate']),
-                'disc_agen_percent' => $this->parseCurrency($request->disc_agen_percent ?? 0),
-                'disc_kemasan_percent' => $this->parseCurrency($request->disc_kemasan_percent ?? 0),
+                'disc_agen_percent' => $this->parseItemDecimal($request->disc_agen_percent ?? 0),
+                'disc_kemasan_percent' => $this->parseItemDecimal($request->disc_kemasan_percent ?? 0),
                 'disc_tambahan_idr' => $this->parseCurrency($request->disc_tambahan_idr ?? 0),
                 'voucher_idr' => $this->parseCurrency($request->voucher_idr ?? 0),
                 'delivery_cost_idr' => $this->parseCurrency($request->delivery_cost_idr ?? 0),
@@ -710,6 +720,7 @@ class InternalRevisionController extends Controller
                 'purchase_total_idr' => $totals['sub_total_item'],
                 'total_discount_idr' => $totals['disc_agen_idr'] + $totals['disc_kemasan_idr'] + $after['disc_tambahan_idr'],
                 'grand_total_idr'    => $totals['grand_total_idr'],
+                'terbilang'          => \App\Helper\CustomHelper::terbilang($totals['grand_total_idr']),
                 'updated_by'         => Auth::id(),
             ]);
 

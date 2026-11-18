@@ -886,13 +886,19 @@ class AoSalesOrderApiController extends Controller
                     }
                 }
 
+                $packagingError = $this->validateItemPackaging($product, $item['pack']);
+                if ($packagingError !== null) {
+                    DB::rollBack();
+                    return response()->json(['success' => false, 'message' => $packagingError], 422);
+                }
+
                 $detail                         = new SalesOrderItem;
                 $detail->so_id                  = $so->id;
                 $detail->product_packaging_id   = $baseProductPackagingId;
                 $detail->price                  = $item['price'];
                 $detail->qty                    = $item['qty'];
                 $detail->disc_usd               = $item['disc'];
-                $detail->packaging_id           = $item['pack'] ?? $product->packaging_id;
+                $detail->packaging_id           = $product->packaging_id ?? $item['pack'];
                 $detail->free_product           = $item['free'];
                 $detail->kontrak                = 0;
                 $detail->created_by             = $createdBy;
@@ -1881,13 +1887,18 @@ class AoSalesOrderApiController extends Controller
                     return response()->json(['success' => false, 'message' => "Produk {$ppId} tidak ditemukan"], 422);
                 }
                 $free = $this->parseBool($it['free_product'] ?? $it['free'] ?? 0);
+                $packagingError = $this->validateItemPackaging($product, $it['packaging_id'] ?? $it['packaging'] ?? null);
+                if ($packagingError !== null) {
+                    DB::rollBack();
+                    return response()->json(['success' => false, 'message' => $packagingError], 422);
+                }
                 $d = new SalesOrderItem;
                 $d->so_id = $so->id;
                 $d->product_packaging_id = $ppId;
                 $d->price = $this->parseNumber($it['price'] ?? $it['unit_price'] ?? 0);
                 $d->qty = $this->parseNumber($it['qty'] ?? 0);
                 $d->disc_usd = $free ? 0 : $this->parseNumber($it['disc_usd'] ?? $it['discount'] ?? $it['disc'] ?? 0);
-                $d->packaging_id = $it['packaging_id'] ?? $it['packaging'] ?? $product->packaging_id;
+                $d->packaging_id = $product->packaging_id ?? $it['packaging_id'] ?? $it['packaging'] ?? null;
                 $d->free_product = $free ? 1 : 0;
                 $d->kontrak = 0;
                 $d->created_by = $so->updated_by ?? $so->created_by;
@@ -1943,6 +1954,25 @@ class AoSalesOrderApiController extends Controller
                 }
             }
         }
+        return null;
+    }
+
+    /**
+     * Tolak item yang kemasannya tidak cocok dengan pack produknya.
+     * Sumber kebenaran kemasan adalah master_products_packaging.packaging_id,
+     * karena DO & nota selalu diturunkan dari pack tersebut.
+     */
+    protected function validateItemPackaging(ProductPack $product, $payloadPackagingId)
+    {
+        $packPackagingId = $product->packaging_id !== null ? (int) $product->packaging_id : null;
+        $sent = ($payloadPackagingId === null || $payloadPackagingId === '') ? null : (int) $payloadPackagingId;
+
+        if ($sent !== null && $packPackagingId !== null && $sent !== $packPackagingId) {
+            $label = $product->code ?: $product->id;
+            return 'Kemasan item ' . $label . ' tidak sesuai: produk ini kemasan id ' . $packPackagingId
+                . ', payload mengirim id ' . $sent . '. Pilih ulang produk sesuai kemasan.';
+        }
+
         return null;
     }
 
