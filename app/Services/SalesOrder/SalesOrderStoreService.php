@@ -140,6 +140,14 @@ class SalesOrderStoreService
             $product = ProductPack::where('id', $request->sku[$key])->first();
 
             if ($product) {
+                $submittedPackagingId = $request->packaging[$key] ?? null;
+                if ($submittedPackagingId !== null && $submittedPackagingId !== ''
+                    && (int) $submittedPackagingId !== (int) $product->packaging_id) {
+                    $label = $product->code ?: $product->id;
+                    $errors[] = 'Item ' . e($label) . ' kemasannya tidak sesuai dengan produk yang dipilih. Hapus baris tersebut dan pilih ulang produk.';
+                    return $errors;
+                }
+
                 if (strpos($product->id, '_1') !== false) {
                     $baseProduct = ProductPack::where('id', str_replace('_1', '', $product->id))->first();
                     if ($baseProduct) {
@@ -171,7 +179,7 @@ class SalesOrderStoreService
             $insertDetail->product_packaging_id = $baseProductPackagingId;
             $insertDetail->price = $request->price[$key];
             $insertDetail->qty = $request->qty[$key];
-            $insertDetail->packaging_id = $request->packaging[$key];
+            $insertDetail->packaging_id = $product->packaging_id ?? $request->packaging[$key];
             $insertDetail->free_product = $request->free_product[$key];
             $insertDetail->disc_usd = $is_free ? 0 : ($request->disc[$key] ?? 0);
             $insertDetail->created_by = Auth::id();
