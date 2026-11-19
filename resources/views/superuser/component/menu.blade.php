@@ -1666,6 +1666,7 @@ body.nz-audio-locked .nz-sound-warn {
                                 <i class="fa-brands fa-connectdevelop"></i> Zona Pengembang
                             </a>
                             <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ route('superuser.health_check.index') }}">Health Check</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.backup.index') }}">Backup DB</a></li>
                                 <li><a class="dropdown-item" href="{{ route('superuser.boilerplate.index') }}">Boilrplate</a></li>
                                 <li><a class="dropdown-item" href="{{ url('superuser/telescope') }}">Telescope</a></li>
@@ -1720,6 +1721,7 @@ body.nz-audio-locked .nz-sound-warn {
                     <button type="button" class="np-tab" data-type="do">Delivery Order</button>
                     <button type="button" class="np-tab" data-type="pay">Keuangan</button>
                     <button type="button" class="np-tab" data-type="otp">Revisi</button>
+                    <button type="button" class="np-tab" data-type="err">Error</button>
                 </div>
 
                 <div id="notifList" class="np-body"></div>

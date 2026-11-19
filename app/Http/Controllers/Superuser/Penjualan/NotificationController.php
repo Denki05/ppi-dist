@@ -15,6 +15,15 @@ class NotificationController extends Controller
      * Daftar tipe notifikasi yang ditampilkan (satu sumber supaya bell,
      * halaman, dan statistik tidak pernah beda isi — OTP revisi wajib ikut).
      */
+    /**
+     * Login superuser memakai guard 'superuser', sedangkan Auth::id() membaca
+     * guard default 'web' - tanpa fallback ini notifikasi superuser selalu kosong.
+     */
+    private function authUserId()
+    {
+        return Auth::guard('superuser')->id() ?: Auth::id();
+    }
+
     private function visibleTypes()
     {
         return [
@@ -24,6 +33,7 @@ class NotificationController extends Controller
             'App\Notifications\PayableNotification',
             'App\Notifications\ReceivingNotification',
             'App\Notifications\InternalRevisionOtpNotification',
+            'App\Notifications\ErrorMonitorNotification',
         ];
     }
 
@@ -41,6 +51,7 @@ class NotificationController extends Controller
             'do' => ['App\Notifications\DoNotification'],
             'pay' => ['App\Notifications\PayableNotification'],
             'otp' => ['App\Notifications\InternalRevisionOtpNotification'],
+            'err' => ['App\Notifications\ErrorMonitorNotification'],
         ];
     }
 
@@ -84,6 +95,9 @@ class NotificationController extends Controller
         if (Str::contains($type, 'InternalRevisionOtp')) {
             return ['label' => 'OTP Revisi', 'short' => 'OTP', 'icon' => 'bi-key', 'color' => 'warning'];
         }
+        if (Str::contains($type, 'ErrorMonitor')) {
+            return ['label' => 'Error Aplikasi', 'short' => 'Error', 'icon' => 'bi-exclamation-triangle', 'color' => 'danger'];
+        }
 
         return ['label' => 'Notifikasi', 'short' => 'Notif', 'icon' => 'bi-bell', 'color' => 'primary'];
     }
@@ -101,6 +115,9 @@ class NotificationController extends Controller
         }
 
         if (Str::contains($type, 'InternalRevisionOtp')) {
+            return 'urgent';
+        }
+        if (Str::contains($type, 'ErrorMonitor')) {
             return 'urgent';
         }
         if (Str::contains($type, 'PengajuanProforma')) {
@@ -161,7 +178,7 @@ class NotificationController extends Controller
      */
     public function getNotifData(Request $request)
     {
-        $userId = Auth::id();
+        $userId = $this->authUserId();
 
         $base = DB::table('notifications')
             ->where('notifiable_id', $userId)
@@ -243,7 +260,7 @@ class NotificationController extends Controller
      */
     public function index(Request $request)
     {
-        $userId = Auth::id();
+        $userId = $this->authUserId();
         $typeFilter = $request->get('type');
         $statusFilter = $request->get('status');
 
@@ -409,7 +426,7 @@ class NotificationController extends Controller
      */
     public function unread_all_notif(Request $request)
     {
-        $userId = Auth::id();
+        $userId = $this->authUserId();
 
         try {
             DB::table('notifications')
@@ -438,7 +455,7 @@ class NotificationController extends Controller
     {
         return DB::table('notifications')
             ->where('id', $id)
-            ->where('notifiable_id', Auth::id())
+            ->where('notifiable_id', $this->authUserId())
             ->first();
     }
 

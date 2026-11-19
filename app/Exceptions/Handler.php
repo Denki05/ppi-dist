@@ -39,6 +39,12 @@ class Handler extends ExceptionHandler
     public function report(Exception $exception)
     {
         parent::report($exception);
+
+        try {
+            (new \App\Services\ErrorMonitorService())->record($exception, request());
+        } catch (\Throwable $e) {
+            // Kegagalan monitor tidak boleh mengganggu pelaporan utama.
+        }
     }
 
     /**

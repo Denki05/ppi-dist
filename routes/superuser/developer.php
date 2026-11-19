@@ -26,6 +26,12 @@ Route::group(['middleware' => ['role:Developer', 'auth:superuser']], function ()
     Route::group(['middleware' => ['permission:terminal-manage']], function () {
         Route::get('/terminal', 'Utility\TerminalController')->name('terminal');
     });
+
+    Route::group(['middleware' => ['role:Developer|SuperAdmin']], function () {
+        Route::get('/health-check', 'HealthCheckController@index')->name('health_check.index');
+        Route::post('/health-check/errors/resolve-all', 'HealthCheckController@resolveAll')->name('health_check.resolve_all');
+        Route::post('/health-check/errors/{id}/resolve', 'HealthCheckController@resolve')->name('health_check.resolve');
+    });
     
     Route::group(['middleware' => ['permission:gate-manage'], 'as' => 'gate.', 'prefix' => '/gate'], function () {
         Route::get('/', 'Utility\GateController@index')->name('index');
