@@ -42,6 +42,11 @@ class Kernel extends ConsoleKernel
         $schedule->command('queue:work database --queue=trial --stop-when-empty --tries=8 --timeout=120 --sleep=0')
             ->everyMinute()
             ->withoutOverlapping(10);
+
+        // Heartbeat untuk Health Check: mendeteksi cron schedule:run berhenti
+        $schedule->command('dev:heartbeat')
+            ->everyMinute()
+            ->withoutOverlapping(5);
     }
 
     /**
