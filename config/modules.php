@@ -89,6 +89,16 @@ return [
             'color'       => '#db2777',
         ],
 
+        'VST' => [
+            'label'       => 'VST',
+            'name'        => 'Visit Light',
+            'description' => 'Kunjungan cepat sales: foto, keterangan singkat, dan lokasi.',
+            'url'         => env('MODULE_VST_URL', 'http://localhost/visit_sales/public'),
+            'sso_path'    => '/module-sso',
+            'icon'        => 'fa-camera',
+            'color'       => '#ea580c',
+        ],
+
     ],
 
     /*

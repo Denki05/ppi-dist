@@ -10,7 +10,7 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     @php
-      $user = Auth::id();
+      $user = Auth::guard('superuser')->id() ?: Auth::id();
       $notifCount = DB::table('notifications')
         ->where('notifiable_id', $user)
         ->where('read_at', null)
