@@ -1880,6 +1880,46 @@ class AoSalesOrderApiController extends Controller
                     $wf = new \App\Services\SalesOrder\SalesOrderWorkflowService();
                     $wf->lanjutkan($so);
                     $so->refresh();
+                    // Sinkronkan SalesOrderProformaItem dari SalesOrderItem terbaru
+                    // (jika proforma ada dan belum lanjutan/ACC)
+                    $proformaRev = \App\Entities\Penjualan\SalesOrderProforma::where('so_id', $so->id)
+                        ->where('so_lanjutan', 0)
+                        ->where('status', '!=', 4)
+                        ->first();
+                    if ($proformaRev) {
+                        \App\Entities\Penjualan\SalesOrderProformaItem::where('so_proforma_id', $proformaRev->id)->delete();
+                        $purchaseRev = 0;
+                        $soItemsRev = \App\Entities\Penjualan\SalesOrderItem::where('so_id', $so->id)->get();
+                        foreach ($soItemsRev as $itemRev) {
+                            $freeRev = !empty($itemRev->free_product);
+                            $lineRev = new \App\Entities\Penjualan\SalesOrderProformaItem();
+                            $lineRev->so_proforma_id = $proformaRev->id;
+                            $lineRev->product_packaging_id = $itemRev->product_packaging_id;
+                            $lineRev->price = $itemRev->price;
+                            $lineRev->qty = $itemRev->qty;
+                            $lineRev->disc_usd = $itemRev->disc_usd;
+                            $lineRev->packaging_id = $itemRev->packaging_id;
+                            $lineRev->free_product = $itemRev->free_product;
+                            $lineRev->total_item = $freeRev ? 0 : ($itemRev->price * $itemRev->qty);
+                            $lineRev->save();
+                            $purchaseRev += $lineRev->total_item;
+                        }
+                        // Update proforma details (total, discount, delivery cost)
+                        $costRev = \App\Entities\Penjualan\SalesOrderProformaDetails::firstOrNew(
+                            ['so_proforma_id' => $proformaRev->id]
+                        );
+                        $discPctRev = (float) ($request->input('disc_percent', $so->disc_percent));
+                        $discIdrRev = (float) ($request->input('disc_idr', $so->disc_idr));
+                        $costRev->discount_1_percent = $discPctRev;
+                        $costRev->discount_1 = $discIdrRev;
+                        $costRev->purchase_total_idr = $purchaseRev;
+                        $costRev->delivery_cost_idr = (float) ($request->input('delivery_cost_idr', $so->delivery_cost_idr ?? 0));
+                        $discAgenRev = $purchaseRev * ($discPctRev / 100);
+                        $costRev->grand_total_idr = $purchaseRev - $discAgenRev - $discIdrRev
+                            - (float) ($costRev->discount_2 ?: 0) - (float) ($costRev->discount_idr ?: 0)
+                            - (float) ($costRev->voucher_idr ?: 0) + (float) ($costRev->delivery_cost_idr ?: 0);
+                        $costRev->save();
+                    }
                 } catch (\Exception $wfEx) {
                     Log::warning('AO revisi auto-lanjutkan gagal, tetap AWAL: ' . $wfEx->getMessage(), ['so_id' => $so->id]);
                 }
@@ -2015,7 +2055,7 @@ class AoSalesOrderApiController extends Controller
             $doc->note = '[AUTO 1-jalan] dari ' . ($so->so_code ?: ('SO#' . $so->id)) . ' — warehouse + kalkulasi oleh admin.';
             $doc->status = 1;
             $doc->exsisting_customer = 1;
-            $doc->created_by = null;
+            $doc->created_by = config("services.ao_api.default_superuser_id", 1);
             $doc->save();
 
             $purchase = 0;
