@@ -441,6 +441,17 @@ class AoSalesOrderApiController extends Controller
             ], 422);
         }
 
+        foreach ((array) $request->input('items') as $it) {
+            $product = ProductPack::where('id', $it['product_packaging_id'])->first();
+            if (!$product) {
+                return response()->json(['success' => false, 'message' => 'Produk ' . $it['product_packaging_id'] . ' tidak ditemukan'], 422);
+            }
+            $priceError = $this->validateItemPrice($product, $it['price'] ?? 0);
+            if ($priceError !== null) {
+                return response()->json(['success' => false, 'message' => $priceError], 422);
+            }
+        }
+
         $pengajuan = PengajuanProforma::where('estimate_number', $request->estimate_number)->first();
         if (!$pengajuan
             || $pengajuan->status !== PengajuanProforma::STATUS_DISETUJUI
@@ -508,8 +519,12 @@ class AoSalesOrderApiController extends Controller
                 $cost->save();
 
                 if (!empty($proforma->so_id)) {
+                    $sync = ['status_proforma' => 1];
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('penjualan_so', 'delivery_cost_idr')) {
+                        $sync['delivery_cost_idr'] = (float) ($cost->delivery_cost_idr ?: 0);
+                    }
                     // Kembali ke Aktif (1) agar dikalkulasi ulang, bukan Terbuat
-                    SalesOrder::where('id', $proforma->so_id)->update(['status_proforma' => 1]);
+                    SalesOrder::where('id', $proforma->so_id)->update($sync);
                 }
 
                 $pengajuan->update(['revisi_ao' => false]);
@@ -888,13 +903,19 @@ class AoSalesOrderApiController extends Controller
                     return response()->json(['success' => false, 'message' => $packagingError], 422);
                 }
 
+                $priceError = $this->validateItemPrice($product, $item['price']);
+                if ($priceError !== null) {
+                    DB::rollBack();
+                    return response()->json(['success' => false, 'message' => $priceError], 422);
+                }
+
                 $detail                         = new SalesOrderItem;
                 $detail->so_id                  = $so->id;
                 $detail->product_packaging_id   = $baseProductPackagingId;
                 $detail->price                  = $item['price'];
                 $detail->qty                    = $item['qty'];
                 $detail->disc_usd               = $item['disc'];
-                $detail->packaging_id           = $item['pack'] ?? $product->packaging_id;
+                $detail->packaging_id           = $product->packaging_id ?? $item['pack'];
                 $detail->free_product           = $item['free'];
                 $detail->kontrak                = 0;
                 $detail->created_by             = $createdBy;
@@ -1065,7 +1086,7 @@ class AoSalesOrderApiController extends Controller
         return $out;
     }
 
-        /**
+    /**
      * Setelan tempo customer: has_tempo + tempo_limit (hari).
      */
     protected function invoiceTempoMeta($inv, $do = null)
@@ -1151,10 +1172,7 @@ class AoSalesOrderApiController extends Controller
                     '=',
                     'i.id'
                 )
-                ->where(function ($q) use ($customerId) {
-                    $q->where('i.customer_other_address_id', $customerId)
-                      ->orWhere('i.customer_other_address_id', 'like', $customerId . '.%');
-                })
+                ->where('i.customer_other_address_id', $customerId)
                 ->where('i.status', Invoicing::STATUS['ACTIVE'])
                 ->whereNull('i.deleted_at')
                 ->where('i.created_at', '>=', $hutangMulai)
@@ -1277,10 +1295,33 @@ class AoSalesOrderApiController extends Controller
         $doStatus = $request->query('do_status');
         $doStatus = is_numeric($doStatus) ? (int) $doStatus : null;
 
+        // Filter jenis order (riwayat PPN/indent): kind=ppn|indent|ppn_indent.
+        $kind = strtolower(trim((string) $request->query('kind', '')));
+        if (!in_array($kind, ['ppn', 'indent', 'ppn_indent'], true)) {
+            $kind = '';
+        }
+        $typeSo = strtolower(trim((string) $request->query('type_so', '')));
+        $typeSo = in_array($typeSo, ['ppn', 'nonppn'], true) ? $typeSo : null;
+        $soIndent = $request->query('so_indent');
+        $soIndent = ($soIndent === null || $soIndent === '') ? null : (int) (bool) $soIndent;
+        $statusIn = array_values(array_filter(array_map('intval', explode(',', (string) $request->query('status_in', '')))));
+
         $hasAoCol = \Illuminate\Support\Facades\Schema::hasColumn('penjualan_so', 'ao_order_number');
+        $hasTypeSoCol = \Illuminate\Support\Facades\Schema::hasColumn('penjualan_so', 'type_so');
+        $hasNoDocCol = \Illuminate\Support\Facades\Schema::hasColumn('penjualan_so', 'no_ducument_ppn');
+        $hasIndentStatusCol = \Illuminate\Support\Facades\Schema::hasColumn('penjualan_so', 'indent_status');
         $cols = ['id', 'so_code', 'status', 'brand_name', 'type_transaction', 'customer_id', 'customer_other_address_id', 'note', 'idr_rate', 'disc_percent', 'disc_idr', 'disc_usd', 'disc_kemasan', 'approval_mou', 'so_indent', 'is_estimate', 'estimate_code', 'code', 'created_by', 'created_at'];
         if ($hasAoCol) {
             $cols[] = 'ao_order_number';
+        }
+        if ($hasTypeSoCol) {
+            $cols[] = 'type_so';
+        }
+        if ($hasNoDocCol) {
+            $cols[] = 'no_ducument_ppn';
+        }
+        if ($hasIndentStatusCol) {
+            $cols[] = 'indent_status';
         }
 
         $query = SalesOrder::where('id', '>', $sinceId);
@@ -1297,6 +1338,25 @@ class AoSalesOrderApiController extends Controller
                     ->where('status', $doStatus)
                     ->whereNull('deleted_at');
             });
+        }
+        if ($kind === 'ppn') {
+            $query->where('type_so', 'ppn');
+        } elseif ($kind === 'indent') {
+            $query->where('so_indent', 1);
+        } elseif ($kind === 'ppn_indent') {
+            $query->where(function ($w) {
+                $w->where('type_so', 'ppn')->orWhere('so_indent', 1);
+            });
+        } else {
+            if ($typeSo !== null) {
+                $query->where('type_so', $typeSo);
+            }
+            if ($soIndent !== null) {
+                $query->where('so_indent', $soIndent);
+            }
+        }
+        if ($statusIn) {
+            $query->whereIn('status', $statusIn);
         }
 
         $rows = $query->orderBy('id', 'asc')->limit($limit)->get($cols);
@@ -1379,7 +1439,7 @@ class AoSalesOrderApiController extends Controller
         } catch (\Exception $e) {
         }
 
-        $data = $rows->map(function ($so) use ($usernames, $members, $dos, $invs, $paidSums, $hasAoCol) {
+        $data = $rows->map(function ($so) use ($usernames, $members, $dos, $invs, $paidSums, $hasAoCol, $hasTypeSoCol, $hasNoDocCol, $hasIndentStatusCol) {
             $childId = (string) $so->customer_other_address_id;
             $member = $members[$childId] ?? null;
             $do = $dos[(int) $so->id] ?? null;
@@ -1393,6 +1453,10 @@ class AoSalesOrderApiController extends Controller
                 'status' => $so->status,
                 'brand_name' => $so->brand_name,
                 'type_transaction' => $so->type_transaction,
+                'type_so' => $hasTypeSoCol ? ($so->type_so ?? null) : null,
+                'so_indent' => (int) ($so->so_indent ?? 0),
+                'indent_status' => $hasIndentStatusCol ? ($so->indent_status ?? null) : null,
+                'no_document_ppn' => $hasNoDocCol ? ($so->no_ducument_ppn ?? null) : null,
                 'customer_id' => $so->customer_id,
                 'customer_other_address_id' => $so->customer_other_address_id,
                 'customer_name' => $member ? $member->name : null,
@@ -1442,13 +1506,21 @@ class AoSalesOrderApiController extends Controller
         } catch (\Exception $e) {
         }
         $hasAoCol = \Illuminate\Support\Facades\Schema::hasColumn('penjualan_so', 'ao_order_number');
+        $hasTypeSoCol = \Illuminate\Support\Facades\Schema::hasColumn('penjualan_so', 'type_so');
+        $hasNoDocCol = \Illuminate\Support\Facades\Schema::hasColumn('penjualan_so', 'no_ducument_ppn');
+        $hasIndentStatusCol = \Illuminate\Support\Facades\Schema::hasColumn('penjualan_so', 'indent_status');
 
         return response()->json(['success' => true, 'data' => array_merge([
             'so_id' => $so->id,
             'so_code' => $so->so_code,
+            'so_date' => $so->created_at ? \Carbon\Carbon::parse($so->created_at)->toDateString() : null,
+            'created_at' => $so->created_at,
             'status' => $so->status,
             'brand_name' => $so->brand_name,
             'type_transaction' => $so->type_transaction,
+            'type_so' => $hasTypeSoCol ? ($so->type_so ?? null) : null,
+            'no_document_ppn' => $hasNoDocCol ? ($so->no_ducument_ppn ?? null) : null,
+            'indent_status' => $hasIndentStatusCol ? ($so->indent_status ?? null) : null,
             'customer_id' => $so->customer_id,
             'customer_other_address_id' => $so->customer_other_address_id,
             'customer_name' => $member ? $member->name : null,
@@ -1687,6 +1759,37 @@ class AoSalesOrderApiController extends Controller
             $creport->Database->Tables(1)->SetLogOnInfo('LOCAL', $db['database'], $db['username'], $db['password']);
             $creport->EnableParameterPrompting = false;
             $creport->RecordSelectionFormula = "{penjualan_do.id} = " . (int) $do->id;
+
+            // Stempel, ttd, dan tanggal pelunasan hanya untuk invoice yang sudah lunas
+            if ($do->so && (int) $do->so->payment_status === 1) {
+                $pay_date = DB::table('finance_payable_detail as pd')
+                    ->join('finance_payable as p', 'p.id', '=', 'pd.payable_id')
+                    ->join('finance_invoicing as i', 'i.id', '=', 'pd.invoice_id')
+                    ->where('i.do_id', $do->id)
+                    ->whereNull('pd.deleted_at')
+                    ->whereNull('p.deleted_at')
+                    ->max('p.pay_date');
+
+                $footer = $creport->Sections->Item(14);
+                for ($i = 1; $i <= $footer->ReportObjects->Count; $i++) {
+                    $obj = $footer->ReportObjects->Item($i);
+                    if ($obj->Name === 'ttdstempel1') {
+                        $obj->Suppress = false;
+                    }
+                }
+
+                if ($pay_date) {
+                    $header = $creport->Sections->Item(2);
+                    for ($i = 1; $i <= $header->ReportObjects->Count; $i++) {
+                        $obj = $header->ReportObjects->Item($i);
+                        if ($obj->Name === 'paydatetext1') {
+                            $obj->SetText('Pelunasan: ' . date('d-m-Y', strtotime($pay_date)));
+                            $obj->Suppress = false;
+                        }
+                    }
+                }
+            }
+
             $creport->ExportOptions->DiskFileName = $tmp;
             $creport->ExportOptions->PDFExportAllPages = true;
             $creport->ExportOptions->DestinationType = 1;
@@ -1746,6 +1849,7 @@ class AoSalesOrderApiController extends Controller
                 'so_code'   => $so->so_code,
                 'status'    => $so->status,
                 'status_text' => SalesOrder::STEP[$so->status] ?? (string) $so->status,
+                'type_so' => \Illuminate\Support\Facades\Schema::hasColumn('penjualan_so', 'type_so') ? ($so->type_so ?? null) : null,
                 'so_indent' => $so->so_indent,
                 'indent_status' => $so->indent_status,
                 'condition' => $so->condition,
@@ -1858,6 +1962,11 @@ class AoSalesOrderApiController extends Controller
                 if ($packagingError !== null) {
                     DB::rollBack();
                     return response()->json(['success' => false, 'message' => $packagingError], 422);
+                }
+                $priceError = $this->validateItemPrice($product, $it['price'] ?? $it['unit_price'] ?? 0);
+                if ($priceError !== null) {
+                    DB::rollBack();
+                    return response()->json(['success' => false, 'message' => $priceError], 422);
                 }
                 $d = new SalesOrderItem;
                 $d->so_id = $so->id;
@@ -1978,6 +2087,27 @@ class AoSalesOrderApiController extends Controller
             $label = $product->code ?: $product->id;
             return 'Kemasan item ' . $label . ' tidak sesuai: produk ini kemasan id ' . $packPackagingId
                 . ', payload mengirim id ' . $sent . '. Pilih ulang produk sesuai kemasan.';
+        }
+
+        return null;
+    }
+
+    /**
+     * Tolak harga item yang tidak sama dengan harga master pack.
+     * Master produk (master_products_packaging.price) adalah sumber kebenaran;
+     * mencegah snapshot harga lama/49 ikut masuk SO/DO/nota.
+     */
+    protected function validateItemPrice(ProductPack $product, $payloadPrice)
+    {
+        $masterPrice = (float) $product->price;
+        $sent = (float) $this->parseNumber($payloadPrice);
+
+        if (abs($sent - $masterPrice) > 0.01) {
+            $label = $product->code ?: $product->id;
+            return 'Harga item ' . $label . ' tidak sesuai master: payload '
+                . number_format($sent, 2, ',', '.') . ', master '
+                . number_format($masterPrice, 2, ',', '.')
+                . '. Muat ulang produk di AO lalu kirim ulang.';
         }
 
         return null;

@@ -91,7 +91,7 @@ return [
 
         'VST' => [
             'label'       => 'VST',
-            'name'        => 'Visit Light',
+            'name'        => 'Visit',
             'description' => 'Kunjungan cepat sales: foto, keterangan singkat, dan lokasi.',
             'url'         => env('MODULE_VST_URL', 'http://localhost/visit_sales/public'),
             'sso_path'    => '/module-sso',
