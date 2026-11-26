@@ -22,6 +22,7 @@ use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Gudang\MutasiShowroom;
 use App\Entities\Gudang\MutasiShowroomDetail;
 use App\Services\StockService;
+use App\Services\SalesOrder\SalesOrderClosingService;
 use App\Entities\Master\Vendor;
 use App\Models\Province;
 use App\Models\Regency;
@@ -96,11 +97,24 @@ class SalesOrderProformaController extends Controller
                 $q->where('status_proforma', 4);
             })->get();
 
+        // Peta member hasil mutasi -> pengajuan (untuk tombol Batalkan Prospek).
+        // Kunci string agar cocok dengan id dotted ("178.1").
+        $pengajuanMap = \App\Entities\Penjualan\PengajuanProforma::where('status', 'disetujui')
+            ->whereNotNull('member_id_hasil')
+            ->pluck('id', 'member_id_hasil')
+            ->mapWithKeys(function ($id, $member) {
+                return [(string) $member => $id];
+            })
+            ->toArray();
+
         return view('superuser.penjualan.so_proforma.index', [
             'aktif' => $aktif,
             'terbuat' => $terbuat,
             'siap' => $siap,
             'tutup' => $tutup,
+            'pengajuanMap' => $pengajuanMap,
+            // Paket A poin 10: tombol Revisi/Batal hanya ID admin sales + divisi Management
+            'canRevisiBatal' => \App\Helper\ProformaAccess::canRevisiBatal(Auth::user()),
 
             'count_aktif' => $aktif->count(),
             'count_terbuat' => $terbuat->count(),
@@ -127,6 +141,43 @@ class SalesOrderProformaController extends Controller
         return view($this->view . "create", $data);
     }
 
+    /**
+     * Ubah input angka jadi float tanpa merusak desimal.
+     *
+     * Format yang diterima: "1157625", "1157625.00", "689062.5" (desimal titik),
+     * "1.234.567" (ribuan titik saja), "1.234.567,89" / "115762,5" (Indonesia).
+     * Versi lama membuang SEMUA titik, sehingga nilai render DB "1157625.00"
+     * terbaca 115762500 (x100) dan setiap save menggelembungkan nominal.
+     */
+    private function cleanCurrency($value)
+    {
+        if ($value === null || $value === '') {
+            return 0.0;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (float) $value;
+        }
+
+        $value = str_replace(' ', '', trim((string) $value));
+
+        $hasComma = strpos($value, ',') !== false;
+        $hasDot = strpos($value, '.') !== false;
+
+        if ($hasComma && $hasDot) {
+            // Indonesia: titik ribuan, koma desimal (1.234.567,89)
+            $value = str_replace(',', '.', str_replace('.', '', $value));
+        } elseif ($hasComma) {
+            // Desimal koma (115762,5)
+            $value = str_replace(',', '.', $value);
+        } elseif (substr_count($value, '.') > 1) {
+            // Titik ribuan saja (1.234.567)
+            $value = str_replace('.', '', $value);
+        }
+
+        return (float) $value;
+    }
+
     public function store(Request $request)
     {
         if ($request->ajax()) {
@@ -134,7 +185,7 @@ class SalesOrderProformaController extends Controller
                 'so_date' => 'required|date',
                 'warehouse' => 'required|integer',
                 'qty' => 'required|array',
-                'qty.*' => 'required|numeric|min:0.01',
+                'qty.*' => 'nullable|numeric|min:0',
             ]);
 
             if ($validator->fails()) {
@@ -149,6 +200,26 @@ class SalesOrderProformaController extends Controller
             }
 
             if ($validator->passes()) {
+                // Baris tanpa produk / qty kosong / qty 0 diabaikan: tidak dibuatkan item,
+                // tidak ikut kalkulasi, dan tidak masuk dokumen turunan (ACC/DO/stok).
+                $validKeys = [];
+                foreach ((array) $request->sku as $key => $sku) {
+                    if ($sku && (float) ($request->qty[$key] ?? 0) >= 0.01) {
+                        $validKeys[] = $key;
+                    }
+                }
+
+                if (empty($validKeys)) {
+                    $response['notification'] = [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'header' => 'Error',
+                        'content' => ['Minimal 1 produk dengan Qty.'],
+                    ];
+
+                    return $this->response(400, $response);
+                }
+
                 $sales_proforma = New SalesOrderProforma;
 
                 if($request->existing_customer == 1){
@@ -185,6 +256,10 @@ class SalesOrderProformaController extends Controller
 
                         if($request->sku) {
                             foreach($request->sku as $key => $item){
+                                if (!in_array($key, $validKeys)) {
+                                    continue;
+                                }
+
                                 $duplicate_product = [];
                                 $duplicate = false;
                                 $listItem[] = [
@@ -276,6 +351,10 @@ class SalesOrderProformaController extends Controller
     
                         if($request->sku) {
                             foreach($request->sku as $key => $item){
+                                if (!in_array($key, $validKeys)) {
+                                    continue;
+                                }
+
                                 $duplicate_product = [];
                                 $duplicate = false;
                                 $listItem[] = [
@@ -364,6 +443,18 @@ class SalesOrderProformaController extends Controller
             abort(404);
         }
 
+        // Paket A poin 10: revisi (tambah produk) hanya admin sales / management
+        if (!\App\Helper\ProformaAccess::canRevisiBatal(Auth::user())) {
+            return $this->response(403, [
+                'notification' => [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Akses ditolak',
+                    'content' => 'Revisi proforma hanya untuk admin sales dan management.',
+                ]
+            ]);
+        }
+
         $validator = Validator::make($request->all(), [
             'warehouse' => 'required|exists:master_warehouses,id',
         
@@ -372,7 +463,7 @@ class SalesOrderProformaController extends Controller
             'idr_rate' => 'required|numeric|min:1',
         
             'qty' => 'required|array',
-            'qty.*' => 'nullable|numeric|min:0.01',
+            'qty.*' => 'nullable|numeric|min:0',
             'price.*' => 'nullable|numeric|min:0',
             'disc_usd.*' => 'nullable|numeric|min:0',
         ], [
@@ -402,8 +493,12 @@ class SalesOrderProformaController extends Controller
             $sales_proforma->vendor_id = $request->vendor;
             $sales_proforma->so_date = $request->so_date;
             $sales_proforma->so_brand_name = $request->so_brand_name;
-            $sales_proforma->so_type_transaction = $request->type_transaction;
-            $sales_proforma->so_idr_rate = $request->idr_rate;
+            // Field Type Transaksi di halaman Edit hanya label (readonly), bukan
+            // kode numerik; jangan timpa nilai tersimpan dengan teks seperti "CASH".
+            if (is_numeric($request->type_transaction)) {
+                $sales_proforma->so_type_transaction = (int) $request->type_transaction;
+            }
+            $sales_proforma->so_idr_rate = $this->cleanCurrency($request->idr_rate);
             $sales_proforma->note = $request->note;
             $sales_proforma->sales_senior_id = $request->sales_senior_id;
             $sales_proforma->sales_id = $request->sales_id;
@@ -423,22 +518,7 @@ class SalesOrderProformaController extends Controller
 
             $sales_proforma->save();
 
-            // ===== DETAIL COST =====
-            $detail_cost = SalesOrderProformaDetails::firstOrNew([
-                'so_proforma_id' => $sales_proforma->id
-            ]);
-
-            $detail_cost->discount_1_percent = $request->disc_agen_percent ?? 0;
-            $detail_cost->discount_1 = $request->disc_agen_idr ?? 0;
-            $detail_cost->discount_2_percent = $request->disc_kemasan_percent ?? 0;
-            $detail_cost->discount_2 = $request->disc_kemasan_idr ?? 0;
-            $detail_cost->discount_idr = $request->disc_tambahan_idr ?? 0;
-            $detail_cost->voucher_idr = $request->voucher_idr ?? 0;
-            $detail_cost->delivery_cost_idr = $request->delivery_cost_idr ?? 0;
-            $detail_cost->purchase_total_idr = $request->subtotal ?? 0;
-            $detail_cost->grand_total_idr = $request->grand_total ?? 0;
-
-            $detail_cost->save();
+            $idr_rate = (float) $sales_proforma->so_idr_rate;
 
             // ===== DELETE ITEMS =====
             if ($request->ids_delete) {
@@ -452,11 +532,31 @@ class SalesOrderProformaController extends Controller
             $sales_order->save();
 
             // ===== ITEMS =====
+            // Mode revisi (tambah varian) hanya bila dibuka via tombol Revisi.
+            // Edit biasa = kalkulasi item existing saja.
+            $isRevisi = $request->input('revision_mode') === 'revisi';
             if ($request->sku) {
 
                 foreach ($request->sku as $key => $value) {
 
                     if (!$value) continue;
+
+                    $qty = (float) ($request->qty[$key] ?? 0);
+
+                    // Qty kosong / 0 diabaikan: baris baru tidak dibuat, baris lama dihapus
+                    // agar tidak ikut ACC, DO, reserved stock, maupun dokumen turunan lain.
+                    if ($qty < 0.01) {
+                        if (!empty($request->edit[$key])) {
+                            SalesOrderProformaItem::where('id', $request->edit[$key])
+                                ->where('so_proforma_id', $sales_proforma->id)
+                                ->delete();
+                        }
+                        continue;
+                    }
+
+                    if (empty($request->edit[$key]) && !$isRevisi) {
+                        throw new \Exception('Tambah varian baru hanya diizinkan via tombol Revisi.');
+                    }
 
                     $free = isset($request->free_product[$key]) 
                             ? $request->free_product[$key] 
@@ -464,7 +564,13 @@ class SalesOrderProformaController extends Controller
 
                     if (!empty($request->edit[$key])) {
 
-                        $item = SalesOrderProformaItem::find($request->edit[$key]);
+                        $item = SalesOrderProformaItem::where('id', $request->edit[$key])
+                            ->where('so_proforma_id', $sales_proforma->id)
+                            ->first();
+
+                        if (!$item) {
+                            continue;
+                        }
 
                     } else {
 
@@ -472,17 +578,74 @@ class SalesOrderProformaController extends Controller
                         $item->so_proforma_id = $sales_proforma->id;
                     }
 
+                    $price = $this->cleanCurrency($request->price[$key] ?? 0);
+                    $disc_usd = $this->cleanCurrency($request->disc_usd[$key] ?? 0);
+
                     $item->product_packaging_id = $value;
-                    $item->price = $request->price[$key] ?? 0;
-                    $item->qty = $request->qty[$key] ?? 0;
-                    $item->disc_usd = $request->disc_usd[$key] ?? 0;
-                    $item->total_item = $request->total[$key] ?? 0;
+                    $item->price = $price;
+                    $item->qty = $qty;
+                    $item->disc_usd = $disc_usd;
+                    // Nominal baris dihitung di server, tidak memakai nilai kiriman
+                    // form (yang bisa berformat "6890625.00" / hasil hitung JS).
+                    $item->total_item = round(($price - $disc_usd) * $qty * $idr_rate, 2);
                     $item->packaging_id = $request->packaging[$key] ?? null;
                     $item->free_product = $free;
 
                     $item->save();
                 }
             }
+
+            // Proforma tanpa item ber-qty tidak boleh disimpan: ACC akan membuat nota kosong
+            if (!$sales_proforma->items()->exists()) {
+                DB::rollback();
+
+                return $this->response(400, [
+                    'notification' => [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'header' => 'Error',
+                        'content' => ['Minimal 1 produk dengan Qty.'],
+                    ]
+                ]);
+            }
+
+            // ===== DETAIL COST =====
+            // Subtotal & potongan dihitung ulang dari item yang baru disimpan,
+            // supaya nilai tidak bergantung pada string angka dari form.
+            $subtotal_idr = round((float) $sales_proforma->items()->sum('total_item'), 2);
+            $disc_1_percent = $this->cleanCurrency($request->disc_agen_percent);
+            $disc_2_percent = $this->cleanCurrency($request->disc_kemasan_percent);
+            // Form versi lama bisa menampilkan Disc Kemasan % tanpa nominalnya
+            // (field % memakai nilai Disc Agen). Jangan terapkan potongan yang
+            // tidak pernah tampil ke user.
+            if ($disc_2_percent > 0 && $this->cleanCurrency($request->disc_kemasan_idr) <= 0) {
+                $disc_2_percent = 0;
+            }
+            $disc_1_idr = round($subtotal_idr * $disc_1_percent / 100, 2);
+            $disc_2_idr = round(($subtotal_idr - $disc_1_idr) * $disc_2_percent / 100, 2);
+            $disc_idr = $this->cleanCurrency($request->disc_tambahan_idr);
+            $voucher_idr = $this->cleanCurrency($request->voucher_idr);
+            $delivery_cost_idr = $this->cleanCurrency($request->delivery_cost_idr);
+            $grand_total_idr = round(
+                $subtotal_idr - $disc_1_idr - $disc_2_idr - $disc_idr - $voucher_idr + $delivery_cost_idr,
+                2
+            );
+
+            $detail_cost = SalesOrderProformaDetails::firstOrNew([
+                'so_proforma_id' => $sales_proforma->id
+            ]);
+
+            $detail_cost->discount_1_percent = $disc_1_percent;
+            $detail_cost->discount_1 = $disc_1_idr;
+            $detail_cost->discount_2_percent = $disc_2_percent;
+            $detail_cost->discount_2 = $disc_2_idr;
+            $detail_cost->discount_idr = $disc_idr;
+            $detail_cost->voucher_idr = $voucher_idr;
+            $detail_cost->delivery_cost_idr = $delivery_cost_idr;
+            $detail_cost->purchase_total_idr = $subtotal_idr;
+            $detail_cost->grand_total_idr = $grand_total_idr;
+
+            $detail_cost->save();
 
             DB::commit();
 
@@ -597,7 +760,17 @@ class SalesOrderProformaController extends Controller
             */
             $stockLogs = []; // ✅ Siapkan array untuk menampung log stock
 
-            foreach ($sales_proforma->items as $item) {
+            // Qty kosong / 0 diabaikan sepenuhnya: tidak reservasi stok, tidak jadi item DO,
+            // dan tidak membuat mutasi free product.
+            $validItems = $sales_proforma->items->filter(function ($item) {
+                return (float) $item->qty >= 0.01;
+            });
+
+            if ($validItems->isEmpty()) {
+                throw new \Exception('Proforma tidak memiliki produk dengan Qty.');
+            }
+
+            foreach ($validItems as $item) {
                 // Hilangkan suffix jika ada (_1, _2, dst) agar konsisten dengan stock
                 $base_product_packaging_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
 
@@ -610,18 +783,16 @@ class SalesOrderProformaController extends Controller
                 );
 
                 // ✅ Simpan data log sementara (do_id masih null, akan diisi nanti)
-                if ($item->qty > 0) {
-                    $stockLogs[] = [
-                        'do_id'                => null, 
-                        'warehouse_id'         => $sales_proforma->warehouse_id,
-                        'product_packaging_id' => $base_product_packaging_id,
-                        'qty'                  => $item->qty,
-                        'status'               => 1, // Status aktif (1)
-                        'note'                 => 'Logs Stock Proforma ACC',
-                        'created_at'           => now(),
-                        'updated_at'           => now(),
-                    ];
-                }
+                $stockLogs[] = [
+                    'do_id'                => null, 
+                    'warehouse_id'         => $sales_proforma->warehouse_id,
+                    'product_packaging_id' => $base_product_packaging_id,
+                    'qty'                  => $item->qty,
+                    'status'               => 1, // Status aktif (1)
+                    'note'                 => 'Logs Stock Proforma ACC',
+                    'created_at'           => now(),
+                    'updated_at'           => now(),
+                ];
             }
     
             /*
@@ -675,11 +846,19 @@ class SalesOrderProformaController extends Controller
             $packingOrder = PackingOrder::where('so_id', $sales_order->id)
                 ->where('status', 7)->orderBy('id', 'desc')->first();
     
+            // Kurs Proforma seharusnya SUDAH diisi Admin sejak awal (dipakai untuk
+            // kalkulasi di Proforma), tapi tetap dijaga dengan ambang batas yang sama
+            // seperti alur lain (kosong/0/1 dianggap belum valid -> hold), untuk
+            // berjaga-jaga jika ada input tidak wajar.
+            $isKursHoldProforma = empty($sales_proforma->so_idr_rate) || (float) $sales_proforma->so_idr_rate <= 1;
+
             if ($packingOrder) {
                 $packingOrder->update([
                     'status' => 2,
                     'warehouse_id' => $sales_proforma->warehouse_id,
                     'note' => $sales_proforma->note,
+                    'idr_rate' => $sales_proforma->so_idr_rate,
+                    'is_kurs_hold' => $isKursHoldProforma,
                     'created_by' => Auth::id()
                 ]);
                 PackingOrderItem::where('do_id', $packingOrder->id)->delete();
@@ -692,6 +871,7 @@ class SalesOrderProformaController extends Controller
                     'customer_other_address_id' => $sales_proforma->customer_other_address_id,
                     'vendor_id' => $sales_proforma->vendor_id,
                     'idr_rate' => $sales_proforma->so_idr_rate,
+                    'is_kurs_hold' => $isKursHoldProforma,
                     'type_transaction' => optional($sales_proforma->salesOrder)->type_transaction,
                     'count_cancel' => 0,
                     'status' => 2,
@@ -726,6 +906,11 @@ class SalesOrderProformaController extends Controller
                     'grand_total_idr' => $sales_proforma->details_cost->grand_total_idr,
                 ]);
             }
+
+            // Nota resmi dibuat di titik yang sama dengan tutup_so: begitu DO ada
+            // dengan kurs & grand total valid. Idempotent — ACC ulang hanya
+            // menyinkronkan nota yang sudah ada (tidak dobel, VOID tidak dihidupkan).
+            app(SalesOrderClosingService::class)->createInvoiceIfNeeded($do_id);
     
             /*
             |--------------------------------------------------------------------------
@@ -734,12 +919,12 @@ class SalesOrderProformaController extends Controller
             */
             $mutasiItems = [];
     
-            foreach ($sales_proforma->items as $item) {
+            foreach ($validItems as $item) {
                 $soItem = SalesOrderItem::where('so_id', $sales_order->id)
                     ->where('product_packaging_id', $item->product_packaging_id)->first(); 
     
                 $is_free_product = !empty($soItem->free_product) && (float)$soItem->free_product > 0;
-                if ($is_free_product && $item->qty > 0) {
+                if ($is_free_product) {
                     $mutasiItems[] = [
                         'product_packaging_id' => $item->product_packaging_id,
                         'qty' => $item->qty,
@@ -788,16 +973,11 @@ class SalesOrderProformaController extends Controller
                 }
             }
     
-            Invoicing::updateOrCreate(
-                ['code' => $sales_order->code, 'do_id' => $do_id],
-                [
-                    'customer_id' => $sales_order->customer_id,
-                    'customer_other_address_id' => $sales_proforma->customer_other_address_id,
-                    'grand_total_idr' => $sales_proforma->details_cost->grand_total_idr ?? 0,
-                    'created_by' => Auth::id(),
-                    'status' => 1
-                ]
-            );
+            // Invoice RESMI tidak dibuat di sini - mengikuti alur baru,
+            // invoice resmi baru terbentuk otomatis nanti di Checker (packed()),
+            // sama seperti alur TEMPO normal. Dokumen "Invoice Proforma" untuk
+            // customer tetap bisa dicetak lewat printProforma()/print_so_proforma(),
+            // itu dokumen tagihan sementara, bukan row Invoicing resmi.
     
             DB::commit();
     
@@ -822,6 +1002,14 @@ class SalesOrderProformaController extends Controller
                 'success' => false,
                 'message' => 'Invalid request'
             ], 400);
+        }
+
+        // Paket A poin 10: hapus proforma hanya admin sales / management
+        if (!\App\Helper\ProformaAccess::canRevisiBatal(Auth::user())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hapus proforma hanya untuk admin sales dan management.'
+            ], 403);
         }
 
         DB::beginTransaction();
@@ -859,6 +1047,24 @@ class SalesOrderProformaController extends Controller
                     'success' => false,
                     'message' => 'Proforma sudah diproses dan tidak bisa dihapus.'
                 ]);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | CEK ASAL MUTASI PROSPEK — hapus biasa dilarang, wajib lewat Batalkan
+            |--------------------------------------------------------------------------
+            */
+            $pengajuanTerkait = app(\App\Services\Penjualan\PengajuanMutasiService::class)
+                ->findPengajuanForProforma($sales_proforma);
+
+            if ($pengajuanTerkait) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Proforma dari mutasi prospek (' . $pengajuanTerkait->estimate_number . ') tidak boleh dihapus langsung — gunakan Batalkan (Prospek).',
+                    'pengajuan_id' => $pengajuanTerkait->id,
+                ], 422);
             }
 
             /*
@@ -999,6 +1205,14 @@ class SalesOrderProformaController extends Controller
 
     public function rollbackProforma($so_id)
     {
+        // Paket A poin 10: rollback proforma hanya admin sales / management
+        if (!\App\Helper\ProformaAccess::canRevisiBatal(Auth::user())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Rollback proforma hanya untuk admin sales dan management.'
+            ], 403);
+        }
+
         DB::beginTransaction();
 
         try {
@@ -1008,6 +1222,23 @@ class SalesOrderProformaController extends Controller
             }
 
             $proforma = SalesOrderProforma::where('so_id', $sales_order->id)->first();
+
+            // Proforma dari mutasi prospek wajib lewat Batalkan (Prospek) agar
+            // tercatat di log + flag + kembali ke prospek + AO diberi tahu.
+            if ($proforma) {
+                $pengajuanTerkait = app(\App\Services\Penjualan\PengajuanMutasiService::class)
+                    ->findPengajuanForProforma($proforma);
+
+                if ($pengajuanTerkait) {
+                    DB::rollBack();
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Proforma dari mutasi prospek (' . $pengajuanTerkait->estimate_number . ') tidak boleh di-rollback langsung — gunakan Batalkan (Prospek).',
+                        'pengajuan_id' => $pengajuanTerkait->id,
+                    ], 422);
+                }
+            }
 
             $deleted_items = 0;
             $deleted_header = 0;
@@ -1078,12 +1309,34 @@ class SalesOrderProformaController extends Controller
 
     public function MultiCancel($id)
     {
+        // Paket A poin 10: cancel proforma hanya admin sales / management
+        if (!\App\Helper\ProformaAccess::canRevisiBatal(Auth::user())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cancel proforma hanya untuk admin sales dan management.'
+            ], 403);
+        }
+
         DB::beginTransaction();
 
         try {
             $so_proforma = SalesOrderProforma::find($id);
             if (!$so_proforma) {
                 throw new \Exception("Sales Order Proforma tidak ditemukan");
+            }
+
+            // Proforma dari mutasi prospek wajib lewat Batalkan (Prospek)
+            $pengajuanTerkait = app(\App\Services\Penjualan\PengajuanMutasiService::class)
+                ->findPengajuanForProforma($so_proforma);
+
+            if ($pengajuanTerkait) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Proforma dari mutasi prospek (' . $pengajuanTerkait->estimate_number . ') tidak boleh di-cancel dari sini — gunakan Batalkan (Prospek).',
+                    'pengajuan_id' => $pengajuanTerkait->id,
+                ], 422);
             }
 
             $sales_order = SalesOrder::find($so_proforma->so_id);

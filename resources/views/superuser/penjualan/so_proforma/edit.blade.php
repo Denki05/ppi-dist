@@ -246,7 +246,7 @@
                       <option value="{{ $item->product_packaging_id }}">{{ $item->productPack->code }} - {{ $item->productPack->name }} / {{ $item->packaging->pack_name }}</option>
                     </select>
                   </td>
-                  <td><input type="number" class="form-control" name="qty[]" value="{{ $item->qty }}" required step="0.01" min="0"><input type="hidden" name="packaging[]" value="{{ $item->packaging_id }}"><input type="hidden" class="form-control" name="edit[]" value="{{ $item->id }}"></td>
+                  <td><input type="number" class="form-control text-center" name="qty[]" value="{{ $item->qty }}" step="0.01" min="0"><input type="hidden" name="packaging[]" value="{{ $item->packaging_id }}"><input type="hidden" class="form-control" name="edit[]" value="{{ $item->id }}"></td>
                   <td><input type="number" class="form-control" name="price[]" value="{{ $item->price }}" required></td>
                   <td><input type="number" class="form-control" name="disc_usd[]" value="{{ $item->disc_usd }}" required></td>
                   <td><input type="number" class="form-control" name="total[]" readonly value="{{ $item->total_item }}"></td>
@@ -399,8 +399,8 @@
         table.row.add([
                       counter,
                       '<input type="checkbox" class="form-check-input input-gift" id="gift" name="gift"><input class="form-control input-free" type="hidden" id="free_product" value="0" name="free_product[]">',
-                      '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select SKU" style="width:100%" required></select>',
-                      '<input type="number" style="text-align: center;" class="form-control" name="qty[]" readonly required step="0.01" min="0"><input type="hidden" class="form-control packaging" name="packaging[]"><input type="hidden" class="form-control" name="edit[]" value="">',
+                      '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select SKU" style="width:100%"></select><input type="hidden" name="free_product[]" value="0">',
+                      '<input type="number" style="text-align: center;" class="form-control" name="qty[]" step="0.01" min="0"><input type="hidden" class="form-control packaging" name="packaging[]"><input type="hidden" class="form-control" name="edit[]" value="">',
                       '<input type="number" style="text-align: center;" class="form-control" name="price[]" readonly required>',
                       '<input type="number" style="text-align: center;" class="form-control" name="disc_usd[]" required>',
                       '<input type="number" style="text-align: center;" class="form-control" name="total[]" readonly>',

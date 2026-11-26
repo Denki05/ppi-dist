@@ -92,6 +92,8 @@ class SalesOrder extends Model
         'Ivan' => 1,
         'Nia' => 2,
         'Lindy' => 3,
+        'Ridwan' => 4,
+        'Maya' => 5,
     ];
 
     const SALES = [
@@ -100,6 +102,9 @@ class SalesOrder extends Model
         'S.A' => 3,
         'Santi' => 4,
         'Eric' => 5,
+        'Ridwan' => 6,
+        'Maya' => 7,
+        'Nurdin' => 8,
     ];
 
     /**

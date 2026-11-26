@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Superuser\Master;
 
 use App\DataTables\Master\CustomerTable;
+use App\DataTables\Master\CustomerGpsEditorTable;
 use App\Entities\Master\Customer;
 use App\Entities\Master\CustomerSaldoLog;
 use App\Entities\Master\CustomerType;
@@ -54,6 +55,146 @@ class CustomerController extends Controller
     public function json(Request $request, CustomerTable $datatable)
     {
         return $datatable->build($request);
+    }
+
+    public function gpsEditor()
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                return redirect()->route('superuser.index')->with('error','Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        return view('superuser.master.customer.gps_editor');
+    }
+
+    public function gpsEditorJson(Request $request, CustomerGpsEditorTable $datatable)
+    {
+        return $datatable->build($request);
+    }
+
+    public function gpsEditorUpdate(Request $request)
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_update == 0){
+                abort(405);
+            }
+        }
+
+        $rows = $request->input('rows', []);
+
+        if (!is_array($rows) || empty($rows)) {
+            return $this->response(400, [
+                'notification' => [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => 'Tidak ada perubahan koordinat untuk disimpan.',
+                ],
+            ]);
+        }
+
+        $normalize = function ($value) {
+            if ($value === null) {
+                return null;
+            }
+
+            $value = trim((string) $value);
+
+            // Nilai placeholder lama di database memakai "-" untuk koordinat kosong.
+            if ($value === '' || $value === '-' || $value === '--') {
+                return null;
+            }
+
+            return str_replace(',', '.', $value);
+        };
+
+        $validated = [];
+        $errors = [];
+
+        foreach ($rows as $row) {
+            $id = isset($row['id']) ? trim((string) $row['id']) : '';
+            $latitude = $normalize($row['latitude'] ?? null);
+            $longitude = $normalize($row['longitude'] ?? null);
+
+            if ($id === '') {
+                $errors[] = 'ID member tidak valid.';
+                continue;
+            }
+
+            $member = CustomerOtherAddress::find($id);
+
+            if ($member === null) {
+                $errors[] = 'Member ID ' . $id . ' tidak ditemukan.';
+                continue;
+            }
+
+            if (($latitude === null) !== ($longitude === null)) {
+                $errors[] = 'Member "' . $member->name . '": latitude dan longitude harus diisi bersamaan (atau dikosongkan keduanya).';
+                continue;
+            }
+
+            if ($latitude === null) {
+                $validated[] = [$member, null, null];
+                continue;
+            }
+
+            if (!is_numeric($latitude) || $latitude < -90 || $latitude > 90) {
+                $errors[] = 'Member "' . $member->name . '": latitude harus angka antara -90 sampai 90.';
+                continue;
+            }
+
+            if (!is_numeric($longitude) || $longitude < -180 || $longitude > 180) {
+                $errors[] = 'Member "' . $member->name . '": longitude harus angka antara -180 sampai 180.';
+                continue;
+            }
+
+            $validated[] = [$member, $latitude, $longitude];
+        }
+
+        if (!empty($errors)) {
+            return $this->response(400, [
+                'notification' => [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Koordinat tidak valid',
+                    'content' => $errors,
+                ],
+            ]);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            foreach ($validated as $item) {
+                list($member, $latitude, $longitude) = $item;
+                $member->gps_latitude = $latitude;
+                $member->gps_longitude = $longitude;
+
+                if (!$member->save()) {
+                    throw new \Exception('Gagal menyimpan member ID ' . $member->id);
+                }
+            }
+
+            DB::commit();
+
+            return $this->response(200, [
+                'updated' => count($validated),
+                'redirect_to' => '#gps-datatable',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            \Log::error('Update GPS member failed: ' . $e->getMessage());
+
+            return $this->response(400, [
+                'notification' => [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => 'Gagal menyimpan koordinat. Silakan coba lagi.',
+                ],
+            ]);
+        }
     }
 
     public function index(Request $request)
@@ -673,13 +814,13 @@ class CustomerController extends Controller
 
     public function destroy(Request $request, $id)
     {
-        // Access
-        if(Auth::user()->is_superuser == 0){
-            if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
-                abort(405);
-            }
-        }
         if ($request->ajax()) {
+            if(Auth::user()->is_superuser == 0){
+                if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
+                    abort(405);
+                }
+            }
+
             $customer = Customer::find($id);
 
             if ($customer === null) {
@@ -689,9 +830,63 @@ class CustomerController extends Controller
             $customer->status = Customer::STATUS['DELETED'];
 
             if ($customer->save()) {
+                $response['notification'] = [
+                    'alert' => 'notify',
+                    'type' => 'success',
+                    'content' => 'Success',
+                ];
                 $response['redirect_to'] = '#datatable';
                 return $this->response(200, $response);
             }
+        }
+    }
+
+    public function destroyMultiple(Request $request)
+    {
+        if(Auth::user()->is_superuser == 0){
+            if(empty($this->access) || empty($this->access->user) || $this->access->can_delete == 0){
+                abort(405);
+            }
+        }
+
+        $ids = array_filter((array) $request->input('ids', []));
+
+        if (empty($ids)) {
+            return $this->response(400, [
+                'notification' => [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => 'Pilih minimal satu customer untuk dihapus.',
+                ],
+            ]);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $deleted = Customer::whereIn('id', $ids)
+                ->where('status', '!=', Customer::STATUS['DELETED'])
+                ->update(['status' => Customer::STATUS['DELETED']]);
+
+            DB::commit();
+
+            return $this->response(200, [
+                'deleted' => $deleted,
+                'redirect_to' => '#datatable',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            \Log::error('Bulk delete customer failed: ' . $e->getMessage());
+
+            return $this->response(400, [
+                'notification' => [
+                    'alert' => 'block',
+                    'type' => 'alert-danger',
+                    'header' => 'Error',
+                    'content' => 'Gagal menghapus customer. Silakan coba lagi.',
+                ],
+            ]);
         }
     }
 

@@ -7,6 +7,14 @@
   
   <button type="button" class="btn btn-outline-info ml-10" data-toggle="modal" data-target="#modal-manage">Manage</button>
 
+  <a href="{{ route('superuser.master.customer.gps_editor') }}" class="btn btn-outline-primary ml-10">
+    <i class="fa fa-map-marker-alt mr-5"></i> GPS Editor
+  </a>
+
+  <button type="button" class="btn btn-outline-danger ml-10" onclick="deleteMultiple()">
+    <i class="fa fa-trash mr-5"></i> Delete Checked
+  </button>
+
   <button type="button" class="btn btn-outline-secondary ml-10" data-toggle="modal" data-target="#exampleModal">
     Import Employee
   </button>
@@ -109,28 +117,29 @@
       </div>
     </div>
 
-<div class="block">
-  <div class="block-content block-content-full">
-    <div class="form-group row">
-    <table class="datatable table table-striped">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Store</th>
-            <th>Category</th>
-            <th>Region</th>
-            <th>Tempo</th>
-            <th>Action</th>
-            <th>Action 2</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-        </tbody>
-      </table>
+    <div class="block">
+      <div class="block-content block-content-full">
+        <div class="form-group row">
+        <table id="datatable" class="datatable table table-striped">
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="check-all" title="Pilih semua"></th>
+                <th>#</th>
+                <th>Store</th>
+                <th>Category</th>
+                <th>Region</th>
+                <th>Tempo</th>
+                <th>Action</th>
+                <th>Action 2</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
 
 <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg" role="document">
@@ -252,6 +261,11 @@
       },
       columns: [
           {
+            data: 'check',
+            orderable: false,
+            searchable: false
+          },
+          {
             "class": "details-control",
             "orderable": false,
             "data": null,
@@ -288,7 +302,7 @@
           },
         ],
         order: [
-          [1, 'asc']
+          [2, 'asc']
         ],
         pageLength: 10,
         lengthMenu: [
@@ -321,7 +335,138 @@
           tr.addClass('shown');
         }
     });
+
+    $(document).on('change', '#check-all', function () {
+      $('.check-entity').prop('checked', this.checked);
+    });
+
+    $(document).on('change', '.check-entity', function () {
+      var total = $('.check-entity').length;
+      var checked = $('.check-entity:checked').length;
+      $('#check-all').prop('checked', total > 0 && total === checked);
+    });
+
+    $('.datatable').on('draw.dt', function () {
+      $('#check-all').prop('checked', false);
+    });
     
   });
+
+  function deleteCustomer(url) {
+    Swal.fire({
+      title: 'Hapus customer ini?',
+      text: 'Data customer akan ditandai sebagai terhapus.',
+      type: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, hapus',
+      cancelButtonText: 'Batal',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      allowEnterKey: false,
+      backdrop: false,
+    }).then(function (result) {
+      if (!result.value) {
+        return;
+      }
+
+      Swal.fire({
+        title: 'Menghapus...',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        allowEnterKey: false,
+        backdrop: false,
+        onOpen: function () {
+          Swal.showLoading();
+        }
+      });
+
+      $.ajax({
+        url: url,
+        type: 'DELETE',
+        dataType: 'json'
+      }).then(function (response) {
+        Swal.fire({
+          title: 'Terhapus!',
+          text: 'Data customer berhasil dihapus.',
+          type: 'success',
+          backdrop: false,
+        }).then(function () {
+          $('.datatable').DataTable().ajax.reload(null, false);
+        });
+      }).catch(function (xhr) {
+        var message = 'Gagal menghapus data.';
+        if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.notification) {
+          var content = xhr.responseJSON.data.notification.content;
+          message = Array.isArray(content) ? content.join('<br>') : content;
+        }
+        Swal.fire('Error!', message, 'error');
+      });
+    });
+  }
+
+  function deleteMultiple() {
+    var ids = $('.check-entity:checked').map(function () {
+      return this.value;
+    }).get();
+
+    if (!ids.length) {
+      Swal.fire('Tidak ada data', 'Pilih minimal satu customer terlebih dahulu.', 'info');
+      return;
+    }
+
+    Swal.fire({
+      title: 'Hapus ' + ids.length + ' customer?',
+      text: 'Data customer yang dipilih akan ditandai sebagai terhapus.',
+      type: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, hapus',
+      cancelButtonText: 'Batal',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      allowEnterKey: false,
+      backdrop: false,
+    }).then(function (result) {
+      if (!result.value) {
+        return;
+      }
+
+      Swal.fire({
+        title: 'Menghapus...',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        allowEnterKey: false,
+        backdrop: false,
+        onOpen: function () {
+          Swal.showLoading();
+        }
+      });
+
+      $.ajax({
+        url: '{{ route('superuser.master.customer.delete_multiple') }}',
+        type: 'POST',
+        data: {
+          _token: '{{ csrf_token() }}',
+          ids: ids
+        },
+        dataType: 'json'
+      }).then(function (response) {
+        Swal.fire({
+          title: 'Terhapus!',
+          text: 'Data customer berhasil dihapus.',
+          type: 'success',
+          backdrop: false,
+        }).then(function () {
+          $('.datatable').DataTable().ajax.reload(null, false);
+        });
+      }).catch(function (xhr) {
+        var message = 'Gagal menghapus data.';
+        if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.notification) {
+          var content = xhr.responseJSON.data.notification.content;
+          message = Array.isArray(content) ? content.join('<br>') : content;
+        }
+        Swal.fire('Error!', message, 'error');
+      });
+    });
+  }
 </script>
 @endpush

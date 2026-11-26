@@ -75,6 +75,17 @@ class AoSalesOrderApiController extends Controller
             $items = [];
         }
 
+        // Gerbang harga & kemasan: kiriman AO membawa pack id + kemasan.
+        // Item tanpa pack id dicocokkan lewat kode (hanya bila kode unik);
+        // pack yang tidak dikenal dilewati agar pengajuan lama tidak macet.
+        $itemErrors = $this->validatePengajuanItems($items);
+        if (!empty($itemErrors)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Harga/kemasan item tidak sesuai master: ' . implode('; ', $itemErrors),
+            ], 422);
+        }
+
         $sudah = PengajuanProforma::where('estimate_number', $request->estimate_number)->first();
         // Ajukan ulang (data dikirim lagi full) diizinkan dari status revisi/ditolak/
         // dibatalkan: baris dipakai ulang, status kembali menunggu.
@@ -449,6 +460,10 @@ class AoSalesOrderApiController extends Controller
             $priceError = $this->validateItemPrice($product, $it['price'] ?? 0);
             if ($priceError !== null) {
                 return response()->json(['success' => false, 'message' => $priceError], 422);
+            }
+            $packError = $this->validateItemPackaging($product, $it['packaging_id'] ?? null);
+            if ($packError !== null) {
+                return response()->json(['success' => false, 'message' => $packError], 422);
             }
         }
 
@@ -2071,6 +2086,43 @@ class AoSalesOrderApiController extends Controller
             }
         }
         return null;
+    }
+
+    /**
+     * Validasi harga & kemasan item pengajuan dari AO.
+     */
+    protected function validatePengajuanItems(array $items): array
+    {
+        $errors = [];
+        foreach ($items as $it) {
+            if (!is_array($it)) {
+                continue;
+            }
+            $packId = trim((string) ($it['product_packaging_id'] ?? ''));
+            $product = null;
+            if ($packId !== '') {
+                $product = ProductPack::where('id', $packId)->first();
+            } elseif (!empty($it['code'])) {
+                $candidates = ProductPack::where('code', $it['code'])->limit(2)->get();
+                if ($candidates->count() === 1) {
+                    $product = $candidates->first();
+                }
+            }
+            if (!$product) {
+                continue;
+            }
+            $packError = $this->validateItemPackaging($product, $it['packaging_id'] ?? null);
+            if ($packError !== null) {
+                $errors[] = $packError;
+            }
+            if (empty($it['free_product'])) {
+                $priceError = $this->validateItemPrice($product, $it['price'] ?? 0);
+                if ($priceError !== null) {
+                    $errors[] = $priceError;
+                }
+            }
+        }
+        return $errors;
     }
 
     /**

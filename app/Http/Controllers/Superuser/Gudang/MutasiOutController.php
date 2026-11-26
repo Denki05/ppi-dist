@@ -49,8 +49,7 @@ class MutasiOutController extends Controller
         $products = ProductPack::where('master_products_packaging.name', 'LIKE', '%' . $request->input('q', '') . '%')
             ->join('master_product_min_stocks', function ($join) use ($request) {
                 $join->on('master_products_packaging.id', '=', 'master_product_min_stocks.product_packaging_id')
-                    ->where('master_product_min_stocks.warehouse_id', $request->warehouse)
-                    ->where('master_product_min_stocks.quantity', '>', 0);
+                    ->where('master_product_min_stocks.warehouse_id', $request->warehouse);
             })
             ->join('master_packaging', 'master_products_packaging.packaging_id', '=', 'master_packaging.id')
             ->join('master_products', 'master_products_packaging.product_id', '=', 'master_products.id')

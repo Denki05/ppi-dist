@@ -34,7 +34,7 @@ class CustomerTable extends Table
                 master_customers.status AS status,
                 master_customer_other_addresses.name AS member_name
             ')
-            ->groupBy('master_customers.id');
+            ->groupBy('master_customers.name');
 
             if ($request->type_search != 'all') {
                 $model = $model->when($request->type_search == 0, function ($query) use ($request) {
@@ -61,6 +61,14 @@ class CustomerTable extends Table
             } else if ($model->status == $model::STATUS['INACTIVE']) {
                 return 'table-warning';
             }
+        });
+
+        $table->addColumn('check', function (Customer $model) {
+            if ($model->status == $model::STATUS['DELETED']) {
+                return '';
+            }
+
+            return '<input type="checkbox" class="check-entity" value="' . $model->id . '">';
         });
 
         $table->editColumn('store_name_city', function (Customer $model) {
@@ -100,7 +108,7 @@ class CustomerTable extends Table
                     </button>
                 </a>
                 
-                <a href=\"{$destroy}\">
+                <a href=\"javascript:deleteConfirmation('{$destroy}')\">
                     <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
                         <i class=\"fa fa-trash\"></i>
                     </button>
@@ -221,7 +229,7 @@ class CustomerTable extends Table
             return $detail_html;
         });
 
-        $table->rawColumns(['detail', 'action', 'action2', 'status_and_existence']);
+        $table->rawColumns(['check', 'detail', 'action', 'action2', 'status_and_existence']);
         return $table->make(true);
     }
 }
