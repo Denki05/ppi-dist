@@ -298,7 +298,7 @@
                     <input type="hidden" name="free_product[]" value="{{ $item->free_product ? 1 : 0 }}">
                   </td>
                   <td><input type="number" class="form-control text-center" name="price[]" value="{{ $item->free_product ? 0 : $item->price }}" readonly required tabindex="-1"></td>
-                  <td><input type="number" class="form-control text-center" name="qty[]" value="{{ $item->qty }}" required step="0.01" min="0"><input type="hidden" name="packaging[]" value="{{ $item->packaging_id }}"><input type="hidden" class="form-control" name="edit[]" value="{{ $item->id }}"></td>
+                  <td><input type="number" class="form-control text-center" name="qty[]" value="{{ $item->qty }}" step="0.01" min="0"><input type="hidden" name="packaging[]" value="{{ $item->packaging_id }}"><input type="hidden" class="form-control" name="edit[]" value="{{ $item->id }}"></td>
                   <td><input type="number" class="form-control text-center" name="disc_usd[]" value="{{ $item->disc_usd }}" required></td>
                   <td><input type="text" class="form-control text-center" name="total[]" readonly tabindex="-1" value="{{ number_format((float) $item->total_item, 2, ',', '.') }}"></td>
                 </tr>
@@ -477,9 +477,9 @@
       if($('#so_brand_name').val()) {
         table.row.add([
                       counter,
-                      '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select SKU" style="width:100%" required></select><input type="hidden" name="free_product[]" value="0">',
+                      '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select SKU" style="width:100%"></select><input type="hidden" name="free_product[]" value="0">',
                       '<input type="number" style="text-align: center;" class="form-control" name="price[]" readonly required>',
-                      '<input type="number" style="text-align: center;" class="form-control" name="qty[]" required step="0.01" min="0"><input type="hidden" class="form-control packaging" name="packaging[]"><input type="hidden" class="form-control" name="edit[]" value="">',
+                      '<input type="number" style="text-align: center;" class="form-control" name="qty[]" step="0.01" min="0"><input type="hidden" class="form-control packaging" name="packaging[]"><input type="hidden" class="form-control" name="edit[]" value="">',
                       '<input type="number" style="text-align: center;" class="form-control" name="disc_usd[]" value="0" required>',
                       '<input type="text" style="text-align: center;" class="form-control" name="total[]" readonly>'
                     ]).draw( false );

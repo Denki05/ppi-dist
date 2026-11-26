@@ -8,7 +8,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | Kode modul harus sama dengan isi kolom superusers.modul_akses:
-    | MIS, CRM, AO, APM, TRS, DSG.
+    | MIS, CRM, AO, APM, TRS, WMS, DSG, VST.
     |
     | internal_route : modul yang berjalan di aplikasi ini (tidak perlu handoff).
     | sso_path       : endpoint penerima token SSO di aplikasi modul.
@@ -87,6 +87,16 @@ return [
             'sso_path'    => '/module-sso',
             'icon'        => 'fa-paint-brush',
             'color'       => '#db2777',
+        ],
+
+        'VST' => [
+            'label'       => 'VST',
+            'name'        => 'Visit Light',
+            'description' => 'Kunjungan cepat sales: foto, keterangan singkat, dan lokasi.',
+            'url'         => env('MODULE_VST_URL', 'http://localhost/visit_sales/public'),
+            'sso_path'    => '/module-sso',
+            'icon'        => 'fa-camera',
+            'color'       => '#ea580c',
         ],
 
     ],

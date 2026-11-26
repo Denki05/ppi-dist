@@ -155,7 +155,7 @@ class SalesOrderProformaController extends Controller
                 'so_date' => 'required|date',
                 'warehouse' => 'required|integer',
                 'qty' => 'required|array',
-                'qty.*' => 'required|numeric|min:0.01',
+                'qty.*' => 'nullable|numeric|min:0',
             ]);
 
             if ($validator->fails()) {
@@ -170,6 +170,26 @@ class SalesOrderProformaController extends Controller
             }
 
             if ($validator->passes()) {
+                // Baris tanpa produk / qty kosong / qty 0 diabaikan: tidak dibuatkan item,
+                // tidak ikut kalkulasi, dan tidak masuk dokumen turunan (ACC/DO/stok).
+                $validKeys = [];
+                foreach ((array) $request->sku as $key => $sku) {
+                    if ($sku && (float) ($request->qty[$key] ?? 0) >= 0.01) {
+                        $validKeys[] = $key;
+                    }
+                }
+
+                if (empty($validKeys)) {
+                    $response['notification'] = [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'header' => 'Error',
+                        'content' => ['Minimal 1 produk dengan Qty.'],
+                    ];
+
+                    return $this->response(400, $response);
+                }
+
                 $sales_proforma = New SalesOrderProforma;
 
                 if($request->existing_customer == 1){
@@ -206,6 +226,10 @@ class SalesOrderProformaController extends Controller
 
                         if($request->sku) {
                             foreach($request->sku as $key => $item){
+                                if (!in_array($key, $validKeys)) {
+                                    continue;
+                                }
+
                                 $duplicate_product = [];
                                 $duplicate = false;
                                 $listItem[] = [
@@ -297,6 +321,10 @@ class SalesOrderProformaController extends Controller
     
                         if($request->sku) {
                             foreach($request->sku as $key => $item){
+                                if (!in_array($key, $validKeys)) {
+                                    continue;
+                                }
+
                                 $duplicate_product = [];
                                 $duplicate = false;
                                 $listItem[] = [
@@ -405,7 +433,7 @@ class SalesOrderProformaController extends Controller
             'idr_rate' => 'required|numeric|min:1',
         
             'qty' => 'required|array',
-            'qty.*' => 'nullable|numeric|min:0.01',
+            'qty.*' => 'nullable|numeric|min:0',
             'price.*' => 'nullable|numeric|min:0',
             'disc_usd.*' => 'nullable|numeric|min:0',
         ], [
@@ -494,6 +522,19 @@ class SalesOrderProformaController extends Controller
 
                     if (!$value) continue;
 
+                    $qty = (float) ($request->qty[$key] ?? 0);
+
+                    // Qty kosong / 0 diabaikan: baris baru tidak dibuat, baris lama dihapus
+                    // agar tidak ikut ACC, DO, reserved stock, maupun dokumen turunan lain.
+                    if ($qty < 0.01) {
+                        if (!empty($request->edit[$key])) {
+                            SalesOrderProformaItem::where('id', $request->edit[$key])
+                                ->where('so_proforma_id', $sales_proforma->id)
+                                ->delete();
+                        }
+                        continue;
+                    }
+
                     if (empty($request->edit[$key]) && !$isRevisi) {
                         throw new \Exception('Tambah varian baru hanya diizinkan via tombol Revisi.');
                     }
@@ -504,7 +545,13 @@ class SalesOrderProformaController extends Controller
 
                     if (!empty($request->edit[$key])) {
 
-                        $item = SalesOrderProformaItem::find($request->edit[$key]);
+                        $item = SalesOrderProformaItem::where('id', $request->edit[$key])
+                            ->where('so_proforma_id', $sales_proforma->id)
+                            ->first();
+
+                        if (!$item) {
+                            continue;
+                        }
 
                     } else {
 
@@ -514,7 +561,7 @@ class SalesOrderProformaController extends Controller
 
                     $item->product_packaging_id = $value;
                     $item->price = (float) ($request->price[$key] ?? 0);
-                    $item->qty = (float) ($request->qty[$key] ?? 0);
+                    $item->qty = $qty;
                     $item->disc_usd = (float) ($request->disc_usd[$key] ?? 0);
                     $item->total_item = $this->cleanCurrency($request->total[$key] ?? 0);
                     $item->packaging_id = $request->packaging[$key] ?? null;
@@ -522,6 +569,20 @@ class SalesOrderProformaController extends Controller
 
                     $item->save();
                 }
+            }
+
+            // Proforma tanpa item ber-qty tidak boleh disimpan: ACC akan membuat nota kosong
+            if (!$sales_proforma->items()->exists()) {
+                DB::rollback();
+
+                return $this->response(400, [
+                    'notification' => [
+                        'alert' => 'block',
+                        'type' => 'alert-danger',
+                        'header' => 'Error',
+                        'content' => ['Minimal 1 produk dengan Qty.'],
+                    ]
+                ]);
             }
 
             DB::commit();
@@ -637,7 +698,17 @@ class SalesOrderProformaController extends Controller
             */
             $stockLogs = []; // ✅ Siapkan array untuk menampung log stock
 
-            foreach ($sales_proforma->items as $item) {
+            // Qty kosong / 0 diabaikan sepenuhnya: tidak reservasi stok, tidak jadi item DO,
+            // dan tidak membuat mutasi free product.
+            $validItems = $sales_proforma->items->filter(function ($item) {
+                return (float) $item->qty >= 0.01;
+            });
+
+            if ($validItems->isEmpty()) {
+                throw new \Exception('Proforma tidak memiliki produk dengan Qty.');
+            }
+
+            foreach ($validItems as $item) {
                 // Hilangkan suffix jika ada (_1, _2, dst) agar konsisten dengan stock
                 $base_product_packaging_id = preg_replace('/_\d+$/', '', $item->product_packaging_id);
 
@@ -650,18 +721,16 @@ class SalesOrderProformaController extends Controller
                 );
 
                 // ✅ Simpan data log sementara (do_id masih null, akan diisi nanti)
-                if ($item->qty > 0) {
-                    $stockLogs[] = [
-                        'do_id'                => null, 
-                        'warehouse_id'         => $sales_proforma->warehouse_id,
-                        'product_packaging_id' => $base_product_packaging_id,
-                        'qty'                  => $item->qty,
-                        'status'               => 1, // Status aktif (1)
-                        'note'                 => 'Logs Stock Proforma ACC',
-                        'created_at'           => now(),
-                        'updated_at'           => now(),
-                    ];
-                }
+                $stockLogs[] = [
+                    'do_id'                => null, 
+                    'warehouse_id'         => $sales_proforma->warehouse_id,
+                    'product_packaging_id' => $base_product_packaging_id,
+                    'qty'                  => $item->qty,
+                    'status'               => 1, // Status aktif (1)
+                    'note'                 => 'Logs Stock Proforma ACC',
+                    'created_at'           => now(),
+                    'updated_at'           => now(),
+                ];
             }
     
             /*
@@ -783,12 +852,12 @@ class SalesOrderProformaController extends Controller
             */
             $mutasiItems = [];
     
-            foreach ($sales_proforma->items as $item) {
+            foreach ($validItems as $item) {
                 $soItem = SalesOrderItem::where('so_id', $sales_order->id)
                     ->where('product_packaging_id', $item->product_packaging_id)->first(); 
     
                 $is_free_product = !empty($soItem->free_product) && (float)$soItem->free_product > 0;
-                if ($is_free_product && $item->qty > 0) {
+                if ($is_free_product) {
                     $mutasiItems[] = [
                         'product_packaging_id' => $item->product_packaging_id,
                         'qty' => $item->qty,

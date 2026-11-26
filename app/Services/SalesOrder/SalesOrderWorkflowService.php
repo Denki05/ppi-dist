@@ -21,7 +21,7 @@ class SalesOrderWorkflowService
     public function lanjutkan($salesOrder)
     {
         // CASE 1: PROFORMA (CASH + ESTIMATE) -> MASUK MODUL SO PROFORMA
-        if ($salesOrder->is_estimate == 1 && trim(strtoupper($salesOrder->type_transaction)) == 'CASH' && $salesOrder->status_proforma == 0) {
+        if ($salesOrder->is_estimate == 1 && trim(strtoupper($salesOrder->type_transaction)) == 'CASH' && empty($salesOrder->status_proforma)) {
             
             $salesOrder->is_proforma = 1;
             $salesOrder->status_proforma = 1;
@@ -56,7 +56,7 @@ class SalesOrderWorkflowService
                 $proforma->sales_senior_id = null;
                 $proforma->sales_id = null;
                 $proforma->exsisting_customer = 1;
-                $proforma->created_by = Auth::id();
+                $proforma->created_by = Auth::id() ?? config("services.ao_api.default_superuser_id", 1);
                 $proforma->save();
 
                 // Copy items

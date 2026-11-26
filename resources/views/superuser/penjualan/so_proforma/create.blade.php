@@ -365,8 +365,8 @@
         table.row.add([
                       counter,
                       '<input type="checkbox" class="form-check-input input-gift" id="gift" name="gift"><input class="form-control input-free" type="hidden" id="free_product" value="0" name="free_product[]">',
-                      '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select SKU" style="width:100%" required></select>',
-                      '<input type="number" style="text-align: center;" class="form-control" name="qty[]" readonly required step="any"><input type="hidden" class="form-control packaging" name="packaging[]">',
+                      '<select class="js-select2 form-control js-ajax" id="sku['+counter+']" name="sku[]" data-placeholder="Select SKU" style="width:100%"></select>',
+                      '<input type="number" style="text-align: center;" class="form-control" name="qty[]" readonly step="any"><input type="hidden" class="form-control packaging" name="packaging[]">',
                       '<input type="number" style="text-align: center;" class="form-control" name="price[]" readonly required>',
                       '<input type="number" style="text-align: center;" class="form-control" name="disc_usd[]" required>',
                       '<input type="number" style="text-align: center;" class="form-control" name="total[]" readonly>',
