@@ -661,10 +661,13 @@ body{ background:#1f242a; font-family: "Segoe UI", Roboto, sans-serif; }
       </div>
       <div class="modal-body">
         <small class="text-muted d-block mb-2">
-          Cari data tidak valid (Fisik != KS / booking tidak cocok), kroscek, lalu tampilkan hasil perbaikan.
-          Perbaikan otomatis (hanya saat LogAktif 0):<br>
-          • <strong>Backfill KS</strong> — selisih dijelaskan oleh Stock Adjustment yang belum masuk kartu stok (adjustment setelah KS terakhir). Yang disisipkan jurnal KS-nya, fisik tidak diubah.<br>
-          • <strong>Fisik = KS</strong> — selisih tanpa adjustment, fisik disamakan ke saldo KS.
+          Stok sehat bila <strong>Fisik + LogAktif = KS</strong> (DO status kirim sudah memotong fisik, KS menyusul saat resi).<br>
+          Cek membandingkan fisik dengan <strong>KS &minus; log DO kirim</strong>, plus reservasi terhadap log DO yang belum kirim.
+          Perbaikan otomatis yang aman:<br>
+          • <strong>Backfill KS</strong> — selisih dijelaskan Stock Adjustment yang belum masuk kartu stok. Jurnal KS disisipkan, fisik tidak diubah.<br>
+          • <strong>Fisik = KS</strong> — selisih tanpa adjustment dan tidak ada DO kirim terbuka.<br>
+          • <strong>Lepas reservasi</strong> — reserved lebih besar dari qty DO yang belum kirim.<br>
+          • <strong>Batalkan log orphan</strong> — log aktif yang DO-nya sudah tidak ada.
         </small>
         <div id="reconcileResult" class="small">Pilih gudang di filter, lalu klik Cari.</div>
       </div>
@@ -1119,20 +1122,25 @@ function loadRebuildProducts(warehouseId) {
     // ── Reconcile: cari tidak valid + perbaiki & kroscek ──
     function renderReconcile(rows) {
         if (!rows.length) {
-            return '<div class="alert alert-success py-2">Tidak ada selisih. Fisik = KS.</div>';
+            return '<div class="alert alert-success py-2">Tidak ada selisih. Fisik sudah sesuai KS dikurangi log DO kirim.</div>';
         }
         let html = '<div class="table-responsive"><table class="table table-sm table-bordered mb-0">'
             + '<thead><tr><th>Produk</th><th class="text-end">Fisik</th><th class="text-end">KS</th>'
-            + '<th class="text-end">Selisih</th><th class="text-end">LogAktif</th><th>Perbaikan</th></tr></thead><tbody>';
+            + '<th class="text-end">Log Kirim</th><th class="text-end">Ekspektasi</th><th class="text-end">Selisih</th>'
+            + '<th class="text-end">Reserved</th><th class="text-end">LogAktif</th><th>Status / Perbaikan</th></tr></thead><tbody>';
         rows.forEach(function (r) {
-            let mode = r.fix_mode === 'backfill' ? 'Backfill KS'
-                : (r.fix_mode === 'fisik' ? 'Fisik = KS' : 'Manual');
-            html += '<tr><td>' + r.product_packaging_id + '</td>'
-                + '<td class="text-end">' + r.fisik + '</td>'
-                + '<td class="text-end">' + r.ks + '</td>'
-                + '<td class="text-end">' + r.selisih_fisik + '</td>'
-                + '<td class="text-end">' + r.log_aktif + '</td>'
-                + '<td>' + mode + '</td></tr>';
+            let badge = r.auto_fixable
+                ? '<span class="badge bg-success">Auto</span> '
+                : '<span class="badge bg-danger">Manual</span> ';
+            html += '<tr><td>' + escHtml(r.product_packaging_id) + '</td>'
+                + '<td class="text-end">' + fmtQty(r.fisik) + '</td>'
+                + '<td class="text-end">' + (r.ks === null ? '-' : fmtQty(r.ks)) + '</td>'
+                + '<td class="text-end">' + fmtQty(r.log_kirim) + '</td>'
+                + '<td class="text-end">' + (r.expected_fisik === null ? '-' : fmtQty(r.expected_fisik)) + '</td>'
+                + '<td class="text-end">' + (r.selisih_fisik === null ? '-' : fmtQty(r.selisih_fisik)) + '</td>'
+                + '<td class="text-end">' + fmtQty(r.reserved) + '</td>'
+                + '<td class="text-end">' + fmtQty(r.log_aktif) + '</td>'
+                + '<td>' + badge + escHtml(r.reason || '') + '</td></tr>';
         });
         return html + '</tbody></table></div>';
     }
@@ -1156,18 +1164,19 @@ function loadRebuildProducts(warehouseId) {
     $('#btnReconcileSync').on('click', function () {
         let wid = $('#warehouse').val();
         if (!wid) return;
-        if (!confirm('Jalankan perbaikan aman (LogAktif 0)? Backfill KS untuk kasus adjustment, Fisik=KS untuk sisanya.')) return;
+        if (!confirm('Jalankan perbaikan otomatis yang aman? Backfill KS, fisik = KS bila tidak ada DO kirim, lepas reservasi menggantung, batalkan log orphan. Baris dengan DO kirim/KS minus/log menggantung tetap Manual.')) return;
         $('#reconcileResult').html('Memperbaiki...');
         $.post("{{ route('superuser.gudang.stock.reconcileSync') }}", {
             warehouse_id: wid, _token: '{{ csrf_token() }}'
         }).done(function (res) {
             let html = '<div class="alert alert-info py-2">Backfill KS: <strong>'
                 + res.fixed_backfill + '</strong>, Fisik diperbaiki: <strong>'
-                + res.fixed_fisik + '</strong>, orphan dibersihkan: <strong>'
+                + res.fixed_fisik + '</strong>, reservasi dilepas: <strong>'
+                + (res.fixed_reserved || 0) + '</strong>, orphan dibersihkan: <strong>'
                 + res.fixed_orphan + '</strong>, sisa manual: <strong>'
                 + res.remaining + '</strong></div>';
             if ((res.details || []).length) html += '<div class="mb-2">' + res.details.join('<br>') + '</div>';
-            if ((res.need_manual || []).length) html += '<div>Perlu manual: ' + res.need_manual.join(', ') + '</div>';
+            if ((res.need_manual || []).length) html += '<div>Perlu manual:<br>' + res.need_manual.join('<br>') + '</div>';
             $('#reconcileResult').html(html);
             try { $('#datatable').DataTable().ajax.reload(null, false); } catch (e) {}
         }).fail(function (xhr) {

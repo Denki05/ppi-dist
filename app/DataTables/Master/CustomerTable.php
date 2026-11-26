@@ -34,7 +34,7 @@ class CustomerTable extends Table
                 master_customers.status AS status,
                 master_customer_other_addresses.name AS member_name
             ')
-            ->groupBy('master_customers.name');
+            ->groupBy('master_customers.id');
 
             if ($request->type_search != 'all') {
                 $model = $model->when($request->type_search == 0, function ($query) use ($request) {
