@@ -22,6 +22,7 @@ use App\Entities\Penjualan\SalesOrder;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\Gudang\StockTransactionExport;
 use App\Exports\Gudang\StockExport;
+use App\Exports\Gudang\StockValuationExport;
 use App\Exports\Gudang\StockImportTemplate;
 use App\Exports\Gudang\StockOutImportTemplate;
 use App\Imports\Gudang\StockImport;
@@ -482,6 +483,41 @@ class StockController extends Controller
     {
         $filename = 'Stock-Quantity-' . date('d-m-Y_H-i-s') . '.xlsx';
         return Excel::download(new StockExport, $filename);
+    }
+
+    public function exportValuation(Request $request)
+    {
+        if (Auth::user()->is_superuser == 0) {
+            if (empty($this->access) || empty($this->access->user) || $this->access->can_read == 0) {
+                return redirect()->route('superuser.index')->with('error', 'Anda tidak punya akses untuk membuka menu terkait');
+            }
+        }
+
+        $warehouseId = $request->warehouse_id;
+        if (!$warehouseId) {
+            return redirect()->route('superuser.gudang.stock.index')->with('error', 'Pilih gudang dulu');
+        }
+
+        $warehouse = Warehouse::find($warehouseId);
+        if (!$warehouse) {
+            return redirect()->route('superuser.gudang.stock.index')->with('error', 'Gudang tidak ditemukan');
+        }
+
+        $rate = 18500;
+        $filename = 'Stock-Valuation-' . preg_replace('/[^A-Za-z0-9]+/', '-', $warehouse->name) . '-' . date('d-m-Y') . '.xlsx';
+
+        try {
+            return Excel::download(new StockValuationExport($warehouse->id, $warehouse->name, $rate), $filename);
+        } catch (\Throwable $e) {
+            \Log::error('Stock valuation export gagal: ' . $e->getMessage(), [
+                'warehouse_id' => $warehouse->id,
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return redirect()->route('superuser.gudang.stock.index')
+                ->with('error', 'Export gagal: ' . $e->getMessage());
+        }
     }
 
     public function import_template()
@@ -1233,6 +1269,172 @@ class StockController extends Controller
      * + booking (reserved vs do_stock_deduction_logs status 1).
      * Dipakai tombol "Cek Selisih" agar tidak perlu 11x command manual.
      */
+    /**
+     * Metrik rekonsiliasi satu baris stok.
+     *
+     * Siklus stok DO:
+     * - DO dibuat (status <= 4): reserved naik, log aktif dibuat, fisik & KS belum berubah.
+     * - DO terkirim (status 5): fisik dipotong & reserved dilepas, KS belum dipotong.
+     * - DO final (status 6/7): KS dipotong & log ditutup.
+     * Maka: fisik = KS - log DO status 5, dan reserved = log DO status <= 4.
+     */
+    private function reconcileMetrics($stock)
+    {
+        $pid = $stock->product_packaging_id;
+        $wid = (int) $stock->warehouse_id;
+
+        $ks = DB::table('gudang_move_stock')
+            ->where('warehouse_id', $wid)
+            ->where('product_packaging_id', $pid)
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $groups = DB::table('do_stock_deduction_logs as l')
+            ->leftJoin('penjualan_do as d', 'd.id', '=', 'l.do_id')
+            ->where('l.warehouse_id', $wid)
+            ->where('l.product_packaging_id', $pid)
+            ->where('l.status', 1)
+            ->selectRaw('d.status as do_status, SUM(l.qty) as qty')
+            ->groupBy('d.status')
+            ->get();
+
+        $logOpen = 0;
+        $logSent = 0;
+        $logStale = 0;
+        $logOrphan = 0;
+        foreach ($groups as $g) {
+            $qty = (float) $g->qty;
+            if ($g->do_status === null) {
+                $logOrphan += $qty;
+            } elseif ((int) $g->do_status === 5) {
+                $logSent += $qty;
+            } elseif ((int) $g->do_status >= 6) {
+                $logStale += $qty;
+            } else {
+                $logOpen += $qty;
+            }
+        }
+
+        $quantity = (float) $stock->quantity;
+        $reserved = (float) $stock->reserved_quantity;
+        $ksBalance = $ks ? (float) $ks->stock_balance : null;
+
+        $expectedFisik = $ksBalance === null ? null : round($ksBalance - $logSent, 2);
+        $selisihFisik = $expectedFisik === null ? null : round($quantity - $expectedFisik, 2);
+        $expectedReserved = round($logOpen, 2);
+        $selisihBooking = round($reserved - $expectedReserved, 2);
+
+        $hasFisikIssue = $selisihFisik !== null && abs($selisihFisik) > 0.01;
+        $hasBookingIssue = abs($selisihBooking) > 0.01;
+        $hasStale = $logStale > 0.01;
+        $hasOrphan = $logOrphan > 0.01;
+
+        // Adjustment yang belum masuk KS: hanya yang lebih baru dari KS terakhir
+        // supaya saldo history lama tidak ikut bergeser.
+        $missingAdj = [];
+        $adjTotal = 0;
+        if ($hasFisikIssue && $ksBalance !== null && $logSent <= 0.01) {
+            $missingAdj = DB::table('gudang_stock_adjustment')
+                ->where('warehouse_id', $wid)
+                ->where('product_packaging_id', $pid)
+                ->where('created_at', '>', $ks->created_at)
+                ->whereNotExists(function ($q) {
+                    $q->select(DB::raw(1))
+                      ->from('gudang_move_stock')
+                      ->whereColumn('gudang_move_stock.code_transaction', 'gudang_stock_adjustment.code');
+                })
+                ->orderBy('created_at', 'asc')
+                ->get(['code', 'plus', 'min', 'note', 'created_at']);
+            foreach ($missingAdj as $a) {
+                $adjTotal += ((float) $a->plus - (float) $a->min);
+            }
+        }
+
+        $explainedByAdj = $hasFisikIssue && $ksBalance !== null && $logSent <= 0.01
+            && count($missingAdj) > 0
+            && abs(((float) $ksBalance + $adjTotal) - $quantity) <= 0.01;
+
+        $reasons = [];
+        $fixMode = 'manual';
+        $blocked = false;
+
+        if ($ksBalance === null) {
+            $reasons[] = 'Belum ada kartu stok (KS)';
+            $blocked = true;
+        } elseif ($ksBalance < -0.01) {
+            $reasons[] = 'Saldo KS minus ' . $ksBalance . ' — perlu penyesuaian stok masuk';
+            $blocked = true;
+        }
+
+        if ($hasOrphan) {
+            $reasons[] = 'Log orphan ' . round($logOrphan, 2) . ' (dibatalkan otomatis)';
+        }
+        if ($hasStale) {
+            $reasons[] = 'Log aktif ' . round($logStale, 2) . ' pada DO final/void (manual)';
+            $blocked = true;
+        }
+
+        if ($hasFisikIssue && $ksBalance !== null && !$blocked) {
+            if ($logSent > 0.01) {
+                $reasons[] = 'Selisih ' . $selisihFisik . ' saat masih ada DO kirim ' . round($logSent, 2);
+                $blocked = true;
+            } elseif ($explainedByAdj) {
+                $reasons[] = 'Backfill ' . count($missingAdj) . ' adjustment ke KS';
+                $fixMode = 'backfill';
+            } elseif ($ksBalance >= 0) {
+                $reasons[] = 'Fisik disamakan ke KS (selisih ' . $selisihFisik . ')';
+                $fixMode = 'fisik';
+            }
+        }
+
+        if ($hasBookingIssue && !$hasFisikIssue && !$blocked) {
+            if ($selisihBooking > 0.01) {
+                $reasons[] = 'Reservasi menggantung ' . $selisihBooking . ' — dilepas';
+                $fixMode = 'reserved';
+            } else {
+                $reasons[] = 'Reservasi kurang ' . abs($selisihBooking) . ' dari DO terbuka';
+                $blocked = true;
+            }
+        }
+
+        if ($hasOrphan && !$blocked && $fixMode === 'manual') {
+            $fixMode = 'orphan';
+        }
+
+        if (empty($reasons)) {
+            $reasons[] = 'Perlu pengecekan manual';
+            $blocked = true;
+        }
+
+        return [
+            'warehouse_id' => $wid,
+            'product_packaging_id' => $pid,
+            'quantity' => $quantity,
+            'reserved' => $reserved,
+            'ks_balance' => $ksBalance,
+            'log_open' => $logOpen,
+            'log_sent' => $logSent,
+            'log_stale' => $logStale,
+            'log_orphan' => $logOrphan,
+            'log_total' => $logOpen + $logSent + $logStale + $logOrphan,
+            'expected_fisik' => $expectedFisik,
+            'selisih_fisik' => $selisihFisik,
+            'expected_reserved' => $expectedReserved,
+            'selisih_booking' => $selisihBooking,
+            'missing_adj' => $missingAdj,
+            'adj_total' => $adjTotal,
+            'has_fisik_issue' => $hasFisikIssue,
+            'has_booking_issue' => $hasBookingIssue,
+            'has_stale' => $hasStale,
+            'has_orphan' => $hasOrphan,
+            'has_issue' => $hasFisikIssue || $hasBookingIssue || $hasStale || $hasOrphan,
+            'auto_fixable' => !$blocked && $fixMode !== 'manual',
+            'fix_mode' => $fixMode,
+            'reason' => implode('; ', $reasons),
+        ];
+    }
+
     public function reconcileCheck(Request $request)
     {
         $warehouseId = $request->warehouse_id;
@@ -1247,83 +1449,24 @@ class StockController extends Controller
 
         $rows = [];
         foreach ($stocks as $stock) {
-            $ks = DB::table('gudang_move_stock')
-                ->where('warehouse_id', $stock->warehouse_id)
-                ->where('product_packaging_id', $stock->product_packaging_id)
-                ->orderBy('created_at', 'desc')
-                ->orderBy('id', 'desc')
-                ->first();
-
-            $activeLog = (float) DB::table('do_stock_deduction_logs')
-                ->where('warehouse_id', $stock->warehouse_id)
-                ->where('product_packaging_id', $stock->product_packaging_id)
-                ->where('status', 1)
-                ->sum('qty');
-
-            $quantity = (float) $stock->quantity;
-            $reserved = (float) $stock->reserved_quantity;
-            $ksBalance = $ks ? (float) $ks->stock_balance : null;
-
-            $selisihFisik = $ksBalance === null ? null : round($quantity - $ksBalance, 2);
-            $selisihBooking = round($reserved - $activeLog, 2);
-
-            $hasFisikIssue = $selisihFisik !== null && abs($selisihFisik) > 0.01;
-            $hasBookingIssue = abs($selisihBooking) > 0.01;
-            if (!$hasFisikIssue && !$hasBookingIssue) continue;
-
-            /*
-            |------------------------------------------------------------------
-            | DETEKSI ADJUSTMENT YANG BELUM MASUK KS
-            | Hanya adjustment TAIL (created_at setelah KS terakhir) yang
-            | dipertimbangkan, agar saldo history lama tidak ikut bergeser.
-            |------------------------------------------------------------------
-            */
-            $missingAdj = [];
-            if ($ks) {
-                $missingAdj = DB::table('gudang_stock_adjustment')
-                    ->where('warehouse_id', $stock->warehouse_id)
-                    ->where('product_packaging_id', $stock->product_packaging_id)
-                    ->where('created_at', '>', $ks->created_at)
-                    ->whereNotExists(function ($q) {
-                        $q->select(DB::raw(1))
-                          ->from('gudang_move_stock')
-                          ->whereColumn('gudang_move_stock.code_transaction', 'gudang_stock_adjustment.code');
-                    })
-                    ->get(['code', 'plus', 'min']);
-            }
-            $adjTotal = 0;
-            foreach ($missingAdj as $a) {
-                $adjTotal += ((float) $a->plus - (float) $a->min);
-            }
-
-            // Selisih bisa dijelaskan penuh oleh adjustment belum-backfill -> backfill KS.
-            // Ada adjustment tail tapi tidak menjelaskan selisih -> jangan auto-fix (manual).
-            $explainedByAdj = $hasFisikIssue && $ksBalance !== null && $activeLog == 0
-                && count($missingAdj) > 0
-                && abs(((float) $ksBalance + $adjTotal) - $quantity) <= 0.01;
-
-            $autoFixable = false;
-            $fixMode = 'manual';
-            if ($explainedByAdj) {
-                $autoFixable = true;
-                $fixMode = 'backfill';
-            } elseif ($activeLog == 0 && $hasFisikIssue && count($missingAdj) == 0) {
-                $autoFixable = true;
-                $fixMode = 'fisik';
-            }
+            $m = $this->reconcileMetrics($stock);
+            if (!$m['has_issue']) continue;
 
             $rows[] = [
-                'warehouse_id' => $stock->warehouse_id,
-                'product_packaging_id' => $stock->product_packaging_id,
-                'fisik' => $quantity,
-                'reserved' => $reserved,
-                'ks' => $ksBalance,
-                'selisih_fisik' => $selisihFisik,
-                'log_aktif' => $activeLog,
-                'selisih_booking' => $selisihBooking,
-                'auto_fixable' => $autoFixable,
-                'fix_mode' => $fixMode,
-                'adj_backfill' => $adjTotal,
+                'warehouse_id' => $m['warehouse_id'],
+                'product_packaging_id' => $m['product_packaging_id'],
+                'fisik' => $m['quantity'],
+                'reserved' => $m['reserved'],
+                'ks' => $m['ks_balance'],
+                'expected_fisik' => $m['expected_fisik'],
+                'selisih_fisik' => $m['selisih_fisik'],
+                'log_kirim' => $m['log_sent'],
+                'log_aktif' => $m['log_total'],
+                'selisih_booking' => $m['selisih_booking'],
+                'auto_fixable' => $m['auto_fixable'],
+                'fix_mode' => $m['fix_mode'],
+                'reason' => $m['reason'],
+                'adj_backfill' => $m['adj_total'],
             ];
         }
 
@@ -1332,9 +1475,11 @@ class StockController extends Controller
 
     /**
      * Perbaiki otomatis yang aman + kroscek ulang.
-     * Aturan: Fisik diset = KS hanya jika LogAktif == 0.
-     * Orphan log (do_id tidak ada di penjualan_do) dibatalkan (status 0).
-     * Selain itu dilaporkan sebagai perlu manual.
+     * - Log orphan (do_id hilang / DO terhapus) dibatalkan (status 0).
+     * - Backfill KS bila selisih dijelaskan adjustment yang belum masuk KS.
+     * - Fisik = KS bila tidak ada DO kirim (status 5).
+     * - Reservasi berlebih dilepas (reserved = log DO belum kirim).
+     * Baris dengan DO kirim terbuka, KS minus, atau log menggantung dilaporkan manual.
      */
     public function reconcileSync(Request $request)
     {
@@ -1352,6 +1497,7 @@ class StockController extends Controller
         $fixedFisik = 0;
         $fixedOrphan = 0;
         $fixedBackfill = 0;
+        $fixedReserved = 0;
         $manual = [];
         $details = [];
 
@@ -1361,33 +1507,20 @@ class StockController extends Controller
             ->get();
 
         foreach ($stocks as $stock) {
-            $ks = DB::table('gudang_move_stock')
-                ->where('warehouse_id', $stock->warehouse_id)
-                ->where('product_packaging_id', $stock->product_packaging_id)
-                ->orderBy('created_at', 'desc')
-                ->orderBy('id', 'desc')
-                ->first();
+            $m = $this->reconcileMetrics($stock);
+            if (!$m['has_issue']) continue;
 
-            $activeLog = (float) DB::table('do_stock_deduction_logs')
-                ->where('warehouse_id', $stock->warehouse_id)
-                ->where('product_packaging_id', $stock->product_packaging_id)
-                ->where('status', 1)
-                ->sum('qty');
-
-            $quantity = (float) $stock->quantity;
-            $ksBalance = $ks ? (float) $ks->stock_balance : null;
-            if ($ksBalance === null) continue;
-
-            $selisih = round($quantity - $ksBalance, 2);
-
-            // 1. Bersihkan orphan dulu (do_id sudah tidak ada)
-            if ($activeLog != 0) {
+            // 1. Log orphan selalu dibatalkan
+            if ($m['has_orphan']) {
                 $orphanIds = DB::table('do_stock_deduction_logs')
-                    ->where('warehouse_id', $stock->warehouse_id)
-                    ->where('product_packaging_id', $stock->product_packaging_id)
+                    ->where('warehouse_id', $m['warehouse_id'])
+                    ->where('product_packaging_id', $m['product_packaging_id'])
                     ->where('status', 1)
-                    ->whereNotIn('do_id', function ($q) {
-                        $q->select('id')->from('penjualan_do');
+                    ->where(function ($q) {
+                        $q->whereNull('do_id')
+                          ->orWhereNotIn('do_id', function ($sub) {
+                              $sub->select('id')->from('penjualan_do');
+                          });
                     })
                     ->pluck('id');
 
@@ -1400,61 +1533,68 @@ class StockController extends Controller
                             'updated_at' => now(),
                         ]);
                     $fixedOrphan += $orphanIds->count();
-                    $activeLog = (float) DB::table('do_stock_deduction_logs')
-                        ->where('warehouse_id', $stock->warehouse_id)
-                        ->where('product_packaging_id', $stock->product_packaging_id)
-                        ->where('status', 1)
-                        ->sum('qty');
+                    $m = $this->reconcileMetrics($stock);
+                    if (!$m['has_issue']) continue;
                 }
             }
 
-            // 2a. Backfill KS dari adjustment tail yang belum masuk KS
-            // (fisik sudah benar karena adjustment; yang hilang hanya jurnal KS-nya).
-            $missingAdj = [];
-            if ($ks) {
-                $missingAdj = DB::table('gudang_stock_adjustment')
-                    ->where('warehouse_id', $stock->warehouse_id)
-                    ->where('product_packaging_id', $stock->product_packaging_id)
-                    ->where('created_at', '>', $ks->created_at)
-                    ->whereNotExists(function ($q) {
-                        $q->select(DB::raw(1))
-                          ->from('gudang_move_stock')
-                          ->whereColumn('gudang_move_stock.code_transaction', 'gudang_stock_adjustment.code');
-                    })
-                    ->orderBy('created_at', 'asc')
-                    ->get(['code', 'plus', 'min', 'note', 'created_at']);
+            if ($m['ks_balance'] === null) {
+                $manual[] = $m['product_packaging_id'] . ' (belum ada kartu stok)';
+                continue;
             }
-            $adjTotal = 0;
-            foreach ($missingAdj as $a) {
-                $adjTotal += ((float) $a->plus - (float) $a->min);
+            if ($m['ks_balance'] < -0.01) {
+                $manual[] = $m['product_packaging_id'] . ' (saldo KS minus ' . $m['ks_balance'] . ' — perlu penyesuaian stok masuk)';
+                continue;
+            }
+            if ($m['has_stale']) {
+                $manual[] = $m['product_packaging_id'] . ' (log aktif ' . $m['log_stale'] . ' pada DO final/void)';
+                continue;
             }
 
-            if (abs($selisih) > 0.01 && $activeLog == 0 && count($missingAdj) > 0
-                && abs(((float) $ksBalance + $adjTotal) - $quantity) <= 0.01) {
-                foreach ($missingAdj as $a) {
-                    $this->stockService->recordAdjustmentMove(
-                        $stock->warehouse_id,
-                        $stock->product_packaging_id,
-                        (float) $a->plus,
-                        (float) $a->min,
-                        $a->code,
-                        $a->note,
-                        $a->created_at
-                    );
+            if ($m['has_fisik_issue']) {
+                if ($m['log_sent'] > 0.01) {
+                    $manual[] = $m['product_packaging_id'] . ' (selisih ' . $m['selisih_fisik'] . ' saat masih ada DO kirim ' . round($m['log_sent'], 2) . ')';
+                    continue;
                 }
-                $fixedBackfill++;
-                $details[] = $stock->product_packaging_id . ': KS ' . $ksBalance . ' -> ' . $quantity . ' (backfill ' . count($missingAdj) . ' adjustment)';
-            }
-            // 2b. Selaraskan fisik = KS jika sudah tidak ada DO open dan bukan kasus adjustment
-            elseif (abs($selisih) > 0.01 && $activeLog == 0 && count($missingAdj) == 0) {
+
+                if (count($m['missing_adj']) > 0
+                    && abs(((float) $m['ks_balance'] + $m['adj_total']) - $m['quantity']) <= 0.01) {
+                    foreach ($m['missing_adj'] as $a) {
+                        $this->stockService->recordAdjustmentMove(
+                            $m['warehouse_id'],
+                            $m['product_packaging_id'],
+                            (float) $a->plus,
+                            (float) $a->min,
+                            $a->code,
+                            $a->note,
+                            $a->created_at
+                        );
+                    }
+                    $fixedBackfill++;
+                    $details[] = $m['product_packaging_id'] . ': KS ' . $m['ks_balance'] . ' -> ' . $m['quantity'] . ' (backfill ' . count($m['missing_adj']) . ' adjustment)';
+                    continue;
+                }
+
                 DB::table('master_product_min_stocks')
-                    ->where('warehouse_id', $stock->warehouse_id)
-                    ->where('product_packaging_id', $stock->product_packaging_id)
-                    ->update(['quantity' => $ksBalance, 'updated_at' => now()]);
+                    ->where('warehouse_id', $m['warehouse_id'])
+                    ->where('product_packaging_id', $m['product_packaging_id'])
+                    ->update(['quantity' => $m['ks_balance'], 'updated_at' => now()]);
                 $fixedFisik++;
-                $details[] = $stock->product_packaging_id . ': ' . $quantity . ' -> ' . $ksBalance;
-            } elseif (abs($selisih) > 0.01 || abs((float) $stock->reserved_quantity - $activeLog) > 0.01) {
-                $manual[] = $stock->product_packaging_id;
+                $details[] = $m['product_packaging_id'] . ': ' . $m['quantity'] . ' -> ' . $m['ks_balance'];
+                continue;
+            }
+
+            if ($m['has_booking_issue']) {
+                if ($m['selisih_booking'] > 0.01) {
+                    DB::table('master_product_min_stocks')
+                        ->where('warehouse_id', $m['warehouse_id'])
+                        ->where('product_packaging_id', $m['product_packaging_id'])
+                        ->update(['reserved_quantity' => $m['expected_reserved'], 'updated_at' => now()]);
+                    $fixedReserved++;
+                    $details[] = $m['product_packaging_id'] . ': reservasi ' . $m['reserved'] . ' -> ' . $m['expected_reserved'];
+                } else {
+                    $manual[] = $m['product_packaging_id'] . ' (reservasi kurang ' . abs($m['selisih_booking']) . ' dari DO terbuka)';
+                }
             }
         }
 
@@ -1466,6 +1606,7 @@ class StockController extends Controller
             'fixed_fisik' => $fixedFisik,
             'fixed_orphan' => $fixedOrphan,
             'fixed_backfill' => $fixedBackfill,
+            'fixed_reserved' => $fixedReserved,
             'need_manual' => $manual,
             'remaining' => $remaining,
             'details' => $details,

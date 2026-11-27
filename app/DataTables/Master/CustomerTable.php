@@ -19,7 +19,6 @@ class CustomerTable extends Table
     public function query(Request $request)
     {
         $model = Customer::leftJoin('master_customer_categories', 'master_customer_categories.id', '=', 'master_customers.category_id')
-            ->leftJoin('master_customer_other_addresses', 'master_customer_other_addresses.customer_id', '=', 'master_customers.id')
             ->selectRaw('
                 master_customers.id AS id,
                 CONCAT(master_customers.name, " - ", master_customers.text_kota) AS store_name_city,
@@ -31,17 +30,21 @@ class CustomerTable extends Table
                     WHEN master_customers.has_tempo = 1 THEN "YES"
                 END AS store_tempo,
                 master_customers.tempo_limit AS store_tempo_limit,
-                master_customers.status AS status,
-                master_customer_other_addresses.name AS member_name
+                master_customers.status AS status
             ')
-            ->groupBy('master_customers.name');
+            ->groupBy('master_customers.id');
 
             if ($request->type_search != 'all') {
                 $model = $model->when($request->type_search == 0, function ($query) use ($request) {
                             return $query->where('master_customers.name', $request->search_name);
                         })
                         ->when($request->type_search == 1, function ($query) use ($request) {
-                            return $query->where('master_customer_other_addresses.name', $request->search_name);
+                            return $query->whereExists(function ($sub) use ($request) {
+                                $sub->select(DB::raw(1))
+                                    ->from('master_customer_other_addresses')
+                                    ->whereColumn('master_customer_other_addresses.customer_id', 'master_customers.id')
+                                    ->where('master_customer_other_addresses.name', $request->search_name);
+                            });
                         });
             }
 
@@ -61,6 +64,14 @@ class CustomerTable extends Table
             } else if ($model->status == $model::STATUS['INACTIVE']) {
                 return 'table-warning';
             }
+        });
+
+        $table->addColumn('check', function (Customer $model) {
+            if ($model->status == $model::STATUS['DELETED']) {
+                return '';
+            }
+
+            return '<input type="checkbox" class="check-entity" value="' . $model->id . '">';
         });
 
         $table->editColumn('store_name_city', function (Customer $model) {
@@ -100,11 +111,9 @@ class CustomerTable extends Table
                     </button>
                 </a>
                 
-                <a href=\"{$destroy}\">
-                    <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\">
-                        <i class=\"fa fa-trash\"></i>
-                    </button>
-                </a>
+                <button type=\"button\" class=\"btn btn-sm btn-circle btn-alt-danger\" title=\"Delete\" onclick=\"deleteCustomer('{$destroy}')\">
+                    <i class=\"fa fa-trash\"></i>
+                </button>
             ";
         });
 
@@ -221,7 +230,7 @@ class CustomerTable extends Table
             return $detail_html;
         });
 
-        $table->rawColumns(['detail', 'action', 'action2', 'status_and_existence']);
+        $table->rawColumns(['check', 'detail', 'action', 'action2', 'status_and_existence']);
         return $table->make(true);
     }
 }

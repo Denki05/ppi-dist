@@ -22,6 +22,7 @@ use App\Entities\Master\CustomerOtherAddress;
 use App\Entities\Gudang\MutasiShowroom;
 use App\Entities\Gudang\MutasiShowroomDetail;
 use App\Services\StockService;
+use App\Services\SalesOrder\SalesOrderClosingService;
 use App\Entities\Master\Vendor;
 use App\Models\Province;
 use App\Models\Regency;
@@ -140,12 +141,41 @@ class SalesOrderProformaController extends Controller
         return view($this->view . "create", $data);
     }
 
+    /**
+     * Ubah input angka jadi float tanpa merusak desimal.
+     *
+     * Format yang diterima: "1157625", "1157625.00", "689062.5" (desimal titik),
+     * "1.234.567" (ribuan titik saja), "1.234.567,89" / "115762,5" (Indonesia).
+     * Versi lama membuang SEMUA titik, sehingga nilai render DB "1157625.00"
+     * terbaca 115762500 (x100) dan setiap save menggelembungkan nominal.
+     */
     private function cleanCurrency($value)
     {
         if ($value === null || $value === '') {
-            return 0;
+            return 0.0;
         }
-        return (float) str_replace(',', '.', str_replace('.', '', $value));
+
+        if (is_int($value) || is_float($value)) {
+            return (float) $value;
+        }
+
+        $value = str_replace(' ', '', trim((string) $value));
+
+        $hasComma = strpos($value, ',') !== false;
+        $hasDot = strpos($value, '.') !== false;
+
+        if ($hasComma && $hasDot) {
+            // Indonesia: titik ribuan, koma desimal (1.234.567,89)
+            $value = str_replace(',', '.', str_replace('.', '', $value));
+        } elseif ($hasComma) {
+            // Desimal koma (115762,5)
+            $value = str_replace(',', '.', $value);
+        } elseif (substr_count($value, '.') > 1) {
+            // Titik ribuan saja (1.234.567)
+            $value = str_replace('.', '', $value);
+        }
+
+        return (float) $value;
     }
 
     public function store(Request $request)
@@ -463,7 +493,11 @@ class SalesOrderProformaController extends Controller
             $sales_proforma->vendor_id = $request->vendor;
             $sales_proforma->so_date = $request->so_date;
             $sales_proforma->so_brand_name = $request->so_brand_name;
-            $sales_proforma->so_type_transaction = $request->type_transaction;
+            // Field Type Transaksi di halaman Edit hanya label (readonly), bukan
+            // kode numerik; jangan timpa nilai tersimpan dengan teks seperti "CASH".
+            if (is_numeric($request->type_transaction)) {
+                $sales_proforma->so_type_transaction = (int) $request->type_transaction;
+            }
             $sales_proforma->so_idr_rate = $this->cleanCurrency($request->idr_rate);
             $sales_proforma->note = $request->note;
             $sales_proforma->sales_senior_id = $request->sales_senior_id;
@@ -484,22 +518,7 @@ class SalesOrderProformaController extends Controller
 
             $sales_proforma->save();
 
-            // ===== DETAIL COST =====
-            $detail_cost = SalesOrderProformaDetails::firstOrNew([
-                'so_proforma_id' => $sales_proforma->id
-            ]);
-
-            $detail_cost->discount_1_percent = $request->disc_agen_percent ?? 0;
-            $detail_cost->discount_1 = $this->cleanCurrency($request->disc_agen_idr);
-            $detail_cost->discount_2_percent = $request->disc_kemasan_percent ?? 0;
-            $detail_cost->discount_2 = $this->cleanCurrency($request->disc_kemasan_idr);
-            $detail_cost->discount_idr = $this->cleanCurrency($request->disc_tambahan_idr);
-            $detail_cost->voucher_idr = $this->cleanCurrency($request->voucher_idr);
-            $detail_cost->delivery_cost_idr = $this->cleanCurrency($request->delivery_cost_idr);
-            $detail_cost->purchase_total_idr = $this->cleanCurrency($request->subtotal);
-            $detail_cost->grand_total_idr = $this->cleanCurrency($request->grand_total);
-
-            $detail_cost->save();
+            $idr_rate = (float) $sales_proforma->so_idr_rate;
 
             // ===== DELETE ITEMS =====
             if ($request->ids_delete) {
@@ -559,11 +578,16 @@ class SalesOrderProformaController extends Controller
                         $item->so_proforma_id = $sales_proforma->id;
                     }
 
+                    $price = $this->cleanCurrency($request->price[$key] ?? 0);
+                    $disc_usd = $this->cleanCurrency($request->disc_usd[$key] ?? 0);
+
                     $item->product_packaging_id = $value;
-                    $item->price = (float) ($request->price[$key] ?? 0);
+                    $item->price = $price;
                     $item->qty = $qty;
-                    $item->disc_usd = (float) ($request->disc_usd[$key] ?? 0);
-                    $item->total_item = $this->cleanCurrency($request->total[$key] ?? 0);
+                    $item->disc_usd = $disc_usd;
+                    // Nominal baris dihitung di server, tidak memakai nilai kiriman
+                    // form (yang bisa berformat "6890625.00" / hasil hitung JS).
+                    $item->total_item = round(($price - $disc_usd) * $qty * $idr_rate, 2);
                     $item->packaging_id = $request->packaging[$key] ?? null;
                     $item->free_product = $free;
 
@@ -584,6 +608,44 @@ class SalesOrderProformaController extends Controller
                     ]
                 ]);
             }
+
+            // ===== DETAIL COST =====
+            // Subtotal & potongan dihitung ulang dari item yang baru disimpan,
+            // supaya nilai tidak bergantung pada string angka dari form.
+            $subtotal_idr = round((float) $sales_proforma->items()->sum('total_item'), 2);
+            $disc_1_percent = $this->cleanCurrency($request->disc_agen_percent);
+            $disc_2_percent = $this->cleanCurrency($request->disc_kemasan_percent);
+            // Form versi lama bisa menampilkan Disc Kemasan % tanpa nominalnya
+            // (field % memakai nilai Disc Agen). Jangan terapkan potongan yang
+            // tidak pernah tampil ke user.
+            if ($disc_2_percent > 0 && $this->cleanCurrency($request->disc_kemasan_idr) <= 0) {
+                $disc_2_percent = 0;
+            }
+            $disc_1_idr = round($subtotal_idr * $disc_1_percent / 100, 2);
+            $disc_2_idr = round(($subtotal_idr - $disc_1_idr) * $disc_2_percent / 100, 2);
+            $disc_idr = $this->cleanCurrency($request->disc_tambahan_idr);
+            $voucher_idr = $this->cleanCurrency($request->voucher_idr);
+            $delivery_cost_idr = $this->cleanCurrency($request->delivery_cost_idr);
+            $grand_total_idr = round(
+                $subtotal_idr - $disc_1_idr - $disc_2_idr - $disc_idr - $voucher_idr + $delivery_cost_idr,
+                2
+            );
+
+            $detail_cost = SalesOrderProformaDetails::firstOrNew([
+                'so_proforma_id' => $sales_proforma->id
+            ]);
+
+            $detail_cost->discount_1_percent = $disc_1_percent;
+            $detail_cost->discount_1 = $disc_1_idr;
+            $detail_cost->discount_2_percent = $disc_2_percent;
+            $detail_cost->discount_2 = $disc_2_idr;
+            $detail_cost->discount_idr = $disc_idr;
+            $detail_cost->voucher_idr = $voucher_idr;
+            $detail_cost->delivery_cost_idr = $delivery_cost_idr;
+            $detail_cost->purchase_total_idr = $subtotal_idr;
+            $detail_cost->grand_total_idr = $grand_total_idr;
+
+            $detail_cost->save();
 
             DB::commit();
 
@@ -844,6 +906,11 @@ class SalesOrderProformaController extends Controller
                     'grand_total_idr' => $sales_proforma->details_cost->grand_total_idr,
                 ]);
             }
+
+            // Nota resmi dibuat di titik yang sama dengan tutup_so: begitu DO ada
+            // dengan kurs & grand total valid. Idempotent — ACC ulang hanya
+            // menyinkronkan nota yang sudah ada (tidak dobel, VOID tidak dihidupkan).
+            app(SalesOrderClosingService::class)->createInvoiceIfNeeded($do_id);
     
             /*
             |--------------------------------------------------------------------------

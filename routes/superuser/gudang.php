@@ -13,6 +13,7 @@ Route::group([
         Route::get('{warehouse}/{startDate}/{endDate}/exportTransactions', 'StockController@exportTransactions')->name('exportTransactions');
         Route::get('/backfillMonthEndBalances', 'StockController@backfillMonthEndBalances')->name('backfillMonthEndBalances');
         Route::get('/export_stock_db', 'StockController@export_stock_db')->name('export_stock_db');
+        Route::get('/export-valuation', 'StockController@exportValuation')->name('exportValuation');
         Route::get('/import_template', 'StockController@import_template')->name('import_template');
         Route::post('/import', 'StockController@import')->name('import');
         Route::get('{warehouse_id}/detail/{product_id}/print', 'StockController@printPdf')->name('print');

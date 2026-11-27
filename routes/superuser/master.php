@@ -124,6 +124,10 @@ Route::group([
         Route::post('/getkelurahan', 'CustomerController@getkelurahan')->name('getkelurahan');
         Route::post('/getzipcode', 'CustomerController@getzipcode')->name('getzipcode');
         Route::post('/getcustomertype', 'CustomerController@getcustomertype')->name('getcustomertype');
+        Route::post('/delete_multiple', 'CustomerController@destroyMultiple')->name('delete_multiple');
+        Route::get('/gps_maps', 'CustomerController@gpsEditor')->name('gps_maps');
+        Route::get('/gps_maps/json', 'CustomerController@gpsEditorJson')->name('gps_maps.json');
+        Route::post('/gps_maps/update', 'CustomerController@gpsEditorUpdate')->name('gps_maps.update');
         Route::get('/update_pic', 'CustomerController@update_pic')->name('update_pic');
         Route::get('/changeStatusActive/{id}', 'CustomerController@changeStatusActive')->name('changeStatusActive');
         Route::get('/changeStatusInactive/{id}', 'CustomerController@changeStatusInactive')->name('changeStatusInactive');
